@@ -1,0 +1,20 @@
+#!/bin/bash
+
+if [ -n "$DEBIAN_SCRIPT_DEBUG" ]; then set -v -x; DEBIAN_SCRIPT_TRACE=1; fi
+${DEBIAN_SCRIPT_TRACE:+ echo "#42#DEBUG# RUNNING $0 $*"}
+set -e
+set -u
+
+# add groups for vyatta accounts
+# vyattacfg is legacy and left for backward compatibility
+for g in vyattacfg vyattaadm vyattaop vyattasu; do
+    if ! getent group $g >/dev/null; then
+        addgroup --system $g
+    fi
+done
+
+if getent passwd configd >/dev/null; then
+        usermod -a -G vyattacfg configd
+fi
+
+#DEBHELPER#

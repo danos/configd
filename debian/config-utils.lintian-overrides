@@ -1,0 +1,9 @@
+config-utils: dir-or-file-in-opt
+config-utils: unstripped-binary-or-object
+config-utils: hardening-no-relro
+config-utils: hardening-no-fortify-functions
+config-utils: unusual-interpreter
+config-utils: statically-linked-binary usr/bin/args2cpath
+config-utils: statically-linked-binary opt/vyatta/bin/featcaps
+config-utils: statically-linked-binary usr/bin/cfgcmds
+config-utils: statically-linked-binary usr/bin/platform-setup

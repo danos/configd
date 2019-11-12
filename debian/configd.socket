@@ -1,0 +1,11 @@
+[Unit]
+Description=configd socket
+
+[Socket]
+ListenStream=/var/run/vyatta/configd/main.sock
+SocketUser=configd
+SocketGroup=vyattacfg
+SocketMode=777
+
+[Install]
+WantedBy=sockets.target

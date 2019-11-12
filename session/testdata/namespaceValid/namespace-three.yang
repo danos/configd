@@ -1,0 +1,54 @@
+module namespace-three {
+	namespace "urn:vyatta.com:mgmt:namespace-three";
+	prefix namespace-three;
+
+	import namespace-one {
+		prefix one;
+	}
+
+	import namespace-two {
+		prefix two;
+	}
+	organization "AT&T Inc.";
+	contact
+		"AT&T
+		 Postal: 208 S. Akard Street
+				 Dallas, TX 75202
+		 Web: www.att.com";
+
+	revision 2015-03-09 {
+		description "Initial revision.";
+	}
+
+	grouping group-three {
+		leaf leaf-group-three {
+			type string;
+		}
+		uses one:group-one;
+		uses two:group-two;
+	}
+
+	container test-three{
+		description "Container in remote module for augment tests.";
+		leaf three-leaf {
+			type string;
+		}
+		uses group-three;
+	}
+
+	augment /one:testcontainer {
+		container three {
+			leaf aug-three {
+				type string;
+			}
+			uses group-three;
+		}
+	}
+
+	augment /two:test-remote {
+		container three-aug-two {
+			uses group-three;
+		}
+
+	}
+}

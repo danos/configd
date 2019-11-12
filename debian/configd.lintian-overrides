@@ -1,0 +1,5 @@
+configd: dir-or-file-in-opt
+configd: unstripped-binary-or-object
+configd: hardening-no-relro
+configd: hardening-no-fortify-functions
+configd: unusual-interpreter

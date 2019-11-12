@@ -1,0 +1,287 @@
+module yangd-v1 {
+	namespace "urn:vyatta.com:mgmt:yangd:1";
+	prefix yangd-v1;
+
+	organization "AT&T Inc.";
+	contact
+		"AT&T
+		 Postal: 208 S. Akard Street
+		 	 Dallas, TX 75202
+		 Web: www.att.com";
+
+	description
+		"Copyright (c) 2017-2019, AT&T Intellectual Property.
+		 All rights reserved.
+
+		 Copyright (c) 2016 by Brocade Communications Systems, Inc.
+		 All rights reserved.
+
+		 Redistribution and use in source and binary forms, with or without
+		 modification, are permitted provided that the following conditions
+		 are met:
+
+		 1. Redistributions of source code must retain the above copyright
+		    notice, this list of conditions and the following disclaimer.
+		 2. Redistributions in binary form must reproduce the above
+		    copyright notice, this list of conditions and the following
+		    disclaimer in the documentation and/or other materials provided
+		    with the distribution.
+		 3. Neither the name of the copyright holder nor the names of its
+		    contributors may be used to endorse or promote products derived
+		    from this software without specific prior written permission.
+
+		 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+		 'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+		 LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+		 FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+		 COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+		 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+		 BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+		 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+		 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+		 LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+		 ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+		 POSSIBILITY OF SUCH DAMAGE.
+
+		 SPDX-License-Identifier: BSD-3-Clause
+
+		 The YANG module for yangd-v1";
+
+	revision 2018-04-24 {
+		description "Add new RPCS
+				- convert-rpc-input
+				- convert-rpc-output
+				- lookup-module-name-by-namespace";
+	}
+	revision 2017-08-29 {
+		description "Add ability to do validation based on module name";
+	}
+	revision 2017-08-14 {
+		description "validate-notification RPC.";
+	}
+	revision 2016-11-09 {
+		description "Initial revision.";
+	}
+
+	typedef encoding-format {
+		type enumeration {
+			enum "json" {
+				description "Json encoded data";
+			}
+			enum "rfc7951" {
+				description "RFC7951 encoded data";
+			}
+			enum "xml" {
+				description "XML encoded data";
+			}
+		}
+	}
+
+	rpc validate-notification {
+		description "Validate a notifications data, returning a JSON encoded " +
+			"string which will include any default values.";
+		input {
+			leaf namespace {
+				must "not(module-name)" {
+					error-message "May only supply one of "
+						+ "module-name or namespace";
+				}
+				description "Namespace that the notification belongs to";
+				type string;
+			}
+			leaf module-name {
+				must "not(namespace)" {
+					error-message "May only supply one of "
+						+ "module-name or namespace";
+				}
+				type string;
+				description "Model name the RPC belongs to";
+			}
+			leaf name {
+				mandatory true;
+				description "Notification name.";
+				type string;
+			}
+			leaf input {
+				mandatory true;
+				description "JSON encoded input to validate for the specified notification";
+				type string;
+			}
+		}
+
+		output {
+			leaf output {
+				type string;
+				description "JSON encoded output, including any populated defaults";
+			}
+		}
+	}
+
+	rpc validate-rpc-input {
+		input {
+			leaf rpc-namespace {
+				must "not(rpc-module-name)" {
+					error-message "May only supply one of "
+						+ "rpc-module-name or rpc-namespace";
+				}
+				type string;
+				description "Namespace that the RPC belongs to";
+			}
+			leaf rpc-module-name {
+				must "not(rpc-namespace)" {
+					error-message "May only supply one of "
+						+ "rpc-module-name or rpc-namespace";
+				}
+				type string;
+				description "Model name the RPC belongs to";
+			}
+			leaf rpc-name {
+				type string;
+				mandatory true;
+				description "Name of the RPC";
+			}
+			leaf rpc-input {
+				type string;
+				mandatory true;
+				description "JSON encoded input to validate for the specified RPC";
+			}
+		}
+		output {
+			leaf valid {
+				type boolean;
+				mandatory true;
+				description "Whether the rpc-input is valid";
+			}
+		}
+	}
+	rpc lookup-rpc-destination-by-module-name {
+		input {
+			leaf module-name {
+				type string;
+				mandatory true;
+				description "The module to lookup";
+			}
+		}
+		output {
+		    leaf destination {
+				type string;
+				description "The model to which the requested module belongs";
+			}
+		}
+	}
+	rpc lookup-module-name-by-namespace {
+		description "The lookup-module-name-by-namespace RPC "
+			+ "looks up the module that has the requested "
+			+ "namespace, and returns its module name";
+		input {
+			leaf namespace {
+				type string;
+				mandatory true;
+				description "The namespace to lookup";
+			}
+		}
+		output {
+			leaf module-name {
+				type string;
+				description "Yang module name the "
+					+ "namespace maps to";
+			}
+		}
+	}
+	rpc convert-rpc-input {
+		description "The convert-rpc-input RPC converts "
+			+ "the input of an RPC from various formats "
+			+ "to other formats.";
+		input {
+			leaf module-name {
+				must "not(rpc-namespace)" {
+					error-message "May only supply one of "
+						+ "module-name or rpc-namespace";
+				}
+				description "Yang module name the "
+					+ "RPC belongs to";
+				type string;
+			}
+			leaf rpc-namespace {
+				must "not(module-name)" {
+					error-message "May only supply one of "
+						+ "module-name or rpc-namespace";
+				}
+				type string;
+				description "Namespace that the RPC belongs to";
+			}
+			leaf rpc-name {
+				description "Name of the RPC";
+				type string;
+				mandatory true;
+			}
+			leaf input-format {
+				description "The format of the incoming "
+					+ "source data";
+				type encoding-format;
+				mandatory true;
+			}
+			leaf output-format {
+				description "The target format for the "
+					+ "outgoing converted data";
+				type encoding-format;
+				mandatory true;
+			}
+			leaf data {
+				description "The source data";
+				type string;
+				mandatory true;
+			}
+		}
+		output {
+			leaf data {
+				description "The converted data";
+				type string;
+			}
+		}
+	}
+	rpc convert-rpc-output {
+		description "The convert-rpc-output RPC converts "
+			+ "the output of an RPC from various formats "
+			+ "to other formats.";
+		input {
+			leaf module-name {
+				type string;
+				description "Yang module name the "
+					+ "RPC belongs to";
+			}
+			leaf rpc-namespace {
+				type string;
+				description "Namespace that the RPC belongs to";
+			}
+			leaf rpc-name {
+				description "RPC name in the module";
+				type string;
+				mandatory true;
+			}
+			leaf input-format {
+				description "The format of the incoming "
+					+ "source data";
+				type encoding-format;
+				mandatory true;
+			}
+			leaf output-format {
+				description "The target format for the "
+					+"outgoing converted data";
+				type encoding-format;
+				mandatory true;
+			}
+			leaf data {
+				description "The source data";
+				type string;
+				mandatory true;
+			}
+		}
+		output {
+			leaf data {
+				description "The converted data";
+				type string;
+			}
+		}
+	}
+}

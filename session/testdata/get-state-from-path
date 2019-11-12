@@ -1,0 +1,3 @@
+#!/bin/sh
+
+echo { \"state\":\"$CONFIGD_PATH\" }

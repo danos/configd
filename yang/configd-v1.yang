@@ -1,0 +1,148 @@
+module configd-v1 {
+	namespace "urn:vyatta.com:mgmt:configd:1";
+	prefix configd-v1;
+
+	organization "AT&T Inc.";
+	contact
+		"AT&T
+		 Postal: 208 S. Akard Street
+				 Dallas, TX 75202
+		 Web: www.att.com";
+
+	description
+		"Copyright (c) 2019 AT&T Intellectual Property
+		 All rights reserved.
+
+		 Copyright (c) 2014-2016 by Brocade Communications Systems, Inc.
+		 All rights reserved.
+
+		 Redistribution and use in source and binary forms, with or without
+		 modification, are permitted provided that the following conditions
+		 are met:
+
+		 1. Redistributions of source code must retain the above copyright
+		    notice, this list of conditions and the following disclaimer.
+		 2. Redistributions in binary form must reproduce the above
+		    copyright notice, this list of conditions and the following
+		    disclaimer in the documentation and/or other materials provided
+		    with the distribution.
+		 3. Neither the name of the copyright holder nor the names of its
+		    contributors may be used to endorse or promote products derived
+		    from this software without specific prior written permission.
+
+		 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+		 'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+		 LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+		 FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+		 COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+		 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+		 BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+		 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+		 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+		 LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+		 ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+		 POSSIBILITY OF SUCH DAMAGE.
+
+		 SPDX-License-Identifier: BSD-3-Clause
+
+		 The YANG module for configd-v1";
+
+	revision 2019-03-15 {
+		description "Add must extension";
+	}
+	revision 2016-01-25 {
+		description "Remove comp_help extension";
+	}
+	revision 2015-12-08 {
+		description "Add get-state and normalize extensions"
+			+ "Add defer-actions";
+	}
+
+	revision 2015-05-20 {
+		description "Remove rpc-script extension and
+			     add call-rpc extension";
+	}
+
+	revision 2014-12-17 {
+		description "Add rpc-script extension";
+	}
+	revision 2014-10-28 {
+		description "Update for 3.2.1R1";
+	}
+
+	revision 2014-05-30 {
+		description "Initial revision.";
+	}
+
+	extension help {
+		argument text;
+	}
+	extension pattern-help {
+		argument text;
+	}
+
+	extension priority {
+		argument priority;
+	}
+
+	extension allowed {
+		argument executable;
+	}
+	extension begin {
+		argument executable;
+	}
+	extension end {
+		argument executable;
+	}
+	extension create {
+		argument executable;
+	}
+	extension delete {
+		argument executable;
+	}
+	extension update {
+		argument executable;
+	}
+	extension subst {
+		argument executable;
+	}
+	extension secret {
+		argument bool;
+	}
+
+	extension validate {
+		argument executable;
+	}
+	extension syntax {
+		argument executable;
+	}
+
+	extension error-message {
+		argument message;
+	}
+
+	extension migration {
+		argument level;
+	}
+
+	extension call-rpc {
+		argument executable;
+	}
+	extension get-state {
+		argument executable;
+	}
+	extension normalize {
+		argument executable;
+	}
+	extension defer-actions {
+		argument executable;
+	}
+	extension must {
+		description
+			"This extension will override the enclosing standard YANG
+			 must statement.  This allows us to use custom XPATH functions
+			 to implement the enclosing must statement rather more efficiently.
+			 There can only be one such extension per existing must statement";
+		argument text;
+	}
+}

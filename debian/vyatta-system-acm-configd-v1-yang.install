@@ -1,0 +1,2 @@
+tmplscripts opt/vyatta/share/
+yang/vyatta-system-acm-configd-v1.yang usr/share/configd/yang/

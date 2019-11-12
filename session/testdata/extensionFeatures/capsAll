@@ -1,0 +1,7 @@
+# Each capability takes the form <module-name>:<feature-name>
+# - it must be first non-WS on the line, anything after it is ignored
+# - comments are marked by a #, but not yet specifically checked for
+
+# This capabilities file enables all features for TestExtensionIfFeatureEnabled test
+
+test-configd-session:testfeature

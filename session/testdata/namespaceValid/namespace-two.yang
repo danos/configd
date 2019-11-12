@@ -1,0 +1,44 @@
+module namespace-two {
+	namespace "urn:vyatta.com:mgmt:namespace-two";
+	prefix namespace-two;
+
+	import namespace-one {
+		prefix one;
+	}
+
+	organization "AT&T Inc.";
+	contact
+		"AT&T
+		 Postal: 208 S. Akard Street
+				 Dallas, TX 75202
+		 Web: www.att.com";
+
+	revision 2015-03-09 {
+		description "Initial revision.";
+	}
+
+	grouping group-two {
+		leaf leaf-group-two {
+			type string;
+		}
+	}
+
+	container test-remote {
+		description "Container in remote module for augment tests.";
+		leaf test-remote-leaf {
+			type string;
+		}
+		uses one:group-one;
+		uses group-two;
+	}
+
+	augment /one:testcontainer {
+		container two {
+			leaf aug-two {
+				type string;
+			}
+			uses one:group-one;
+			uses group-two;
+		}
+	}
+}

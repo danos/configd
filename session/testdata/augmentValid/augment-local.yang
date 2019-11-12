@@ -1,0 +1,83 @@
+module augment-local {
+	namespace "urn:vyatta.com:mgmt:augment-local";
+	prefix local;
+
+	import augment-remote {
+		prefix remote;
+	}
+
+	organization "AT&T Inc.";
+	contact
+		"AT&T
+		 Postal: 208 S. Akard Street
+				 Dallas, TX 75202
+		 Web: www.att.com";
+
+	revision 2015-03-09 {
+		description "Initial revision.";
+	}
+
+	container test-local {
+		description "Container to use as an augment local
+			     target node";
+		container embedded-container {
+			description "Embedded container for augment tests";
+		}
+	}
+
+	augment /test-local {
+		description "To test that an absent prefix correctly
+			     refers to node in the local module";
+		leaf aug-local-imp-leaf {
+			type string;
+		}
+	}
+
+	augment /test-local/embedded-container {
+		description "To test that an absent prefix, on a two level
+			     node reference correctly refers to local module";
+		leaf aug-embed-imp-leaf {
+			type string;
+		}
+	}
+
+	augment /local:test-local {
+		description "To test that an explicit local module prefix
+			     works correctly";
+		leaf aug-local-exp-leaf {
+			type string;
+		}
+	}
+
+	augment /local:test-local/local:embedded-container {
+		description "To test that multi level local module prefixes
+			     work correctly";
+		leaf aug-embed-exp-leaf {
+			type string;
+		}
+	}
+
+	augment /local:test-local/embedded-container {
+		description "To test multi level augment reference, one with
+			     an explicit and one an explicit prefix to local
+			     module";
+		leaf aug-embed-mixedone-leaf {
+			type string;
+		}
+	}
+
+	augment /test-local/local:embedded-container {
+		description "As above, with explicit/implicit prefixes
+			     reversed";
+		leaf aug-embed-mixedtwo-leaf {
+			type string;
+		}
+	}
+
+	augment /remote:test-remote {
+		description "To test that a remote prefix works correctly";
+		leaf aug-remote-leaf {
+			type string;
+		}
+	}
+}

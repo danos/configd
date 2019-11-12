@@ -1,0 +1,22 @@
+module augment-remote {
+	namespace "urn:vyatta.com:mgmt:augment-remote";
+	prefix augment-remote;
+
+	organization "AT&T Inc.";
+	contact
+		"AT&T
+		 Postal: 208 S. Akard Street
+				 Dallas, TX 75202
+		 Web: www.att.com";
+
+	revision 2015-03-09 {
+		description "Initial revision.";
+	}
+
+	container test-remote {
+		description "Container in remote module for augment tests.";
+		leaf test-remote-leaf {
+			type string;
+		}
+	}
+}

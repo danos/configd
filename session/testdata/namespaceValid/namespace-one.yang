@@ -1,0 +1,39 @@
+module namespace-one {
+	namespace "urn:vyatta.com:mgmt:namespace-one";
+	prefix one;
+
+	organization "AT&T Inc.";
+	contact
+		"AT&T
+		 Postal: 208 S. Akard Street
+				 Dallas, TX 75202
+		 Web: www.att.com";
+
+	revision 2015-10-15 {
+		description "Initial revision.";
+	}
+
+	grouping group-one {
+		leaf leaf-group-one {
+			type string;
+		}
+	}
+
+	container testcontainer {
+		description "Container to use as an augment local
+			     target node";
+		container embedded-container {
+			description "Embedded container for augment tests";
+			uses group-one;
+		}
+	}
+
+	augment /testcontainer {
+		container one {
+			leaf aug-one {
+				type string;
+			}
+			uses group-one;
+		}
+	}
+}

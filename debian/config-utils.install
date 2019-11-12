@@ -1,0 +1,13 @@
+usr/bin/args2cpath
+usr/bin/callrpc
+usr/bin/cfgcli
+usr/bin/cfgcmds
+usr/bin/cfgdiff
+usr/bin/cfgread
+usr/bin/configdcaps
+usr/bin/featcaps opt/vyatta/bin
+usr/bin/gettree
+usr/bin/normalize
+usr/bin/platform-setup
+
+cmd/cfgcli/scripts/* lib/cfgcli

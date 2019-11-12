@@ -1,0 +1,32 @@
+# Each capability takes the form <module-name>:<feature-name>
+# - it must be first non-WS on the line, anything after it is ignored
+# - comments are marked by a #, but not yet specifically checked for
+
+# This capabilities enables all features present in the feature-local and
+# feature-remote yang modules and incorporates some capabilities files WS
+# and comments testing entries.
+
+feature-local:dependent-test-feature    # Example Comment
+feature-remote:remote-test-feature
+feature-local:local-test-feature
+feature-local:another-test-feature
+feature-remote:testfeature
+feature-remote:yet-another-feature
+feature-local:testfeature
+feature-local:local-remote-dependent
+feature-remote:another-test-feature
+feature-local:local-dependent 
+    feature-local:remote-dependent #Whitespace is allowed at start of line
+feature-local:inside-container-capable
+feature-local:inside-leaf-capable
+feature-local:augment-container-capable
+feature-local:augment-leaf-capable
+feature-local:augmented-node-capable
+feature-local:testUses2Capable
+feature-local:G2-capable
+
+# Corner test cases
+a:c
+b:
+:r
+:

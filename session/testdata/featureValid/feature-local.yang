@@ -1,0 +1,146 @@
+module feature-local {
+	namespace "urn:vyatta.com:mgmt:feature-local";
+	prefix local;
+
+	import feature-remote {
+		prefix feature-remote;
+	}
+
+	organization "AT&T Inc.";
+	contact
+		"AT&T
+		 Postal: 208 S. Akard Street
+				 Dallas, TX 75202
+		 Web: www.att.com";
+
+	revision 2015-03-09 {
+		description "Initial revision.";
+	}
+
+	feature testfeature {
+		description "A test feature to allow testing of the
+			     feature and if-feature yang statements";
+	}
+
+	feature local-test-feature;
+	feature another-test-feature;
+
+	feature local-dependent {
+		description "Dependent on another local feature";
+		if-feature local-test-feature;
+	}
+
+	feature remote-dependent {
+		description "dependent on a feature in a remote module";
+		if-feature feature-remote:remote-test-feature;
+	}
+
+	feature local-remote-dependent {
+		description "Another test feature to allow testing of the
+			     feature and if-feature yang statements";
+		if-feature another-test-feature;
+		if-feature feature-remote:yet-another-feature;
+	}
+
+	feature inside-container-capable;
+
+	feature inside-leaf-capable;
+
+	feature augment-container-capable;
+
+	feature augment-leaf-capable;
+
+	feature augmented-remote-container-capable;
+
+	feature augmented-node-capable;
+
+	feature G2-capable;
+
+	feature testUses2Capable;
+
+	grouping target {
+		leaf testG1 {
+			type string;
+		}
+		leaf testG2 {
+			type string;
+			if-feature G2-capable;
+		}
+	}
+
+	container testUses {
+		leaf testUses2Leaf {
+			type string;
+		}
+
+		uses target {
+			if-feature testUses2Capable;
+		}
+
+	}
+
+	augment /feature-remote:remote-container {
+		if-feature augmented-node-capable;
+		container augment-container {
+			if-feature augment-container-capable;
+			leaf augment-leaf {
+				type string;
+				if-feature augment-leaf-capable;
+			}
+			leaf other-leaf {
+				type string;
+			}
+		}
+		container second-augment-container {
+			leaf second-leaf {
+				type string;
+			}
+		}
+	}
+
+	container testcontainer {
+		leaf localimplicit {
+			if-feature testfeature;
+			type string;
+			description "A leaf with an if-feature referencing
+				     an implicit local feature node";
+		}
+		leaf localexplicit {
+			type string;
+			description "A leaf with an if-feature referencing
+				     an explicit local feature node";
+			if-feature local:testfeature;
+		}
+		leaf localdependent {
+			type string;
+			if-feature local-dependent;
+		}
+		leaf remote {
+			description "A leaf with an if-feature referencing
+				     a remote feature node";
+			type string;
+			if-feature feature-remote:testfeature;
+		}
+		leaf remote-dependent {
+			type string;
+			if-feature remote-dependent;
+		}
+		leaf dependentref {
+			description "A leaf with an if-feature referencing
+				     a remote feature node and another which
+				     is an implicit local feature reference
+				     which is dependent on another local
+				     feature";
+			type string;
+			if-feature local-remote-dependent;
+			if-feature feature-remote:testfeature;
+		}
+		container insidecontainer {
+			if-feature inside-container-capable;
+			leaf insideleaf {
+				type string;
+				if-feature inside-leaf-capable;
+			}
+		}
+	}
+}

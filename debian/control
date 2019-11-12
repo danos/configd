@@ -1,0 +1,173 @@
+Source: configd
+Section: admin
+Maintainer: Vyatta Package Maintainers <DL-vyatta-help@att.com>
+Build-Depends:
+ debhelper (>= 9),
+ dh-golang (>= 1.18),
+ dh-systemd,
+ dh-vci,
+ dh-yang,
+ golang (>= 1.10),
+ golang-dbus-dev,
+ golang-github-danos-config-dev,
+ golang-github-danos-encoding-rfc7951-dev (>= 0.5),
+ golang-github-danos-mgmterror-dev,
+ golang-github-danos-utils-args-dev,
+ golang-github-danos-utils-audit-dev,
+ golang-github-danos-utils-exec-dev,
+ golang-github-danos-utils-natsort-dev,
+ golang-github-danos-utils-os-group-dev,
+ golang-github-danos-utils-patherr-dev,
+ golang-github-danos-utils-pathutil-dev,
+ golang-github-danos-utils-tsort-dev,
+ golang-github-danos-utils-tty-dev,
+ golang-github-danos-vci-dev (>= 0.3),
+ golang-github-danos-yang-dev,
+ golang-github-danos-yangd-dev (>= 1.1),
+ golang-github-fsnotify-fsnotify-dev,
+ golang-go-systemd-dev,
+ golang-golang-x-crypto-dev,
+ libaudit-dev
+Standards-Version: 3.9.6
+
+Package: configd
+Architecture: any
+Priority: extra
+Replaces: vyatta-configd
+Depends:
+ adduser,
+ cli-shell-api,
+ libcap2-bin,
+ lu,
+ provisiond,
+ yangd,
+ ${misc:Depends},
+ ${shlibs:Depends}
+Built-Using: ${misc:Built-Using}
+Description: Configuration daemon
+ Yang based Configuration daemon
+
+Package: golang-github-danos-configd-rpc-dev
+Architecture: all
+Depends: ${misc:Depends}
+Built-Using: ${misc:Built-Using}
+Description: configd rpc library
+ Golang configd rpc library
+ .
+ This package contains the source.
+
+Package: golang-github-danos-configd-client-dev
+Architecture: all
+Depends: golang-github-danos-configd-rpc-dev, ${misc:Depends}
+Built-Using: ${misc:Built-Using}
+Description: configd client library
+ Golang configd client library
+ .
+ This package contains the source.
+
+Package: yangd
+Architecture: any
+Priority: extra
+Depends:
+ adduser,
+ libcap2-bin,
+ lu,
+ yangd-v1-yang,
+ ${misc:Depends},
+ ${shlibs:Depends}
+Built-Using: ${misc:Built-Using}
+Description: YANG daemon
+ YANG daemon for parsing YANG models
+
+Package: config-utils
+Architecture: any
+Priority: extra
+Depends:
+ bash (>= 5~) | vyatta-bash (>= 1:4.4-1vyatta12),
+ cli-shell-api,
+ ${shlibs:Depends}
+Recommends: jq, xmlstarlet
+Built-Using: ${misc:Built-Using}
+Description: Configuration utilities
+ A set of utilities that can be used to work with configuration data
+
+Package: yang-utils
+Architecture: any
+Priority: extra
+Replaces: yang2path
+Depends: ${perl:Depends}, ${shlibs:Depends}
+Built-Using: ${misc:Built-Using}
+Description: Yang tools
+ A set of tools that can be used to work with Yang definitions
+
+Package: configd-v1-yang
+Architecture: all
+Depends: configd (>= ${source:Version})
+Replaces: configd (<= 1.7)
+Section: admin
+Priority: optional
+Description: configd-v1 module
+ The YANG module for configd-v1
+
+Package: ietf-inet-types-yang
+Architecture: all
+Replaces: configd (<= 1.7)
+Section: admin
+Priority: optional
+Description: ietf-inet-types module
+ The YANG module for ietf-inet-types
+
+Package: ietf-netconf-monitoring-yang
+Architecture: all
+Depends: ${yang:Depends}
+Replaces: configd (<= 1.7)
+Section: admin
+Priority: optional
+Description: ietf-netconf-monitoring module
+ The YANG module for ietf-netconf-monitoring
+
+Package: ietf-yang-types-yang
+Architecture: all
+Replaces: configd (<= 1.7)
+Section: admin
+Priority: optional
+Description: ietf-yang-types module
+ The YANG module for ietf-yang-types
+
+Package: vyatta-system-acm-configd-v1-yang
+Architecture: all
+Depends:
+ acmd,
+ configd (>= ${source:Version}),
+ vyatta-cfg,
+ ${yang:Depends}
+Replaces: configd (<= 1.7)
+Section: admin
+Priority: optional
+Description: vyatta-system-acm-configd-v1 module
+ The YANG module for vyatta-system-acm-configd-v1
+
+Package: ietf-netconf-yang
+Architecture: all
+Depends: ${yang:Depends}
+Replaces: configd (<= 1.7)
+Section: admin
+Priority: optional
+Description: ietf-netconf module
+ The YANG module for ietf-netconf
+
+Package: ietf-netconf-with-defaults-yang
+Architecture: all
+Depends: ${yang:Depends}
+Replaces: configd (<= 1.7)
+Section: admin
+Priority: optional
+Description: ietf-netconf-with-defaults module
+ The YANG module for ietf-netconf-with-defaults
+
+Package: yangd-v1-yang
+Architecture: all
+Section: admin
+Priority: optional
+Description: yangd-v1 module
+ The YANG module for yangd-v1

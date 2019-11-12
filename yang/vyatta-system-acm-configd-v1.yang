@@ -1,0 +1,388 @@
+module vyatta-system-acm-configd-v1 {
+	namespace "urn:vyatta.com:mgmt:vyatta-system-acm-configd:1";
+	prefix vyatta-system-acm-configd-v1;
+
+	import vyatta-system-v1 {
+		prefix system;
+	}
+	import vyatta-system-acm-v1 {
+		prefix system-acm;
+	}
+	import configd-v1 {
+		prefix configd;
+	}
+
+	organization "AT&T Inc.";
+	contact
+		"AT&T
+		 Postal: 208 S. Akard Street
+		         Dallas, TX 75202
+		 Web: www.att.com";
+
+	description
+		"Copyright (c) 2018-2019, AT&T Intellectual Property.
+		 All rights reserved.
+
+		 Copyright (c) 2014-2016 by Brocade Communications Systems, Inc.
+		 All rights reserved.
+
+		 Redistribution and use in source and binary forms, with or without
+		 modification, are permitted provided that the following conditions
+		 are met:
+
+		 1. Redistributions of source code must retain the above copyright
+		    notice, this list of conditions and the following disclaimer.
+		 2. Redistributions in binary form must reproduce the above
+		    copyright notice, this list of conditions and the following
+		    disclaimer in the documentation and/or other materials provided
+		    with the distribution.
+		 3. Neither the name of the copyright holder nor the names of its
+		    contributors may be used to endorse or promote products derived
+		    from this software without specific prior written permission.
+
+		 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+		 'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+		 LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+		 FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+		 COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+		 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+		 BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+		 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+		 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+		 LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+		 ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+		 POSSIBILITY OF SUCH DAMAGE.
+
+		 SPDX-License-Identifier: BSD-3-Clause
+
+		 The YANG module for vyatta-system-acm-configd-v1";
+
+	revision 2018-02-28 {
+		description
+			"Extend rules to support RPCs, notifications
+			 and yang modules";
+	}
+
+	revision 2014-08-26 {
+		description "Initial revision.";
+		configd:migration 1;
+	}
+
+	typedef action {
+		type enumeration {
+			enum "allow" {
+				configd:help "Allow the action";
+			}
+			enum "deny" {
+				configd:help "Deny the action";
+			}
+		}
+	}
+
+		
+	augment /system:system/system-acm:acm {
+		leaf log-requests {
+			description
+				"If enabled, log all requests for data
+				 node operations";
+			configd:help "Log all requests to the audit log";
+			type empty;
+		}
+		leaf read-default {
+			description
+				"The action that is taken if no matching
+				 rule is found for an read operation";
+			type action;
+			default "allow";
+			configd:help "Read operation default action";
+		}
+		leaf delete-default {
+			description
+				"The action that is taken if no matching
+				 rule is found for an delete operation";
+			type action;
+			default "deny";
+			configd:help "Delete operation default action";
+		}
+		leaf update-default {
+			description
+				"The action that is taken if no matching
+				 rule is found for an update operation";
+			type action;
+			default "deny";
+			configd:help "Update operation default action";
+		}
+		container ruleset {
+			presence "true";
+			configd:help "Configuration path ruleset";
+			list rule {
+				description
+					"Each rule is evaluated in order until a
+					 match is found.
+
+					 If no matching rule is found, the
+					 default action will determine if access
+					 is granted";
+				configd:help "Rule number (1-9999)";
+				key "tagnode";
+				leaf tagnode {
+					description
+						"Rule identifier. Rules are evaluated
+						 in their sorted order, from 1 through
+						 9999";
+					type uint32 {
+						range 1..9999;
+					}
+					configd:help "Rule number";
+				}
+				leaf path {
+					description
+						"A path to configuration nodes.
+						 If specified, the rule rule is a path only
+						 rule.
+						 Each node in the path is seperated by a '/'.
+						 Any node can have the value '*' which
+						 will match any node.
+						 If the last node in the path has the value
+						 '*', then the rule will match all child
+						 nodes.
+						 The special value '*' will match all
+						 data nodes.";
+					type string;
+					mandatory true;
+					configd:help "Path to match";
+				}
+				leaf action {
+					description
+						"The access control action associated with the
+						 rule.  If a rule is determined to match a
+						 particular request, then this object is used
+						 to determine whether to permit or deny the
+						 request.";
+					type action;
+					default "deny";
+					configd:help "Action";
+				}
+				leaf-list group {
+					description
+						"Specifies a list of group IDs.
+						 The rule will match if the user
+						 belongs to one of the specified
+						 group IDs.";
+					type string;
+					ordered-by "user";
+					configd:help "Group to match";
+					configd:allowed "/opt/vyatta/share/tmplscripts/system/acm/ruleset/rule/group/configd_allowed.sh";
+				}
+				leaf log {
+					description
+						"Enables logging of the rule.
+						 RPC and Notification rules will not be logged.";
+					type empty;
+					configd:help "Enable logging for rule";
+				}
+				leaf operation {
+					description
+						"Defines the rules operation type.
+						 The value '*' matches all operation types.
+						 This is required for all rules that include
+						 a path.";
+					type enumeration {
+						enum "create";
+						enum "read";
+						enum "update";
+						enum "delete";
+						enum "*";
+					}
+					configd:help "Path operation to match";
+					mandatory true;
+				}
+			}
+		}
+		container rpc-ruleset {
+			presence "RPC rules";
+			configd:help "RPC ruleset";
+			list rule {
+				description
+					"Each rule is evaluated in order until a
+					 match is found. A rule with no
+					 'rpc-name' will match all rpc access
+					 requests.
+
+					 If no matching rule is found, the
+					 rpc-default action will determine if access
+					 is granted";
+				configd:help "Rule number (1-9999)";
+				key "rule-number";
+				leaf rule-number {
+					description
+						"Rule identifier. Rules are evaluated
+						 in their sorted order, from 1 through
+						 9999";
+					type uint32 {
+						range 1..9999;
+					}
+					configd:help "Rule number";
+				}
+				leaf module-name {
+					description
+						"The name of a Yang module associated
+						 with the rule. The value '*' will
+						 always match, otherwise, the rule will
+						 only match for data nodes, RPCs or
+						 notifications that are defined in
+						 the specified Yang module";
+					reference "RFC 6020; Sec 7.1";
+					type string;
+					configd:help "Yang module to match";
+					default "*";
+				}
+				leaf rpc-name {
+					description
+						"The RPC name associated with the rule.
+						 If specified, the rule is an RPC only rule.
+						 If it has the value '*', it matches all RPCs,
+						 otherwise, it matches the specified RPC name.
+
+						 The name is an RPC defined in a Yang module,
+						 and must be prefixed by the name of the Yang
+						 module in which it is defined";
+					type string;
+					configd:help "RPC to match";
+				}
+				leaf action {
+					description
+						"The access control action associated with the
+						 rule.  If a rule is determined to match a
+						 particular request, then this object is used
+						 to determine whether to permit or deny the
+						 request.";
+					type action;
+					default "deny";
+					configd:help "Action";
+				}
+				leaf-list group {
+					description
+						"Specifies a list of group IDs.
+						 The rule will match if the user
+						 belongs to one of the specified
+						 group IDs.";
+					type string;
+					min-elements 1;
+					ordered-by "user";
+					configd:help "Group to match";
+					configd:allowed "/opt/vyatta/share/tmplscripts/system/acm/ruleset/rule/group/configd_allowed.sh";
+				}
+			}
+		}
+		container notification-ruleset {
+			presence "notification rules";
+			configd:help "notification ruleset";
+			list rule {
+				description
+					"Each rule is evaluated in order until a
+					 match is found. A rule with no
+					 notification-name, will match all
+					 notifications.
+
+					 If no matching rule is found, the
+					 notification-default action will determine
+					 if access is granted";
+				configd:help "Rule number (1-9999)";
+				key "rule-number";
+				leaf rule-number {
+					description
+						"Rule identifier. Rules are evaluated
+						 in their sorted order, from 1 through
+						 9999";
+					type uint32 {
+						range 1..9999;
+					}
+					configd:help "Rule number";
+				}
+				leaf module-name {
+					description
+						"The name of a Yang module associated
+						 with the rule. The value '*' will
+						 always match, otherwise, the rule will
+						 only match for data nodes, RPCs or
+						 notifications that are defined in
+						 the specified Yang module";
+					reference "RFC 6020; Sec 7.1";
+					type string;
+					configd:help "Yang module to match";
+					default "*";
+				}
+				leaf notification-name {
+					description
+						"The Notification name associated
+						 with the rule. If specified, the
+						 rule is a notification only rule.
+						 If it has the value '*', this
+						 rule will match all notifications.
+
+						 The name is a Notification defined
+						 in a Yang module and must be prefixed
+						 by the name of the Yang module";
+					type string;
+					configd:help "Notification to match";
+				}
+				leaf action {
+					description
+						"The access control action associated with the
+						 rule.  If a rule is determined to match a
+						 particular request, then this object is used
+						 to determine whether to permit or deny the
+						 request.";
+					type action;
+					default "deny";
+					configd:help "Action";
+				}
+				leaf-list group {
+					description
+						"Specifies a list of group IDs.
+						 The rule will match if the user
+						 belongs to one of the specified
+						 group IDs.";
+					type string;
+					min-elements 1;
+					ordered-by "user";
+					configd:help "Group to match";
+					configd:allowed "/opt/vyatta/share/tmplscripts/system/acm/ruleset/rule/group/configd_allowed.sh";
+				}
+			}
+		}
+		leaf enable {
+			description
+				"Enables ACM rules. If not enabled, all data
+				 operations, RPCs and Notifications will be
+				 allowed";
+			type empty;
+			configd:help "Enable rulesets";
+		}
+		leaf create-default {
+			description
+				"Defines the default action for any data node
+				 create actions that do not match a rule";
+			type action;
+			default "deny";
+			configd:help "Create operation default action";
+		}
+		leaf rpc-default {
+			description
+				"Defines the default action for any RPCs that
+				 do not match any rules";
+			type action;
+			default "allow";
+			configd:help "RPC default action";
+		}
+		leaf notification-default {
+			description
+				"Defines the default action for any
+				 notifications that do not match any rules";
+			type action;
+			default "allow";
+			configd:help "Notification default action";
+		}
+	}
+}

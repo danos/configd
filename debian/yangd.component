@@ -1,0 +1,9 @@
+[Vyatta Component]
+Name=net.vyatta.vci.config.yangd
+Description=yangd interface
+ExecName=/usr/bin/configd
+ConfigFile=/dev/null
+
+[Model net.vyatta.vci.config.yangd.v1]
+Modules=yangd-v1
+ModelSets=vyatta-v1

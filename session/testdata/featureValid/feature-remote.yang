@@ -1,0 +1,40 @@
+module feature-remote {
+	namespace "urn:vyatta.com:mgmt:feature-remote";
+	prefix feature-remote;
+
+	organization "AT&T Inc.";
+	contact
+		"AT&T
+		 Postal: 208 S. Akard Street
+				 Dallas, TX 75202
+		 Web: www.att.com";
+
+	revision 2015-03-09 {
+		description "Initial revision.";
+	}
+
+	feature testfeature {
+		description "A test feature to allow testing of the
+			     feature and if-feature yang statements";
+	}
+
+	feature another-test-feature {
+		description "Another test feature to allow testing of the
+			     feature and if-feature yang statements";
+	}
+
+	feature yet-another-feature {
+		description "Yet another feature for testing purposes";
+	}
+
+	feature remote-test-feature {
+		description "Test feature in a remote module";
+	}
+
+	container remote-container {
+		if-feature remote-test-feature;
+		description "Container in remote module for augment tests.
+			     Allows testing of implicit local if-feature
+			     references in augment and augmented nodes";
+	}
+}
