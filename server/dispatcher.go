@@ -1049,7 +1049,8 @@ func (d *Disp) Compare(old, new, spath string, ctxdiff bool) (string, error) {
 
 	dtree := diff.NewNode(t1, t2, d.ms, nil)
 	dtree = dtree.Descendant(pathutil.Makepath(spath))
-	return dtree.Serialize(ctxdiff), nil
+	hide := !configd.InSecretsGroup(d.ctx)
+	return dtree.Serialize(ctxdiff, diff.HideSecrets(hide)), nil
 }
 
 func (d *Disp) validCompareConfigRevision(revision string) bool {
@@ -1090,15 +1091,15 @@ func (d *Disp) CompareConfigRevisions(sid, revOne, revTwo string) (string, error
 	var err error
 	if revOne == "session" {
 		candSess := d.getROSession(rpc.CANDIDATE, sid)
-		one, err = candSess.Show(d.ctx, nil, false, false)
+		one, err = candSess.ShowForceSecrets(d.ctx, nil, false, false)
 	} else {
-		one, err = d.ReadConfigFile(configRevisionFileName(revOne))
+		one, err = d.readConfigFileForceShowSecrets(configRevisionFileName(revOne))
 	}
 	if err != nil {
 		return "", err
 	}
 
-	two, err := d.ReadConfigFile(configRevisionFileName(revTwo))
+	two, err := d.readConfigFileForceShowSecrets(configRevisionFileName(revTwo))
 	if err != nil {
 		return "", err
 	}
@@ -1116,12 +1117,12 @@ func (d *Disp) CompareSessionChanges(sid string) (string, error) {
 	runningSess := d.getROSession(rpc.RUNNING, sid)
 	candSess := d.getROSession(rpc.CANDIDATE, sid)
 
-	runningShow, err := runningSess.Show(d.ctx, nil, false, false)
+	runningShow, err := runningSess.ShowForceSecrets(d.ctx, nil, false, false)
 	if err != nil {
 		return "", err
 	}
 
-	candShow, err := candSess.Show(d.ctx, nil, false, false)
+	candShow, err := candSess.ShowForceSecrets(d.ctx, nil, false, false)
 	if err != nil {
 		return "", err
 	}
@@ -1330,12 +1331,12 @@ func (d *Disp) ShowConfigWithContextDiffs(sid string, path string, showDefaults 
 	runningSess := d.getROSession(rpc.RUNNING, sid)
 	candSess := d.getROSession(rpc.CANDIDATE, sid)
 
-	runningShow, err := runningSess.Show(d.ctx, nil, false, showDefaults)
+	runningShow, err := runningSess.ShowForceSecrets(d.ctx, nil, false, showDefaults)
 	if err != nil {
 		return "", err
 	}
 
-	candShow, err := candSess.Show(d.ctx, nil, false, showDefaults)
+	candShow, err := candSess.ShowForceSecrets(d.ctx, nil, false, showDefaults)
 	if err != nil {
 		return "", err
 	}
@@ -1359,10 +1360,14 @@ func (d *Disp) AuthGetPerms() (map[string]string, error) {
 func (d *Disp) TreeGet(db rpc.DB, sid, path, encoding string, flags map[string]interface{}) (string, error) {
 	ps := pathutil.Makepath(path)
 	sess := d.getROSession(db, sid)
+
 	opts := session.NewTreeOpts(flags)
+	// For NETCONF, it's not an error if a node could exist, but currently
+	// is not configured.
 	if encoding == "netconf" {
 		opts.AllowCouldExist()
 	}
+
 	ut, err := sess.GetTree(d.ctx, ps, opts)
 	if err != nil {
 		return fixupEmptyStringForEncoding("", encoding), err
@@ -1399,7 +1404,7 @@ func (d *Disp) printWarnings(warns []error) {
 func fixupEmptyStringForEncoding(out, encoding string) string {
 	if out == "" {
 		switch encoding {
-		case "json":
+		case "json", "internal", "rfc7951":
 			out = "{}"
 		case "xml", "netconf":
 			// See https://tools.ietf.org/html/rfc6241#section-6.4.2
@@ -1423,10 +1428,14 @@ func (d *Disp) TreeGetFullWithWarnings(
 
 	ps := pathutil.Makepath(path)
 	sess := d.getROSession(db, sid)
+
 	opts := session.NewTreeOpts(flags)
-	if encoding == "netconf" {
-		opts.AllowCouldExist()
-	}
+	// Unconditionally allow for nodes that could exist, but don't have
+	// any current config, or are state nodes.  This allows us to return
+	// empty data rather than an error, saving that for when the path could
+	// never exist, or something else went wrong.
+	opts.AllowCouldExist()
+
 	ut, err, warns := sess.GetFullTree(d.ctx, ps, opts)
 	d.printWarnings(warns)
 	if err != nil {
@@ -1605,7 +1614,7 @@ func (d *Disp) cfgFileReader(file *os.File) (io.Reader, error) {
 	return file, nil
 }
 
-func (d *Disp) readCfgFile(file string, raw bool) (string, error) {
+func (d *Disp) readCfgFile(file string, raw, forceShowSecrets bool) (string, error) {
 	f, err := os.Open(file)
 	if err != nil {
 		return "", err
@@ -1635,17 +1644,25 @@ func (d *Disp) readCfgFile(file string, raw bool) (string, error) {
 	// access.  However, we used to use ut.String() here which just returned
 	// an empty string and no error in this case, so to preserve identical
 	// behaviour we do this here and ignore returned error.
-	out, _ := ut.Show(nil, union.Authorizer(sess.NewAuther(d.ctx)))
-
+	var options []union.UnionOption
+	options = append(options, union.Authorizer(sess.NewAuther(d.ctx)))
+	if forceShowSecrets {
+		options = append(options, union.ForceShowSecrets)
+	}
+	out, _ := ut.Show(nil, options...)
 	return out, nil
 }
 
 func (d *Disp) ReadConfigFileRaw(file string) (string, error) {
-	return d.readCfgFile(file, true)
+	return d.readCfgFile(file, true, false)
 }
 
 func (d *Disp) ReadConfigFile(file string) (string, error) {
-	return d.readCfgFile(file, false)
+	return d.readCfgFile(file, false, false)
+}
+
+func (d *Disp) readConfigFileForceShowSecrets(file string) (string, error) {
+	return d.readCfgFile(file, false, true)
 }
 
 func (d *Disp) MigrateConfigFile(file string) (string, error) {
@@ -2028,4 +2045,8 @@ func (d *Disp) EditConfigXML(sid, config_target, default_operation, test_option,
 	}
 
 	return "", sess.EditConfigXML(d.ctx, config_target, default_operation, test_option, error_option, config)
+}
+
+func (d *Disp) SetConfigDebug(sid, logName, level string) (string, error) {
+	return common.SetConfigDebug(logName, level)
 }

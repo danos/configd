@@ -2,6 +2,7 @@ usr/bin/args2cpath
 usr/bin/callrpc
 usr/bin/cfgcli
 usr/bin/cfgcmds
+usr/bin/cfgdbg
 usr/bin/cfgdiff
 usr/bin/cfgread
 usr/bin/configdcaps

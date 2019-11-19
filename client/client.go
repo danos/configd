@@ -424,3 +424,7 @@ func (c *Client) CompareConfigRevisions(revOne string, revTwo string) (string, e
 func (c *Client) CompareSessionChanges() (string, error) {
 	return c.callString(GetFuncName(), c.sid)
 }
+
+func (c *Client) SetConfigDebug(dbgType, level string) (string, error) {
+	return c.callString(GetFuncName(), c.sid, dbgType, level)
+}

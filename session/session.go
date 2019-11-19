@@ -407,14 +407,15 @@ func (s *Session) MarkSaved(ctx *configd.Context, saved bool) {
 	}
 }
 
-func (s *Session) Show(ctx *configd.Context, path []string, hideSecrets, showDefaults bool) (string, error) {
+func (s *Session) showInternal(ctx *configd.Context, path []string, hideSecrets, showDefaults, forceShowSecrets bool) (string, error) {
 	respch := make(chan showresp)
 	req := &showreq{
-		ctx:          ctx,
-		path:         path,
-		hideSecrets:  hideSecrets,
-		showDefaults: showDefaults,
-		resp:         respch,
+		ctx:              ctx,
+		path:             path,
+		hideSecrets:      hideSecrets,
+		showDefaults:     showDefaults,
+		forceShowSecrets: forceShowSecrets,
+		resp:             respch,
 	}
 	select {
 	case s.s.reqch <- req:
@@ -423,6 +424,13 @@ func (s *Session) Show(ctx *configd.Context, path []string, hideSecrets, showDef
 	case <-s.s.term:
 	}
 	return "", sessTermError()
+}
+func (s *Session) Show(ctx *configd.Context, path []string, hideSecrets, showDefaults bool) (string, error) {
+	return s.showInternal(ctx, path, hideSecrets, showDefaults, false)
+}
+
+func (s *Session) ShowForceSecrets(ctx *configd.Context, path []string, hideSecrets, showDefaults bool) (string, error) {
+	return s.showInternal(ctx, path, hideSecrets, showDefaults, true)
 }
 
 func (s *Session) Discard(ctx *configd.Context) error {

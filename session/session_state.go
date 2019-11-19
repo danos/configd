@@ -180,6 +180,10 @@ type errorAndWarnings struct {
 	warns []error
 }
 
+// addStateToTree - adds relevant state information into the tree.
+//
+// Returns error if path can't be found (this might be because the node
+// could exist but doesn't right now), plus list of warnings.
 func addStateToTree(
 	ut union.Node,
 	path []string,

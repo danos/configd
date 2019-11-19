@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2017-2019, AT&T Intellectual Property Inc. All rights reserved.
 //
 // Copyright (c) 2014-2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -259,7 +259,59 @@ container protocols {
 		}
 	}
 }
+container secrets {
+	list secretList {
+		key name;
+		leaf name {
+			type string;
+			configd:secret true;
+		}
+		leaf data {
+			type string;
+		}
+	}
+}
 `
+
+var showConfigWithContextDiffsSecretList = Root(
+	Cont("secrets",
+		List("secretList",
+			ListEntry("one", Leaf("data", "foo")))))
+
+var showConfigWithContextDiffsSecretListExp = Root(
+	Cont("secrets",
+		List("secretList",
+			ListEntry("\"********\"", Leaf("data", "foo")))))
+
+func showConfigWithContextDiffsSecrets(t *testing.T, inSecretsGroup, defaults bool, expConfig, config, configPath string, expCmd []string) {
+	t.Helper()
+	a := auth.TestAutherAllowAll()
+	d := newTestDispatcherWithCustomAuth(
+		t, a,
+		showConfigWithContextDiffsTestSchema, config,
+		false, /* not configd user, so our auther gets used! */
+		inSecretsGroup /* not in secrets group */)
+
+	dispTestSetupSession(t, d, testSID)
+
+	expConfig = FormatAsDiffNoTrailingLine(expConfig)
+
+	dispTestShowConfigWithContextDiffs(t, d, testSID, configPath, expConfig, defaults)
+
+	assertCommandAaaNoSecrets(t, a, expCmd)
+}
+
+func TestShowConfigWithSecretList(t *testing.T) {
+	showConfigWithContextDiffsSecrets(t, true, false,
+		showConfigWithContextDiffsSecretList,
+		showConfigWithContextDiffsSecretList, "", []string{"show"})
+}
+
+func TestShowConfigWithSecretListRedacted(t *testing.T) {
+	showConfigWithContextDiffsSecrets(t, false, false,
+		showConfigWithContextDiffsSecretListExp,
+		showConfigWithContextDiffsSecretList, "", []string{"show"})
+}
 
 var showConfigWithContextDiffsInterfacesConfig = Root(
 	Cont("interfaces",

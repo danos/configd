@@ -17,6 +17,7 @@ import (
 	"github.com/danos/config/data"
 	"github.com/danos/config/schema"
 	"github.com/danos/configd"
+	"github.com/danos/configd/common"
 	"github.com/danos/mgmterror"
 	"github.com/danos/utils/exec"
 	spawn "os/exec"
@@ -72,13 +73,31 @@ func pad(msg string) string {
 	return msg + ": " + padding[:padLen]
 }
 
+// We log here if COMMIT_DEBUG is set (c.debug) OR if cfgdbg settings
+// are error / debug level.  Per-script logging is done elsewhere, and only
+// if debug level logging is enabled.
+func (c *commitctx) loggingEnabled() bool {
+	if c.debug {
+		return true
+	}
+	if common.LoggingIsEnabledAtLevel(common.LevelError, common.TypeCommit) {
+		return true
+	}
+	return false
+}
+
 func (c *commitctx) LogCommitMsg(msg string) {
-	c.sctx.Dlog.Println(fmt.Sprintf("%s: %s", commitLogMsgPrefix, msg))
+	if c.loggingEnabled() {
+		c.sctx.Elog.Println(fmt.Sprintf("%s: %s", commitLogMsgPrefix, msg))
+	}
 }
 
 func (c *commitctx) LogCommitTime(msg string, startTime time.Time) {
-	c.sctx.Dlog.Println(fmt.Sprintf("%s: %s%s", commitLogMsgPrefix, pad(msg),
-		time.Since(startTime).Round(time.Millisecond)))
+	if c.loggingEnabled() {
+		c.sctx.Elog.Println(
+			fmt.Sprintf("%s: %s%s", commitLogMsgPrefix, pad(msg),
+				time.Since(startTime).Round(time.Millisecond)))
+	}
 }
 
 func (c *commitctx) Log(msgs ...interface{}) {

@@ -226,7 +226,7 @@ func main() {
 		os.ExpandEnv("$VYATTA_CONFIG_SID"))
 	defer c.Close()
 	handleError(err)
-	err = insertDynamicCommands(c)
+	err = updateDynamicCommands(c)
 	handleError(err)
 	args := flag.Args()
 	if cliParams.argsInEnv {

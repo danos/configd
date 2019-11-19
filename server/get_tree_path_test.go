@@ -1,4 +1,4 @@
-// Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2019, AT&T Intellectual Property Inc. All rights reserved.
 //
 // SPDX-License-Identifier: LGPL-2.1-only
 
@@ -141,7 +141,7 @@ container top {
 
 const schemaTemplate = `%s`
 
-// For NETCONF, we need to return no error if a requested path could exist,
+// We need to return no error if a requested path could exist,
 // but currently doesn't.  Paths for GetTree / GetTreeFull need to be in
 // configd format, ie list entry name inserted as 'parent' of nodes that are
 // siblings in YANG (eg interface address etc).
@@ -215,7 +215,7 @@ func TestPathsThatCouldExist(t *testing.T) {
 				schema.NodeSpec{Path: pathutil.Makepath(test.path)},
 				"netconf")
 
-			verifyInvalidPathFullTree(t, testSchema,
+			verifyValidPathFullTree(t, testSchema,
 				schema.NodeSpec{Path: pathutil.Makepath(test.path)},
 				"xml")
 			verifyInvalidPathConfigOnly(t, testSchema,
@@ -286,7 +286,7 @@ func TestStatePathsThatCouldExist(t *testing.T) {
 				schema.NodeSpec{Path: pathutil.Makepath(test.path)},
 				"netconf")
 
-			verifyInvalidPathFullTree(t, testSchema,
+			verifyValidPathFullTree(t, testSchema,
 				schema.NodeSpec{Path: pathutil.Makepath(test.path)},
 				"xml")
 			verifyInvalidPathConfigOnly(t, testSchema,

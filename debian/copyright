@@ -11,9 +11,14 @@ Copyright: 2019, AT&T Intellectual Property.
            2014,2016, Brocade Communications Systems, Inc.
 License: BSD-2-Clause and LGPL-2.1
 
-Files: yang/* cmd/normalize/normalize.go
+Files: yang/*
 Copyright: 2017-2019, AT&T Intellectual Property.
            2014-2017, Brocade Communications Systems, Inc.
+License: BSD-3-Clause
+
+Files: cmd/normalize/normalize.go
+Copyright: 2019, AT&T Intellectual Property.
+           2015-2017, Brocade Communications Systems, Inc.
            2009, The Go Authors.
 License: BSD-3-Clause and LGPL-2.1
 

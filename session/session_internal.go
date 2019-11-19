@@ -18,6 +18,7 @@ import (
 	"github.com/danos/config/schema"
 	"github.com/danos/config/union"
 	"github.com/danos/configd"
+	"github.com/danos/configd/common"
 	"github.com/danos/configd/rpc"
 	"github.com/danos/encoding/rfc7951"
 	rfc7951data "github.com/danos/encoding/rfc7951/data"
@@ -36,12 +37,17 @@ const (
 
 //Implements the Auther interface from union tree
 type Auther struct {
-	s   *session
-	ctx *configd.Context
+	s           *session
+	ctx         *configd.Context
+	showSecrets bool
 }
 
 func (s *session) newAuther(ctx *configd.Context) union.Auther {
-	return &Auther{s, ctx}
+	return &Auther{s: s, ctx: ctx}
+}
+
+func (s *session) newShowSecAuther(ctx *configd.Context) union.Auther {
+	return &Auther{s: s, ctx: ctx, showSecrets: true}
 }
 
 func (s *Auther) AuthRead(path []string) bool {
@@ -65,7 +71,7 @@ func (s *Auther) AuthDelete(path []string) bool {
 }
 
 func (s *Auther) AuthReadSecrets(path []string) bool {
-	return s.ctx.Configd || configd.InSecretsGroup(s.ctx)
+	return s.showSecrets || s.ctx.Configd || configd.InSecretsGroup(s.ctx)
 }
 
 type session struct {
@@ -456,8 +462,27 @@ func logStateEvent(logger schema.StateLogger, msg string) {
 	logger.Printf("%s: %s", stateLogMsgPrefix, msg)
 }
 
+func stateErrLogEnabled() bool {
+	return common.LoggingIsEnabledAtLevel(common.LevelError, common.TypeState)
+}
+
+func stateDbgLogEnabled() bool {
+	return common.LoggingIsEnabledAtLevel(common.LevelDebug, common.TypeState)
+}
+
 func (s *session) getfulltree(ctx *configd.Context, path []string, opts *TreeOpts) (union.Node, error, []error) {
-	logStateEvent(ctx.Elog,
+
+	var errLogger schema.StateLogger
+	if stateErrLogEnabled() {
+		errLogger = ctx.Elog
+	}
+
+	var dbgLogger schema.StateLogger
+	if stateDbgLogEnabled() {
+		dbgLogger = ctx.Dlog
+	}
+
+	logStateEvent(errLogger,
 		fmt.Sprintf("Start getfulltree '%v' operation.", path))
 	stateStart := time.Now()
 
@@ -470,7 +495,7 @@ func (s *session) getfulltree(ctx *configd.Context, path []string, opts *TreeOpt
 	var errAndWarns errorAndWarnings
 	respch := make(chan errorAndWarnings)
 	go func() {
-		respch <- addStateToTree(ut, path, ctx.Dlog)
+		respch <- addStateToTree(ut, path, dbgLogger)
 	}()
 
 	//Process requests that don't modify the session during commit
@@ -484,16 +509,22 @@ Loop:
 		}
 	}
 	if errAndWarns.err != nil {
+		// We may get an error if a node doesn't exist, but could exist.
+		// That might be a config node that hasn't been configured, or a
+		// state node that is populated by a VCI component instead of a
+		// configd:state script.
+		//
+		// In such cases, we now check to see if the node could have existed
+		// and if so, continue.
 		if opts.CouldExistIsAllowed {
 			err := s.validateSetPath(
 				ctx, path, incompletePathIsValid, fullSchema)
-			if err == nil {
-				return nil, nil, errAndWarns.warns
+			if err != nil {
+				return nil, errAndWarns.err, errAndWarns.warns
 			}
 		}
-		return nil, errAndWarns.err, errAndWarns.warns
 	}
-	logStateTime(ctx.Elog, "Legacy scripts", stateStart)
+	logStateTime(errLogger, "Legacy scripts", stateStart)
 
 	// 2. Convert union tree to an rfc7951 data tree
 	// For now marshal to and from rfc7951, eventually this will be more
@@ -509,13 +540,13 @@ Loop:
 	if err != nil {
 		return nil, err, nil
 	}
-	logStateTime(ctx.Elog, "Convert to RFC7951 data tree", convertToRFCStart)
+	logStateTime(errLogger, "Convert to RFC7951 data tree", convertToRFCStart)
 
 	// 3. Merge in component state
 	// This should be one Client for the whole sessiond daemon (whenever that
 	// is built)
 	vciStart := time.Now()
-	logStateEvent(ctx.Elog, "Start VCI scripts")
+	logStateEvent(errLogger, "Start VCI scripts")
 
 	client, vciErr := vci.Dial()
 	if vciErr == nil {
@@ -541,12 +572,12 @@ Loop:
 				continue
 			}
 			ft = ft.Merge(state)
-			logStateTime(ctx.Elog, fmt.Sprintf("  %s", model),
+			logStateTime(errLogger, fmt.Sprintf("  %s", model),
 				compStartTime)
 		}
 	}
 
-	logStateTime(ctx.Elog, "End VCI scripts", vciStart)
+	logStateTime(errLogger, "End VCI scripts", vciStart)
 
 	// 4. Convert back to a union tree.
 	marshalStart := time.Now()
@@ -554,7 +585,7 @@ Loop:
 	if err != nil {
 		return nil, err, nil
 	}
-	logStateTime(ctx.Elog, "Marshal RFC7951 data", marshalStart)
+	logStateTime(dbgLogger, "Marshal RFC7951 data", marshalStart)
 
 	// Unmarshal will perform validation of the merged tree.  This involves
 	// putting the rfc7951 data (d) into a data tree, and then 'set'ting
@@ -566,7 +597,7 @@ Loop:
 	if err != nil {
 		return nil, err, nil
 	}
-	logStateTime(ctx.Elog, "Validate back into union tree", validationStart)
+	logStateTime(errLogger, "Validate back into union tree", validationStart)
 
 	// 5. Filter based on path
 	filterStart := time.Now()
@@ -579,9 +610,9 @@ Loop:
 		return nil, nil, errAndWarns.warns
 	}
 	out, err := ut.Descendant(s.newAuther(ctx), path)
-	logStateTime(ctx.Elog, "Filtering", filterStart)
+	logStateTime(errLogger, "Filtering", filterStart)
 
-	logStateTime(ctx.Elog, fmt.Sprintf("Overall for path '%v'", path),
+	logStateTime(errLogger, fmt.Sprintf("Overall for path '%v'", path),
 		stateStart)
 	return out, err, errAndWarns.warns
 }
@@ -608,7 +639,8 @@ func (s *session) validate(ctx *configd.Context) *commitresp {
 	defer s.unlock(int32(configd.COMMIT))
 
 	mcan := s.getUnion().Merge()
-	c := newctx(s.sid, ctx, nil, mcan, s.getRunning(), s.schema, "", false)
+	c := newctx(s.sid, ctx, nil, mcan, s.getRunning(), s.schema, "",
+		common.LoggingIsEnabledAtLevel(common.LevelDebug, common.TypeCommit))
 
 	respch := make(chan *commitresp)
 	go func() {
@@ -695,13 +727,16 @@ func (s *session) marksaved(ctx *configd.Context, saved bool) error {
 	return nil
 }
 
-func (s *session) show(ctx *configd.Context, path []string, hideSecrets, showDefaults bool) (string, error) {
+func (s *session) show(ctx *configd.Context, path []string, hideSecrets, showDefaults, forceShowSecrets bool) (string, error) {
 	options := []union.UnionOption{union.Authorizer(s.newAuther(ctx))}
 	if hideSecrets {
 		options = append(options, union.HideSecrets)
 	}
 	if showDefaults {
 		options = append(options, union.IncludeDefaults)
+	}
+	if forceShowSecrets {
+		options = append(options, union.ForceShowSecrets)
 	}
 	out, err := s.getUnion().Show(path, options...)
 	if err != nil {
@@ -823,7 +858,7 @@ func (s *session) processreq(req request, diffCache *diff.Node) {
 	case *marksavedreq:
 		v.resp <- s.marksaved(v.ctx, v.saved)
 	case *showreq:
-		d, err := s.show(v.ctx, v.path, v.hideSecrets, v.showDefaults)
+		d, err := s.show(v.ctx, v.path, v.hideSecrets, v.showDefaults, v.forceShowSecrets)
 		v.resp <- showresp{d, err}
 	case *discardreq:
 		v.resp <- s.discard(v.ctx)

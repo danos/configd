@@ -505,9 +505,21 @@ func firstWordComp(ctx *Ctx) (completionText string) {
 	return doComplete(ctx, true, CommandHelps(), printHelp)
 }
 
+// rollbackValid - check if rollback command is valid
+//
+// Format of command is 'rollback <ver> [comment <comment>]'
+// Thus, if only 2 args (allow for fewer though should never get that here)
+// we have no comment.
+// Otherwise we check that we have 'comment <comment>' present and correct
+// with no trailing text.
+// Validation of the revision number is done elsewhere (server/dispatcher.go).
 func rollbackValid(ctx *Ctx) error {
-	// nothing to do
-	return nil
+	if len(ctx.Args) <= 2 {
+		return nil
+	}
+
+	args := removeTrailingEmptyArgument(ctx.Args)
+	return validateCommentIfAny(args, 2, ctx.Prefix)
 }
 
 func rollbackComp(ctx *Ctx) (completionText string) {

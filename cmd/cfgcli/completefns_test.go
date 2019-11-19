@@ -16,14 +16,16 @@ package main
 
 import (
 	"testing"
+
+	"github.com/danos/configd/common"
 )
+
+var testCfgMgr = newTestClient(nil).
+	enableFeature(common.ConfigManagementFeature)
 
 // CONFIRM
 func TestConfirm(t *testing.T) {
-	if !checkConfigMgmt(newTestClient(nil)) {
-		t.Skip("config managment isn't available")
-	}
-	completionText, err := completeCmdLine("confirm")
+	completionText, err := completeCmdLineWithCfgMgr(testCfgMgr, "confirm")
 
 	checkNoError(t, err)
 
@@ -32,10 +34,7 @@ func TestConfirm(t *testing.T) {
 }
 
 func TestConfirmCompletion(t *testing.T) {
-	if !checkConfigMgmt(newTestClient(nil)) {
-		t.Skip("config managment isn't available")
-	}
-	completionText, err := completeCmdLine("confirm")
+	completionText, err := completeCmdLineWithCfgMgr(testCfgMgr, "confirm")
 
 	checkNoError(t, err)
 
@@ -44,10 +43,7 @@ func TestConfirmCompletion(t *testing.T) {
 }
 
 func TestConfirmSpace(t *testing.T) {
-	if !checkConfigMgmt(newTestClient(nil)) {
-		t.Skip("config managment isn't available")
-	}
-	completionText, err := completeCmdLine("confirm ")
+	completionText, err := completeCmdLineWithCfgMgr(testCfgMgr, "confirm ")
 
 	checkNoError(t, err)
 
@@ -57,103 +53,101 @@ func TestConfirmSpace(t *testing.T) {
 }
 
 // COMMIT
-func TestCommit(t *testing.T) {
-	completionText, err := completeCmdLine("commit")
+type commitTest struct {
+	name      string
+	cmdLine   string
+	expOutput []string
+	success   bool
+	prefix    string
+}
 
-	checkNoError(t, err)
-
-	// May be returned in either order ...
-	expText := []string{" commit "}
-	if checkConfigMgmt(newTestClient(nil)) {
-		expText = append(expText, " commit-confirm ")
+func TestCommitCommand(t *testing.T) {
+	testCases := []commitTest{
+		{
+			name:      "Commit",
+			cmdLine:   "commit",
+			expOutput: []string{" commit ", " commit-confirm "},
+			success:   true,
+		},
+		{
+			name:      "Commit completion",
+			cmdLine:   "comm",
+			expOutput: []string{" commit ", " commit-confirm "},
+			success:   true,
+		},
+		{
+			name:    "Commit - trailing space",
+			cmdLine: "commit ",
+			expOutput: []string{
+				"<Enter> Commit working configuration",
+				"comment Comment for commit log"},
+			success: true,
+		},
+		{
+			name:    "Comment completion",
+			cmdLine: "commit com",
+			expOutput: []string{
+				"COMPREPLY=( comment  )"},
+			success: true,
+		},
+		{
+			name:    "Comment completion with trailing text",
+			cmdLine: "commit comTrailingText",
+			expOutput: []string{
+				"COMPREPLY=( comment  )"},
+			success: true,
+			prefix:  "com",
+		},
+		{
+			name:    "Wrong comment keyword",
+			cmdLine: "commit not-comment-keyword",
+			expOutput: []string{
+				"Invalid command: commit [not-comment-keyword]"},
+			success: false,
+		},
+		{
+			name:    "Comment - no comment",
+			cmdLine: "commit comment",
+			expOutput: []string{
+				"COMPREPLY=( comment  )"},
+			success: true,
+		},
+		{
+			name:    "Comment Text",
+			cmdLine: "commit comment text",
+			expOutput: []string{
+				"<text> Comment for the commit log"},
+			success: true,
+		},
+		{
+			name:    "Comment Text - extra text",
+			cmdLine: "commit comment text extra-text",
+			expOutput: []string{
+				"Invalid command: commit comment text [extra-text]"},
+			success: false,
+		},
 	}
-	checkTextContains(t, completionText, expText)
-}
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			completionText, err := getCompletedCmdLine(
+				testCfgMgr, test.cmdLine, test.prefix)
 
-func TestCommitCompletion(t *testing.T) {
-	completionText, err := completeCmdLine("comm")
-
-	checkNoError(t, err)
-
-	// May be returned in either order ...
-	expText := []string{" commit "}
-	if checkConfigMgmt(newTestClient(nil)) {
-		expText = append(expText, " commit-confirm ")
+			if test.success {
+				checkNoError(t, err)
+				checkTextContains(t, completionText, test.expOutput)
+			} else {
+				checkErrorContains(t, err, test.expOutput)
+			}
+		})
 	}
-	checkTextContains(t, completionText, expText)
-}
-
-func TestCommitSpace(t *testing.T) {
-	completionText, err := completeCmdLine("commit ")
-
-	checkNoError(t, err)
-
-	expText := []string{
-		"<Enter> Commit working configuration",
-		"comment Comment for commit log"}
-	checkTextContains(t, completionText, expText)
-}
-
-func TestCommitCommentCompletion(t *testing.T) {
-	completionText, err := completeCmdLine("commit com")
-
-	checkNoError(t, err)
-
-	expText := []string{"COMPREPLY=( comment  )"}
-	checkTextContains(t, completionText, expText)
-}
-
-func TestCommitCommentCompletionWithTrailingText(t *testing.T) {
-	completionText, err := completeCmdLineWithPrefix(
-		"commit comTrailingText", "com")
-
-	checkNoError(t, err)
-
-	expText := []string{"COMPREPLY=( comment  )"}
-	checkTextContains(t, completionText, expText)
-}
-
-func TestCommitWrongCommentKeyword(t *testing.T) {
-	_, err := completeCmdLine("commit not-comment-keyword")
-
-	expectedErrs := []string{"Invalid command: commit [not-comment-keyword]"}
-	checkErrorContains(t, err, expectedErrs)
-}
-
-func TestCommitCommentNoComment(t *testing.T) {
-	completionText, err := completeCmdLine("commit comment")
-
-	checkNoError(t, err)
-
-	expText := []string{"COMPREPLY=( comment  )"}
-	checkTextContains(t, completionText, expText)
-}
-
-func TestCommitCommentText(t *testing.T) {
-	completionText, err := completeCmdLine("commit comment text")
-
-	checkNoError(t, err)
-
-	expText := []string{"<text> Comment for the commit log"}
-	checkTextContains(t, completionText, expText)
-}
-
-func TestCommitCommentTextExtraText(t *testing.T) {
-	_, err := completeCmdLine("commit comment text extra-text")
-
-	expectedErrs := []string{
-		"Invalid command: commit comment text [extra-text]"}
-	checkErrorContains(t, err, expectedErrs)
 }
 
 // COMMIT-CONFIRM
 
 // No completion text: we just add a space
 func TestCommitConfirmCommandOnly(t *testing.T) {
-	if !checkConfigMgmt(newTestClient(nil)) {
-		t.Skip("config managment isn't available")
-	}
-	completionText, err := completeCmdLine("commit-confirm")
+	completionText, err := completeCmdLineWithCfgMgr(
+		testCfgMgr, "commit-confirm")
 
 	checkNoError(t, err)
 
@@ -162,10 +156,8 @@ func TestCommitConfirmCommandOnly(t *testing.T) {
 }
 
 func TestCommitConfirmCompletion(t *testing.T) {
-	if !checkConfigMgmt(newTestClient(nil)) {
-		t.Skip("config managment isn't available")
-	}
-	completionText, err := completeCmdLine("commit-")
+	completionText, err := completeCmdLineWithCfgMgr(
+		testCfgMgr, "commit-")
 
 	checkNoError(t, err)
 
@@ -174,10 +166,8 @@ func TestCommitConfirmCompletion(t *testing.T) {
 }
 
 func TestCommitConfirmSpace(t *testing.T) {
-	if !checkConfigMgmt(newTestClient(nil)) {
-		t.Skip("config managment isn't available")
-	}
-	completionText, err := completeCmdLine("commit-confirm ")
+	completionText, err := completeCmdLineWithCfgMgr(
+		testCfgMgr, "commit-confirm ")
 
 	checkNoError(t, err)
 
@@ -186,30 +176,22 @@ func TestCommitConfirmSpace(t *testing.T) {
 }
 
 func TestCommitConfirmInvalidTimeout(t *testing.T) {
-	if !checkConfigMgmt(newTestClient(nil)) {
-		t.Skip("config managment isn't available")
-	}
-	_, err := completeCmdLine("commit-confirm x")
+	_, err := completeCmdLineWithCfgMgr(testCfgMgr, "commit-confirm x")
 
 	expectedErrs := []string{"Invalid timeout: x"}
 	checkErrorContains(t, err, expectedErrs)
 }
 
 func TestCommitConfirmTooLowTimeout(t *testing.T) {
-	if !checkConfigMgmt(newTestClient(nil)) {
-		t.Skip("config managment isn't available")
-	}
-	_, err := completeCmdLine("commit-confirm 0")
+	_, err := completeCmdLineWithCfgMgr(testCfgMgr, "commit-confirm 0")
 
 	expectedErrs := []string{"Invalid timeout: 0"}
 	checkErrorContains(t, err, expectedErrs)
 }
 
 func TestCommitConfirmValidTimeout(t *testing.T) {
-	if !checkConfigMgmt(newTestClient(nil)) {
-		t.Skip("config managment isn't available")
-	}
-	completionText, err := completeCmdLine("commit-confirm 10")
+	completionText, err := completeCmdLineWithCfgMgr(
+		testCfgMgr, "commit-confirm 10")
 
 	checkNoError(t, err)
 
@@ -219,10 +201,8 @@ func TestCommitConfirmValidTimeout(t *testing.T) {
 
 // Abbreviated keyword
 func TestCommitConfValidTimeout(t *testing.T) {
-	if !checkConfigMgmt(newTestClient(nil)) {
-		t.Skip("config managment isn't available")
-	}
-	completionText, err := completeCmdLine("commit-conf 10")
+	completionText, err := completeCmdLineWithCfgMgr(
+		testCfgMgr, "commit-conf 10")
 
 	checkNoError(t, err)
 
@@ -231,30 +211,22 @@ func TestCommitConfValidTimeout(t *testing.T) {
 }
 
 func TestCommitConfirmInvalidTimeoutSpace(t *testing.T) {
-	if !checkConfigMgmt(newTestClient(nil)) {
-		t.Skip("config managment isn't available")
-	}
-	_, err := completeCmdLine("commit-confirm x ")
+	_, err := completeCmdLineWithCfgMgr(testCfgMgr, "commit-confirm x ")
 
 	expectedErrs := []string{"Invalid timeout: x"}
 	checkErrorContains(t, err, expectedErrs)
 }
 
 func TestCommitConfInvalidTimeoutSpace(t *testing.T) {
-	if !checkConfigMgmt(newTestClient(nil)) {
-		t.Skip("config managment isn't available")
-	}
-	_, err := completeCmdLine("commit-conf x ")
+	_, err := completeCmdLineWithCfgMgr(testCfgMgr, "commit-conf x ")
 
 	expectedErrs := []string{"Invalid timeout: x"}
 	checkErrorContains(t, err, expectedErrs)
 }
 
 func TestCommitConfirmValidTimeoutSpace(t *testing.T) {
-	if !checkConfigMgmt(newTestClient(nil)) {
-		t.Skip("config managment isn't available")
-	}
-	completionText, err := completeCmdLine("commit-conf 10 ")
+	completionText, err := completeCmdLineWithCfgMgr(
+		testCfgMgr, "commit-conf 10 ")
 
 	checkNoError(t, err)
 
@@ -266,10 +238,8 @@ func TestCommitConfirmValidTimeoutSpace(t *testing.T) {
 
 //notcomment
 func TestCommitConfirmWrongComment(t *testing.T) {
-	if !checkConfigMgmt(newTestClient(nil)) {
-		t.Skip("config managment isn't available")
-	}
-	_, err := completeCmdLine("commit-conf 999 notcomment")
+	_, err := completeCmdLineWithCfgMgr(
+		testCfgMgr, "commit-conf 999 notcomment")
 
 	expectedErrs := []string{
 		"Invalid command: commit-confirm 999 [notcomment]"}
@@ -278,10 +248,7 @@ func TestCommitConfirmWrongComment(t *testing.T) {
 
 // comx
 func TestCommitConfirmPartialCommentInvalid(t *testing.T) {
-	if !checkConfigMgmt(newTestClient(nil)) {
-		t.Skip("config managment isn't available")
-	}
-	_, err := completeCmdLine("commit-conf 999 comx")
+	_, err := completeCmdLineWithCfgMgr(testCfgMgr, "commit-conf 999 comx")
 
 	expectedErrs := []string{
 		"Invalid command: commit-confirm 999 [comx]"}
@@ -289,10 +256,8 @@ func TestCommitConfirmPartialCommentInvalid(t *testing.T) {
 }
 
 func TestCommitConfirmPartialComment(t *testing.T) {
-	if !checkConfigMgmt(newTestClient(nil)) {
-		t.Skip("config managment isn't available")
-	}
-	completionText, err := completeCmdLine("commit-conf 999 comm")
+	completionText, err := completeCmdLineWithCfgMgr(
+		testCfgMgr, "commit-conf 999 comm")
 
 	checkNoError(t, err)
 
@@ -301,10 +266,8 @@ func TestCommitConfirmPartialComment(t *testing.T) {
 }
 
 func TestCommitConfirmComment(t *testing.T) {
-	if !checkConfigMgmt(newTestClient(nil)) {
-		t.Skip("config managment isn't available")
-	}
-	completionText, err := completeCmdLine("commit-conf 999 comment")
+	completionText, err := completeCmdLineWithCfgMgr(
+		testCfgMgr, "commit-conf 999 comment")
 
 	checkNoError(t, err)
 
@@ -313,10 +276,8 @@ func TestCommitConfirmComment(t *testing.T) {
 }
 
 func TestCommitConfirmCommentSpace(t *testing.T) {
-	if !checkConfigMgmt(newTestClient(nil)) {
-		t.Skip("config managment isn't available")
-	}
-	completionText, err := completeCmdLine("commit-conf 999 comment ")
+	completionText, err := completeCmdLineWithCfgMgr(
+		testCfgMgr, "commit-conf 999 comment ")
 
 	checkNoError(t, err)
 
@@ -326,10 +287,8 @@ func TestCommitConfirmCommentSpace(t *testing.T) {
 }
 
 func TestCommitConfirmCommentText(t *testing.T) {
-	if !checkConfigMgmt(newTestClient(nil)) {
-		t.Skip("config managment isn't available")
-	}
-	completionText, err := completeCmdLine("commit-conf 999 comment text")
+	completionText, err := completeCmdLineWithCfgMgr(
+		testCfgMgr, "commit-conf 999 comment text")
 
 	checkNoError(t, err)
 
@@ -339,10 +298,8 @@ func TestCommitConfirmCommentText(t *testing.T) {
 }
 
 func TestCommitConfirmPartialCommentText(t *testing.T) {
-	if !checkConfigMgmt(newTestClient(nil)) {
-		t.Skip("config managment isn't available")
-	}
-	completionText, err := completeCmdLine("commit-conf 999 co text")
+	completionText, err := completeCmdLineWithCfgMgr(
+		testCfgMgr, "commit-conf 999 co text")
 
 	checkNoError(t, err)
 
@@ -352,10 +309,7 @@ func TestCommitConfirmPartialCommentText(t *testing.T) {
 }
 
 func TestCommitConfirmCommentQuotedText(t *testing.T) {
-	if !checkConfigMgmt(newTestClient(nil)) {
-		t.Skip("config managment isn't available")
-	}
-	completionText, err := completeCmdLine(
+	completionText, err := completeCmdLineWithCfgMgr(testCfgMgr,
 		"commit-conf 999 comment \"quoted text\"")
 
 	checkNoError(t, err)
@@ -366,10 +320,8 @@ func TestCommitConfirmCommentQuotedText(t *testing.T) {
 }
 
 func TestCommitConfirmCommentTextExtraText(t *testing.T) {
-	if !checkConfigMgmt(newTestClient(nil)) {
-		t.Skip("config managment isn't available")
-	}
-	_, err := completeCmdLine("commit-conf 999 comment text extra_text")
+	_, err := completeCmdLineWithCfgMgr(
+		testCfgMgr, "commit-conf 999 comment text extra_text")
 
 	expectedErrs := []string{
 		"Invalid command: commit-confirm 999 comment text [extra_text]"}
@@ -377,10 +329,8 @@ func TestCommitConfirmCommentTextExtraText(t *testing.T) {
 }
 
 func TestCommitConfirmCommentTextSpace(t *testing.T) {
-	if !checkConfigMgmt(newTestClient(nil)) {
-		t.Skip("config managment isn't available")
-	}
-	completionText, err := completeCmdLine("commit-conf 999 comment text ")
+	completionText, err := completeCmdLineWithCfgMgr(
+		testCfgMgr, "commit-conf 999 comment text ")
 
 	checkNoError(t, err)
 
@@ -393,11 +343,9 @@ func testCheckConfigMgmt(c cfgManager) bool { return true }
 
 // Compare
 func TestCompareCompletion(t *testing.T) {
-	overrideConfigMgmtCheck(testCheckConfigMgmt)
 
-	completionText, err := completeCmdLine("compare sav")
-
-	resetConfigMgmtCheck()
+	completionText, err := completeCmdLineWithCfgMgr(
+		testCfgMgr, "compare sav")
 
 	checkNoError(t, err)
 
@@ -406,17 +354,138 @@ func TestCompareCompletion(t *testing.T) {
 }
 
 func TestCompareCompletionWithTrailingText(t *testing.T) {
-	overrideConfigMgmtCheck(testCheckConfigMgmt)
 
-	completionText, err := completeCmdLineWithPrefix(
-		"compare savTrailingText", "sav")
-
-	resetConfigMgmtCheck()
+	completionText, err := completeCmdLineWithPrefixAndCfgMgr(
+		testCfgMgr, "compare savTrailingText", "sav")
 
 	checkNoError(t, err)
 
 	expText := []string{"COMPREPLY=( saved  )"}
 	checkTextContains(t, completionText, expText)
+}
+
+// ROLLBACK
+type rollbackTest struct {
+	name      string
+	cmdLine   string
+	expOutput []string
+	success   bool
+	prefix    string
+}
+
+func TestRollbackCommand(t *testing.T) {
+	testCases := []rollbackTest{
+		{
+			name:      "Rollback w/o version",
+			cmdLine:   "rollback",
+			expOutput: []string{"COMPREPLY=( rollback  )"},
+			success:   true,
+		},
+		{
+			name:      "Rollback completion",
+			cmdLine:   "roll",
+			expOutput: []string{"COMPREPLY=( rollback  )"},
+			success:   true,
+		},
+		{
+			name:    "Rollback - trailing space",
+			cmdLine: "rollback ",
+			expOutput: []string{
+				"<N>   Rollback to revision N",
+				"1     2019-08-21 09:00:1 vyatta"},
+			success: true,
+		},
+		{
+			name:      "Rollback with valid version",
+			cmdLine:   "rollback 1",
+			expOutput: []string{"COMPREPLY=( 1  )"},
+			success:   true,
+		},
+		{
+			name:    "Rollback with valid version - trailing space",
+			cmdLine: "rollback 1 ",
+			expOutput: []string{
+				"<Enter> Execute the current command",
+				"comment Comment for commit log"},
+			success: true,
+		},
+		{
+			name:      "Rollback - invalid version (numeric)",
+			cmdLine:   "rollback 99",
+			expOutput: []string{"<N>   Rollback to revision N"},
+			success:   true,
+		},
+		{
+			name:      "Rollback - invalid version (non-numeric)",
+			cmdLine:   "rollback invalid-version",
+			expOutput: []string{"<N>   Rollback to revision N"},
+			success:   true,
+		},
+		{
+			name:    "Comment completion",
+			cmdLine: "rollback 1 com",
+			expOutput: []string{
+				"COMPREPLY=( comment  )"},
+			success: true,
+		},
+		{
+			name:    "Comment completion with trailing text",
+			cmdLine: "rollback 1 comTrailingText",
+			expOutput: []string{
+				"COMPREPLY=( comment  )"},
+			success: true,
+			prefix:  "com",
+		},
+		{
+			name:    "Wrong comment keyword",
+			cmdLine: "rollback 0 not-comment-keyword",
+			expOutput: []string{
+				"Invalid command: rollback 0 [not-comment-keyword]"},
+			success: false,
+		},
+		{
+			name:    "Comment - no comment",
+			cmdLine: "rollback 0 comment",
+			expOutput: []string{
+				"COMPREPLY=( comment  )"},
+			success: true,
+		},
+		{
+			name:    "Comment Text",
+			cmdLine: "rollback 3 comment text",
+			expOutput: []string{
+				"<text> Comment for commit log"},
+			success: true,
+		},
+		{
+			name:    "Comment Text - extra text",
+			cmdLine: "rollback 1 comment text extra-text",
+			expOutput: []string{
+				"Invalid command: rollback 1 comment text [extra-text]"},
+			success: false,
+		},
+	}
+	for _, test := range testCases {
+		// We need to have a commit log history, and enable the rollback cmd.
+		// '3' get us 3 log entries, and we use 0, 1 and 3 in tests as valid,
+		// and 99 as invalid.
+		cfgMgr := newTestClient(nil).
+			setCommitLog(3).
+			enableFeature(
+				common.ConfigManagementFeature)
+
+		t.Run(test.name, func(t *testing.T) {
+			completionText, err := getCompletedCmdLine(
+				cfgMgr, test.cmdLine, test.prefix)
+
+			if test.success {
+				checkNoError(t, err)
+				checkTextContains(t, completionText, test.expOutput)
+			} else {
+				checkErrorContains(t, err, test.expOutput)
+			}
+		})
+	}
 }
 
 // SAVE

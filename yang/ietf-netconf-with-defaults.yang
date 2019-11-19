@@ -6,25 +6,13 @@ module ietf-netconf-with-defaults {
 
    import ietf-netconf { prefix nc; }
 
-   organization
-    "IETF NETCONF (Network Configuration Protocol) Working Group";
+   organization "AT&T Inc.";
 
    contact
-    "WG Web:   <http://tools.ietf.org/wg/netconf/>
-
-     WG List:  <netconf@ietf.org>
-
-     WG Chair: Bert Wijnen
-               <bertietf@bwijnen.net>
-
-     WG Chair: Mehmet Ersue
-               <mehmet.ersue@nsn.com>
-
-     Editor: Andy Bierman
-             <andy.bierman@brocade.com>
-
-     Editor: Balazs Lengyel
-             <balazs.lengyel@ericsson.com>";
+    "AT&T
+     Postal: 208 S. Akard Street
+             Dallas, TX 75202
+     Web: www.att.com";
 
    description
     "This module defines an extension to the NETCONF protocol

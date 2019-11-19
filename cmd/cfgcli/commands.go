@@ -100,7 +100,7 @@ func populateCommands() map[string]*Command {
 	return cmds
 }
 
-func insertDynamicCommands(c cfgManager) error {
+func updateDynamicCommands(c cfgManager) error {
 	if checkConfigMgmt(c) {
 		Commands["confirm"] = NewCommand("confirm",
 			"Confirm configuration changes",
@@ -111,12 +111,18 @@ func insertDynamicCommands(c cfgManager) error {
 		Commands["commit-confirm"] = NewCommand("commit-confirm",
 			"Commit the current set of changes; rollback if not confirmed",
 			commitConfComp, commitConfRun, commitConfValid)
+	} else {
+		delete(Commands, "confirm")
+		delete(Commands, "rollback")
+		delete(Commands, "commit-confirm")
 	}
 
 	if checkLoadKey(c) {
 		Commands["loadkey"] = NewCommand("loadkey",
 			"Load user SSH key from a file",
 			loadkeyComp, loadkeyRun, loadKeyValid)
+	} else {
+		delete(Commands, "loadkey")
 	}
 
 	return nil

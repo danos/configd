@@ -3,25 +3,20 @@ module ietf-inet-types {
   namespace "urn:ietf:params:xml:ns:yang:ietf-inet-types";
   prefix "inet";
 
-  organization
-   "IETF NETMOD (NETCONF Data Modeling Language) Working Group";
+  organization "AT&T Inc.";
 
   contact
-   "WG Web:   <http://tools.ietf.org/wg/netmod/>
-    WG List:  <mailto:netmod@ietf.org>
-
-    WG Chair: David Kessens
-              <mailto:david.kessens@nsn.com>
-
-    WG Chair: Juergen Schoenwaelder
-              <mailto:j.schoenwaelder@jacobs-university.de>
-
-    Editor:   Juergen Schoenwaelder
-              <mailto:j.schoenwaelder@jacobs-university.de>";
+   "AT&T
+    Postal: 208 S. Akard Street
+            Dallas, TX 75202
+    Web: www.att.com";
 
   description
    "This module contains a collection of generally useful derived
     YANG data types for Internet addresses and related things.
+
+    Copyright (c) 2019, AT&T Intellectual Property.
+    All rights reserved.
 
     Copyright (c) 2013 IETF Trust and the persons identified as
     authors of the code.  All rights reserved.

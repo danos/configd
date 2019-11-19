@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2017-2019, AT&T Intellectual Property Inc. All rights reserved.
 //
 // Copyright (c) 2015-2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -58,6 +58,14 @@ func validateFullTree(
 		return
 	}
 
+	// So we can validate case where there are no nodes, but there *could*
+	// be nodes, ensure if nothing expected, there is nothing to find.
+	if len(expect) == 0 {
+		if ut != nil && ut.NumChildren() > 0 {
+			t.Fatalf("No children of '%s' expected, yet some found!", ut.Name())
+		}
+	}
+
 	for _, v := range expect {
 		ps := pathutil.Makepath(v)
 		n, err := ut.Descendant(nil, ps)
@@ -67,6 +75,43 @@ func validateFullTree(
 		}
 		if n.NumChildren() > 0 {
 			t.Errorf("Unexpected child nodes for %s", v)
+			continue
+		}
+	}
+}
+
+func validateFullTreeCheckNodesNotFound(
+	t *testing.T,
+	sess *session.Session,
+	ctx *configd.Context,
+	find string,
+	unexpect ...string) {
+
+	ut, err, warns := sess.GetFullTree(ctx, pathutil.Makepath(find),
+		&session.TreeOpts{Defaults: false, Secrets: true})
+	if err != nil {
+		t.Fatalf("Unexpected error: %s", err.Error())
+	}
+	if len(warns) != 0 {
+		t.Logf("Unexpected warning(s):\n")
+		for _, warn := range warns {
+			t.Logf("%s\n", warn.Error())
+		}
+		t.Fatalf("Test FAILED.\n")
+		return
+	}
+
+	// So we can validate case where there are no nodes, but there *could*
+	// be nodes, ensure if nothing expected, there is nothing to find.
+	if len(unexpect) == 0 {
+		t.Fatalf("Must specify at least one unexpected node")
+	}
+
+	for _, v := range unexpect {
+		ps := pathutil.Makepath(v)
+		_, err := ut.Descendant(nil, ps)
+		if err == nil {
+			t.Errorf("Unexpectedly found node %s", v)
 			continue
 		}
 	}
@@ -205,6 +250,43 @@ func TestGetFullTreeList(t *testing.T) {
 		"state-value/leafvalue2")
 }
 
+// This checks we get no error if we request a state node populated by VCI,
+// but that we don't get the node returned.
+func TestComponentState(t *testing.T) {
+
+	const schema = `
+	container config {
+		leaf config-leaf {
+			type string;
+		}
+		container state {
+			config false;
+			leaf state-leaf {
+				type string;
+			}
+		}
+	}`
+
+	const config = `config {
+			config-leaf stuff;
+		}`
+
+	srv, sess := sessiontest.TstStartup(t, schema, config)
+	defer sess.Kill()
+
+	validateFullTree(t, sess, srv.Ctx,
+		"",
+		"config/config-leaf/stuff")
+	validateFullTreeCheckNodesNotFound(t, sess, srv.Ctx,
+		"",
+		"config/state")
+	validateFullTree(t, sess, srv.Ctx,
+		"config",
+		"config-leaf/stuff")
+	validateFullTree(t, sess, srv.Ctx,
+		"config/state")
+}
+
 func TestGetFullTreeStateOnly(t *testing.T) {
 	const schema = `container stateonly {
 			config false;
@@ -326,9 +408,8 @@ func TestGetFullTreeStateUnderConfigPresenceAbsent(t *testing.T) {
 	srv, sess := sessiontest.TstStartup(t, schema, emptyconfig)
 	defer sess.Kill()
 
-	checkFullTreeInvalid(t, sess, srv.Ctx,
-		"config-node/stateonly",
-		errtest.NewInvalidNodeError(t, "/config-node").RawErrorStrings()...)
+	validateFullTree(t, sess, srv.Ctx,
+		"")
 }
 
 func TestGetFullTreeStateUnderConfigPresenceConfigured(t *testing.T) {
@@ -445,7 +526,8 @@ func TestGetFullTreeWithConfigNoState(t *testing.T) {
 	defer sess.Kill()
 
 	validateFullTree(t, sess, srv.Ctx,
-		"test/config")
+		"test/config",
+		"configValue")
 }
 
 func TestGetFullTreeWithConfigAndState(t *testing.T) {

@@ -209,11 +209,12 @@ type showresp struct {
 }
 
 type showreq struct {
-	ctx          *configd.Context
-	path         []string
-	hideSecrets  bool
-	showDefaults bool
-	resp         chan showresp
+	ctx              *configd.Context
+	path             []string
+	hideSecrets      bool
+	showDefaults     bool
+	forceShowSecrets bool
+	resp             chan showresp
 }
 
 func (*showreq) reqty() {}

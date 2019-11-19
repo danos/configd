@@ -171,16 +171,50 @@ func testValidFn(
 	return valFn(ctx)
 }
 
+func completeCmdLineWithPrefixAndCfgMgr(
+	c cfgManager,
+	cmdLine, prefix string,
+) (completionText string, err error) {
+
+	updateDynamicCommands(c)
+	defer updateDynamicCommands(newTestClient(nil))
+
+	args, params := parseCmdLine(cmdLine, prefix, POS_NOT_SET)
+	return complete(c, args, params)
+}
+
 func completeCmdLineWithPrefix(cmdLine, prefix string) (
 	completionText string, err error) {
 
-	args, params := parseCmdLine(cmdLine, prefix, POS_NOT_SET)
-	return complete(newTestClient(nil), args, params)
+	return completeCmdLineWithPrefixAndCfgMgr(
+		newTestClient(nil), cmdLine, prefix)
+}
+
+func completeCmdLineWithCfgMgr(
+	c cfgManager,
+	cmdLine string,
+) (completionText string, err error) {
+
+	return completeCmdLineWithPrefixAndCfgMgr(c, cmdLine, FULL_WORD)
 }
 
 func completeCmdLine(cmdLine string) (completionText string, err error) {
-	args, params := parseCmdLine(cmdLine, FULL_WORD, POS_NOT_SET)
-	return complete(newTestClient(nil), args, params)
+
+	return completeCmdLineWithPrefixAndCfgMgr(
+		newTestClient(nil), cmdLine, FULL_WORD)
+}
+
+func getCompletedCmdLine(
+	cfgMgr cfgManager,
+	inputCmdLine, prefix string,
+) (string, error) {
+
+	if prefix == "" {
+		return completeCmdLineWithCfgMgr(cfgMgr, inputCmdLine)
+	} else {
+		return completeCmdLineWithPrefixAndCfgMgr(
+			cfgMgr, inputCmdLine, prefix)
+	}
 }
 
 func checkArgs(t *testing.T, args []string, numArgs int, expArgs []string) {

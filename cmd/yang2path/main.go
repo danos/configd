@@ -95,6 +95,7 @@ func handleHelp(n interface {
 		for v, _ := range help {
 			vs = append(vs, v)
 		}
+		sort.Strings(vs)
 		out := strings.Join(vs, "|")
 		if len(vs) > 1 {
 			out = "(" + out + ")"

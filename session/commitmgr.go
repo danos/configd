@@ -18,6 +18,7 @@ import (
 	"github.com/danos/config/schema"
 	"github.com/danos/config/union"
 	"github.com/danos/configd"
+	"github.com/danos/configd/common"
 	"github.com/danos/mgmterror"
 	"github.com/danos/utils/exec"
 )
@@ -96,6 +97,10 @@ func (m *CommitMgr) commit(sid string, sctx *configd.Context, candidate *data.No
 	run := union.NewNode(nil, rtree, m.schema, nil, 0).Merge()
 	ucan := union.NewNode(candidate, rtree, m.schema, nil, 0)
 	mcan := ucan.Merge()
+	// debug-level logging should be enabled if the debug flag passed in is
+	// set OR if configd 'commit' logging is set to debug level.
+	debug = debug || common.LoggingIsEnabledAtLevel(
+		common.LevelDebug, common.TypeCommit)
 	ctx := newctx(sid, sctx, m.effective, mcan, run, m.schema, message, debug)
 	ctx.LogCommitMsg("Starting validation and commit")
 	outs, errs, ok := ctx.validate()

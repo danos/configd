@@ -72,12 +72,32 @@ func (m *Mocker) CheckAllCallsMade(t *testing.T) {
 }
 
 type testClient struct {
-	t *testing.T
+	t              *testing.T
+	cfgSysFeatures map[string]struct{}
+	commitLog      map[string]string
 	Mocker
 }
 
 func newTestClient(t *testing.T) *testClient {
-	return &testClient{t: t}
+	featMap := make(map[string]struct{}, 0)
+	cmtLogMap := make(map[string]string, 0)
+	return &testClient{
+		t:              t,
+		cfgSysFeatures: featMap,
+		commitLog:      cmtLogMap}
+}
+
+func (tc *testClient) enableFeature(feature string) *testClient {
+	tc.cfgSysFeatures[feature] = struct{}{}
+	return tc
+}
+
+func (tc *testClient) setCommitLog(numEntries int) *testClient {
+	for i := 0; i < numEntries; i++ {
+		tc.commitLog[fmt.Sprintf("%d", i)] = fmt.Sprintf(
+			"2019-08-21 09:00:%d vyatta", i)
+	}
+	return tc
 }
 
 func (tc *testClient) Commit(message string, debug bool) (string, error) {
@@ -140,11 +160,11 @@ func (tc *testClient) Get(db rpc.DB, path string) ([]string, error) {
 }
 
 func (tc *testClient) GetCommitLog() (map[string]string, error) {
-	return map[string]string{}, nil
+	return tc.commitLog, nil
 }
 
 func (tc *testClient) GetConfigSystemFeatures() (map[string]struct{}, error) {
-	return map[string]struct{}{}, nil
+	return tc.cfgSysFeatures, nil
 }
 
 func (tc *testClient) GetCompletions(

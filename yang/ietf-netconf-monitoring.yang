@@ -6,24 +6,13 @@ module ietf-netconf-monitoring {
   import ietf-yang-types { prefix yang; }
   import ietf-inet-types { prefix inet; }
 
-  organization
-    "IETF NETCONF (Network Configuration) Working Group";
+  organization "AT&T Inc.";
 
   contact
-    "WG Web:   <http://tools.ietf.org/wg/netconf/>
-     WG List:  <mailto:netconf@ietf.org>
-
-     WG Chair: Mehmet Ersue
-               <mailto:mehmet.ersue@nsn.com>
-
-     WG Chair: Bert Wijnen
-               <mailto:bertietf@bwijnen.net>
-
-     Editor:   Mark Scott
-               <mailto:mark.scott@ericsson.com>
-
-     Editor:   Martin Bjorklund
-               <mailto:mbj@tail-f.com>";
+    "AT&T
+     Postal: 208 S. Akard Street
+             Dallas, TX 75202
+     Web: www.att.com";
 
   description
     "NETCONF Monitoring Module.

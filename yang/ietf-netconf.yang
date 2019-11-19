@@ -10,30 +10,19 @@ module ietf-netconf {
     prefix inet;
   }
 
-  organization
-    "IETF NETCONF (Network Configuration) Working Group";
+  organization "AT&T Inc.";
 
   contact
-    "WG Web:   <http://tools.ietf.org/wg/netconf/>
-     WG List:  <netconf@ietf.org>
-
-     WG Chair: Bert Wijnen
-               <bertietf@bwijnen.net>
-
-     WG Chair: Mehmet Ersue
-               <mehmet.ersue@nsn.com>
-
-     Editor:   Martin Bjorklund
-               <mbj@tail-f.com>
-
-     Editor:   Juergen Schoenwaelder
-               <j.schoenwaelder@jacobs-university.de>
-
-     Editor:   Andy Bierman
-               <andy.bierman@brocade.com>";
+    "AT&T
+     Postal: 208 S. Akard Street
+             Dallas, TX 75202
+     Web: www.att.com";
 
   description
     "NETCONF Protocol Data Types and Protocol Operations.
+
+     Copyright (c) 2019, AT&T Intellectual Property.
+     All rights reserved.
 
      Copyright (c) 2011 IETF Trust and the persons identified as
      the document authors.  All rights reserved.

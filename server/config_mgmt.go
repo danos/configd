@@ -82,7 +82,7 @@ func getCurrentConfigVersion() string {
 }
 
 func (d *Disp) isVyattaConfigFile(file string) bool {
-	cfg, err := d.readCfgFile(file, true)
+	cfg, err := d.readCfgFile(file, true, false)
 	if err != nil {
 		return false
 	}
