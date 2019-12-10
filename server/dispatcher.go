@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2017-2020, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2014-2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -832,12 +832,59 @@ func (d *Disp) loadArchivedConfig(sid, revision string) error {
 }
 
 func (d *Disp) rollbackCommandAuthArgs(rev, comment string) *commandArgs {
-	args := []string{rev}
+	cmd := "rollback"
+
+	args := make([]string, 0)
+	if rev == "revert" {
+		cmd = "cancel-commit"
+	} else {
+		args = append(args, rev)
+	}
 	if comment != "" {
 		args = append(args, "comment", comment)
 	}
+	return d.newCommandArgsForAaa(cmd, args, nil)
+}
 
-	return d.newCommandArgsForAaa("rollback", args, nil)
+func (d *Disp) sessionTermination() error {
+
+	info := getConfirmedCommitInfo()
+	if info.Session != "" && info.PersistId == "" &&
+		info.Session == strconv.Itoa(int(d.ctx.Pid)) {
+		cmd := spawn.Command("/opt/vyatta/sbin/vyatta-config-mgmt.pl",
+			"--action=revert-configuration")
+		out, err := cmd.CombinedOutput()
+		// out contains the output of both stdout and stderr. err is not really
+		// user relevant so shouldn't be printed.
+		if err != nil {
+			err := mgmterror.NewOperationFailedApplicationError()
+			err.Message = string(out)
+			return err
+		}
+	}
+	return nil
+}
+
+func (d *Disp) CancelCommit(sid, comment, persistid string, force, debug bool) (string, error) {
+	if !force {
+		info := getConfirmedCommitInfo()
+		switch {
+		case info.Session == "":
+			err := mgmterror.NewOperationFailedApplicationError()
+			err.Message = "No confirmed commit pending"
+			return "", err
+		case info.PersistId != persistid:
+			err := mgmterror.NewInvalidValueProtocolError()
+			err.Message = "persist-id does not match pending confirmed commit"
+			return "", err
+		case info.PersistId == "" && info.Session != strconv.Itoa(int(d.ctx.Pid)):
+			err := mgmterror.NewAccessDeniedApplicationError()
+			err.Message = "Pending confirmed commit initiated by ther session"
+			return "", err
+		}
+	}
+	res, err := d.Rollback(sid, "revert", comment, debug)
+	return res, err
 }
 
 func (d *Disp) Rollback(sid, revision, comment string, debug bool) (string, error) {
@@ -866,15 +913,25 @@ func (d *Disp) Rollback(sid, revision, comment string, debug bool) (string, erro
 		return retStr, err
 	}
 
-	log, _ := d.GetCommitLog()
-	if _, exists := log[revision]; !exists {
-		err := newInvalidConfigRevisionError(revision)
-		d.logRollbackError(err)
-		return retStr, err
-	}
+	if revision != "revert" {
+		log, _ := d.GetCommitLog()
+		if _, exists := log[revision]; !exists {
+			err := newInvalidConfigRevisionError(revision)
+			d.logRollbackError(err)
+			return retStr, err
+		}
 
-	d.logRollbackEvent(fmt.Sprintf("Restoring revision %s [%s] from archive",
-		revision, log[revision]))
+		d.logRollbackEvent(fmt.Sprintf("Restoring revision %s [%s] from archive",
+			revision, log[revision]))
+	} else {
+		if _, err := os.Stat(configRevisionFileName(revision)); err != nil {
+			if os.IsNotExist(err) {
+				err := mgmterror.NewOperationFailedApplicationError()
+				err.Message = "No pending confirmed commit to cancel\n"
+				return retStr, err
+			}
+		}
+	}
 
 	err = d.loadArchivedConfig(sid, revision)
 	if err != nil {
@@ -888,7 +945,7 @@ func (d *Disp) Rollback(sid, revision, comment string, debug bool) (string, erro
 		return retStr, err
 	}
 	if sessChngd {
-		out, err := d.commitInternal(sid, comment, debug, 0)
+		out, err := d.commitInternal(sid, comment, debug, 0, revision == "revert")
 		if out != "" {
 			retStr += out + "\n"
 		}
@@ -918,6 +975,38 @@ func (d *Disp) Confirm(sid string) (string, error) {
 	return string(out), err
 }
 
+func (d *Disp) ConfirmPersistId(persistid string) (string, error) {
+	defer d.accountCommand(d.newCommandArgsForAaa("confirm", []string{"persist-id", persistid}, nil))
+
+	cmd := spawn.Command("/opt/vyatta/sbin/vyatta-config-mgmt.pl",
+		"--action=confirm",
+		fmt.Sprintf("--persistid=%s", persistid))
+	out, err := cmd.CombinedOutput()
+	// out contains the output of both stdout and stderr. err is not really
+	// user relevant so shouldn't be printed.
+	if err != nil {
+		err := mgmterror.NewOperationFailedApplicationError()
+		err.Message = string(out)
+		return "", err
+	}
+	return string(out), err
+}
+
+func (d *Disp) ConfirmingCommit() (string, error) {
+	cmd := spawn.Command("/opt/vyatta/sbin/vyatta-config-mgmt.pl",
+		"--action=confirming-commit")
+	out, err := cmd.CombinedOutput()
+	// out contains the output of both stdout and stderr. err is not really
+	// user relevant so shouldn't be printed.
+	if err != nil {
+		err := mgmterror.NewOperationFailedApplicationError()
+		err.Message = string(out)
+		return "", err
+	}
+	return string(out), err
+
+}
+
 func (d *Disp) ConfirmSilent(sid string) (string, error) {
 	cmd := spawn.Command("/opt/vyatta/sbin/vyatta-config-mgmt.pl",
 		"--action=confirm-silent")
@@ -932,6 +1021,19 @@ func (d *Disp) ConfirmSilent(sid string) (string, error) {
 	return string(out), err
 }
 
+func (d *Disp) setConfirmedCommitTimeout(cmt *commitInfo) (string, error) {
+	cmd := spawn.Command("/opt/vyatta/sbin/vyatta-config-mgmt.pl",
+		cmt.arguments(strconv.Itoa(int(d.ctx.Pid)))...)
+	out, err := cmd.CombinedOutput()
+	// out contains the output of both stdout and stderr. err is not really
+	// user relevant so shouldn't be printed.
+	if err != nil {
+		err := mgmterror.NewOperationFailedApplicationError()
+		err.Message = string(out)
+		return "", err
+	}
+	return string(out), err
+}
 func (d *Disp) setConfirmTimeout(mins int) (string, error) {
 	cmd := spawn.Command("/opt/vyatta/sbin/vyatta-config-mgmt.pl",
 		"--action=commit-confirm",
@@ -958,7 +1060,7 @@ func (d *Disp) CommitConfirm(
 		args = append(args, "comment", message)
 	}
 	defer d.accountCommand(d.newCommandArgsForAaa("commit-confirm", args, nil))
-	return d.commitInternal(sid, message, debug, mins)
+	return d.commitInternal(sid, message, debug, mins, false)
 }
 
 func (d *Disp) Commit(
@@ -971,7 +1073,30 @@ func (d *Disp) Commit(
 		args = append(args, "comment", message)
 	}
 	defer d.accountCommand(d.newCommandArgsForAaa("commit", args, nil))
-	return d.commitInternal(sid, message, debug, 0)
+	return d.commitInternal(sid, message, debug, 0, false)
+}
+
+func (d *Disp) ConfirmedCommit(
+	sid string,
+	message string,
+	confirmed bool,
+	timeout string,
+	persist string,
+	persistid string,
+	debug bool,
+) (string, error) {
+	var args []string
+	if message != "" {
+		args = append(args, "comment", message)
+	}
+
+	cmt, err := newCommitInfo(confirmed, timeout, persist, persistid)
+	if err != nil {
+		return "", err
+	}
+
+	defer d.accountCommand(d.newCommandArgsForAaa("commit", args, nil))
+	return d.confirmedCommitInternal(sid, message, debug, 0, cmt, false)
 }
 
 func (d *Disp) commitInternal(
@@ -979,6 +1104,18 @@ func (d *Disp) commitInternal(
 	message string,
 	debug bool,
 	confirmTimeout int,
+	revert bool,
+) (string, error) {
+	return d.confirmedCommitInternal(sid, message, debug, confirmTimeout, nil, revert)
+}
+
+func (d *Disp) confirmedCommitInternal(
+	sid string,
+	message string,
+	debug bool,
+	confirmTimeout int,
+	cmt *commitInfo,
+	revert bool,
 ) (string, error) {
 
 	var rpcout bytes.Buffer
@@ -987,6 +1124,9 @@ func (d *Disp) commitInternal(
 		return "", err
 	}
 
+	if err := d.isCommitAllowed(strconv.Itoa(int(d.ctx.Pid)), cmt, revert); err != nil {
+		return "", err
+	}
 	outs, errs, ok := sess.Commit(d.ctx, message, debug)
 
 	if outs != nil {
@@ -1004,6 +1144,18 @@ func (d *Disp) commitInternal(
 			}
 		}
 	}
+	if cmt != nil && cmt.confirmed {
+		out, err := d.setConfirmedCommitTimeout(cmt)
+		if out != "" {
+			rpcout.WriteByte('\n')
+			rpcout.WriteString(out)
+			rpcout.WriteByte('\n')
+		}
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+
 	if ok && len(errs) == 0 {
 		if ok, err := d.Save(""); !ok {
 			return "", err

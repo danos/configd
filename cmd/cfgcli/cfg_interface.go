@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2018-2020, AT&T Intellectual Property. All rights reserved.
 //
 // SPDX-License-Identifier: LGPL-2.1-only
 
@@ -21,12 +21,14 @@ type getSetter interface {
 // These represent implementations of cfgcli's keywords, so make a logical
 // grouping.
 type commander interface {
+	CancelCommit(comment string, force, debug bool) (string, error)
 	Commit(message string, debug bool) (string, error)
 	CommitConfirm(message string, debug bool, mins int) (string, error)
 	CompareConfigRevisions(revOne, revTwo string) (string, error)
 	CompareSessionChanges() (string, error)
 	Confirm() (string, error)
 	ConfirmSilent() (string, error)
+	ConfirmPersistId(persistid string) (string, error)
 	Delete(path string) error
 	Discard() error
 	getSetter

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2019-2020, AT&T Intellectual Property. All rights reserved.
 //
 // SPDX-License-Identifier: LGPL-2.1-only
 
@@ -207,7 +207,7 @@ func (d *Disp) LoadKeys(sid, user, source, routingInstance string) (string, erro
 	}
 
 	d.ConfirmSilent(sid)
-	out, err := d.commitInternal(sid, strings.Join(args.cmd, " "), false, 0 /* no timeout */)
+	out, err := d.commitInternal(sid, strings.Join(args.cmd, " "), false, 0 /* no timeout */, false)
 	if err == nil {
 		if out != "" {
 			out = strings.TrimRight(out, "\n") + "\n\n"

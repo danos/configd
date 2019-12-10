@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, AT&T Intellectual Property.
+// Copyright (c) 2018-2020, AT&T Intellectual Property.
 // All rights reserved.
 //
 // Copyright (c) 2015-2017 by Brocade Communications Systems, Inc.
@@ -111,8 +111,34 @@ func doSnippitAndContinue(ctx *Ctx, snippit string, env ...string) {
 	}
 }
 
+func validateConfirmPersistIdIfAny(
+	ctx *Ctx,
+	persistidKeywordPos int,
+) (persistid string) {
+
+	if len(ctx.Args) == persistidKeywordPos+1 {
+		handleError(fmt.Errorf("Please provide persisit-id."))
+	}
+
+	if len(ctx.Args) > persistidKeywordPos+1 {
+		persistid = ctx.Args[persistidKeywordPos+1]
+	}
+
+	return persistid
+}
+
 func confirmRun(ctx *Ctx) {
-	out, err := ctx.Client.Confirm()
+	var out string
+	var err error
+
+	persistid := validateConfirmPersistIdIfAny(ctx, 1)
+
+	switch persistid {
+	case "":
+		out, err = ctx.Client.Confirm()
+	default:
+		out, err = ctx.Client.ConfirmPersistId(persistid)
+	}
 	handleErrorNoIndent(err)
 	logRollbackEvent("Commit confirmed.")
 	if out != "" {
@@ -212,6 +238,18 @@ func logRollbackEvent(msg string) {
 			break
 		}
 	}
+}
+
+func cancelcommitRun(ctx *Ctx) {
+
+	comment := validateCommitCommentIfAny(ctx, 1)
+
+	out, err := ctx.Client.CancelCommit(comment, true, isCommitDebugOn())
+	if out != "" {
+		doSnippit(ctx, fmt.Sprintf("echo \"%s\"\n", out))
+	}
+	handleError(err)
+	os.Exit(0)
 }
 
 func rollbackRun(ctx *Ctx) {

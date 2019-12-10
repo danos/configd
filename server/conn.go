@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2018-2020, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2014-2015,2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -207,6 +207,9 @@ func (conn *SrvConn) Handle() {
 		if err != nil {
 			break
 		}
+	}
+	if err = disp.sessionTermination(); err != nil {
+		conn.srv.LogError(err)
 	}
 	conn.Close()
 	return

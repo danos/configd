@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2017-2020, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2014-2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -285,11 +285,17 @@ func (c *Client) Copy(fpath, tpath string) error {
 func (c *Client) Comment(path string) error {
 	return c.callBoolIgnore(GetFuncName(), c.sid, path)
 }
+func (c *Client) CancelCommit(comment string, force, debug bool) (string, error) {
+	return c.callString(GetFuncName(), c.sid, comment, "", force, debug)
+}
 func (c *Client) Rollback(revision, comment string, debug bool) (string, error) {
 	return c.callString(GetFuncName(), c.sid, revision, comment, debug)
 }
 func (c *Client) Confirm() (string, error) {
 	return c.callString(GetFuncName(), c.sid)
+}
+func (c *Client) ConfirmPersistId(persistid string) (string, error) {
+	return c.callString(GetFuncName(), persistid)
 }
 func (c *Client) ConfirmSilent() (string, error) {
 	return c.callString(GetFuncName(), c.sid)

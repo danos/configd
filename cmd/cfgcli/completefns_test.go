@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, AT&T Intellectual Property.
+// Copyright (c) 2018-2020, AT&T Intellectual Property.
 // All rights reserved.
 //
 // Copyright (c) 2016 by Brocade Communications Systems, Inc.
@@ -23,33 +23,160 @@ import (
 var testCfgMgr = newTestClient(nil).
 	enableFeature(common.ConfigManagementFeature)
 
+type testDefinitions struct {
+	name      string
+	cmdLine   string
+	expOutput []string
+	success   bool
+	prefix    string
+}
+
+// CANCEL-COMMIT
+func TestCancelCommitCommand(t *testing.T) {
+	testCases := []testDefinitions{
+		{
+			name:      "CancelCommit",
+			cmdLine:   "cancel-commit",
+			expOutput: []string{"COMPREPLY=( cancel-commit  )"},
+			success:   true,
+		},
+		{
+			name:      "CancelCommit completion",
+			cmdLine:   "cancel-co",
+			expOutput: []string{"COMPREPLY=( cancel-commit  )"},
+			success:   true,
+		},
+		{
+			name:    "Comment completion",
+			cmdLine: "cancel-commit com",
+			expOutput: []string{
+				"COMPREPLY=( comment  )"},
+			success: true,
+		},
+		{
+			name:    "Comment completion with trailing text",
+			cmdLine: "cancel-commit comTrailingText",
+			expOutput: []string{
+				"COMPREPLY=( comment  )"},
+			success: true,
+			prefix:  "com",
+		},
+		{
+			name:    "Wrong comment keyword",
+			cmdLine: "cancel-commit not-comment-keyword",
+			expOutput: []string{
+				"Invalid command: cancel-commit [not-comment-keyword]"},
+			success: false,
+		},
+		{
+			name:    "Comment - no comment",
+			cmdLine: "cancel-commit comment",
+			expOutput: []string{
+				"COMPREPLY=( comment  )"},
+			success: true,
+		},
+		{
+			name:    "Comment Text",
+			cmdLine: "cancel-commit comment text",
+			expOutput: []string{
+				"<text> Comment for the commit log"},
+			success: true,
+		},
+		{
+			name:    "Comment Text - extra text",
+			cmdLine: "cancel-commit comment text extra-text",
+			expOutput: []string{
+				"Invalid command: cancel-commit comment text [extra-text]"},
+			success: false,
+		},
+	}
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			completionText, err := getCompletedCmdLine(
+				testCfgMgr, test.cmdLine, test.prefix)
+
+			if test.success {
+				checkNoError(t, err)
+				checkTextContains(t, completionText, test.expOutput)
+			} else {
+				checkErrorContains(t, err, test.expOutput)
+			}
+		})
+	}
+}
+
 // CONFIRM
-func TestConfirm(t *testing.T) {
-	completionText, err := completeCmdLineWithCfgMgr(testCfgMgr, "confirm")
+func TestConfirmCommand(t *testing.T) {
+	testCases := []testDefinitions{
+		{
+			name:      "Confirm",
+			cmdLine:   "confirm",
+			expOutput: []string{"COMPREPLY=( confirm  )"},
+			success:   true,
+		},
+		{
+			name:      "Confirm completion",
+			cmdLine:   "conf",
+			expOutput: []string{"COMPREPLY=( confirm  )"},
+			success:   true,
+		},
+		{
+			name:    "Perisist-id completion",
+			cmdLine: "confirm pers",
+			expOutput: []string{
+				"COMPREPLY=( persist-id  )"},
+			success: true,
+		},
+		{
+			name:    "Persist-id completion with trailing text",
+			cmdLine: "confirm persisTrailingText",
+			expOutput: []string{
+				"COMPREPLY=( persist-id  )"},
+			success: true,
+			prefix:  "per",
+		},
+		{
+			name:    "Wrong persist-id keyword",
+			cmdLine: "confirm not-persist-id-keyword",
+			expOutput: []string{
+				"Invalid command: confirm [not-persist-id-keyword]"},
+			success: false,
+		},
+		{
+			name:    "Persist-id - no persist-id",
+			cmdLine: "confirm persist-id",
+			expOutput: []string{
+				"COMPREPLY=( persist-id  )"},
+			success: true,
+		},
+		{
+			name:    "Persist-id Text",
+			cmdLine: "confirm persist-id text",
+			expOutput: []string{
+				"<text> Persist-id of pending confirmed commit"},
+			success: true,
+		},
+		{
+			name:    "Persist-id Text - extra text",
+			cmdLine: "confirm persist-id text extra-text",
+			expOutput: []string{
+				"Invalid command: confirm persist-id text [extra-text]"},
+			success: false,
+		},
+	}
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			completionText, err := getCompletedCmdLine(
+				testCfgMgr, test.cmdLine, test.prefix)
 
-	checkNoError(t, err)
-
-	expText := []string{"COMPREPLY=( confirm  )"}
-	checkTextContains(t, completionText, expText)
-}
-
-func TestConfirmCompletion(t *testing.T) {
-	completionText, err := completeCmdLineWithCfgMgr(testCfgMgr, "confirm")
-
-	checkNoError(t, err)
-
-	expText := []string{"COMPREPLY=( confirm  )"}
-	checkTextContains(t, completionText, expText)
-}
-
-func TestConfirmSpace(t *testing.T) {
-	completionText, err := completeCmdLineWithCfgMgr(testCfgMgr, "confirm ")
-
-	checkNoError(t, err)
-
-	expText := []string{
-		"<Enter> Confirm acceptance of running configuration"}
-	checkTextContains(t, completionText, expText)
+			if test.success {
+				checkNoError(t, err)
+				checkTextContains(t, completionText, test.expOutput)
+			} else {
+				checkErrorContains(t, err, test.expOutput)
+			}
+		})
+	}
 }
 
 // COMMIT

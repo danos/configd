@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, AT&T Intellectual Property.
+// Copyright (c) 2018-2020, AT&T Intellectual Property.
 // All rights reserved.
 //
 // Copyright (c) 2015-2017 by Brocade Communications Systems, Inc.
@@ -549,21 +549,33 @@ func rollbackComp(ctx *Ctx) (completionText string) {
 	return doComplete(ctx, true, m, printHelp)
 }
 
-func confirmValid(ctx *Ctx) error {
-	if len(ctx.Args) == 1 || (len(ctx.Args) == 2 && ctx.Prefix == "") {
+// cancelcommitValid - check if cancel-commit command is valid
+//
+// Format of command is 'cancel-commit [persist-id <persist-id>]'
+// Thus, if only 1 args (allow for fewer though should never get that here)
+// we have no persist-id.
+// Otherwise we check that we have 'persist-id <persist-id>' present and correct
+// with no trailing text.
+func cancelcommitValid(ctx *Ctx) error {
+	if len(ctx.Args) == 1 {
 		return nil
 	}
 
-	// Unexpected arguments provided ...
-	return fmt.Errorf("Invalid command: %s [%s]", ctx.Args[0], ctx.Args[1:])
+	args := removeTrailingEmptyArgument(ctx.Args)
+	return validateCommentIfAny(args, 1, ctx.Prefix)
 }
 
-func confirmComp(ctx *Ctx) (completionText string) {
+func cancelcommitComp(ctx *Ctx) (completionText string) {
 	var m map[string]string
 	switch ctx.CompCurIdx {
 	case 1:
 		m = map[string]string{
-			"<Enter>": "Confirm acceptance of running configuration",
+			"<Enter>": "Cancel pending confirmed commit",
+			"comment": "Comment for commit log",
+		}
+	case 2:
+		m = map[string]string{
+			"<text>": "Comment for the commit log",
 		}
 	default:
 		m = defaultcomps
@@ -571,29 +583,56 @@ func confirmComp(ctx *Ctx) (completionText string) {
 	return doComplete(ctx, true, m, printHelp)
 }
 
-// Check comment keyword is correct, if present, and that we only have a
-// single comment after it (if commment has been typed yet)
-func validateCommentIfAny(args []string, keywordPos int, prefix string) error {
+func confirmValid(ctx *Ctx) error {
+	if len(ctx.Args) == 1 {
+		return nil
+	}
 
-	// Command finishes at 'comment' (or at least at point at which that is
+	args := removeTrailingEmptyArgument(ctx.Args)
+	return validatePersistIdIfAny(args, 1, ctx.Prefix)
+}
+
+func confirmComp(ctx *Ctx) (completionText string) {
+	var m map[string]string
+	switch ctx.CompCurIdx {
+	case 1:
+		m = map[string]string{
+			"<Enter>":    "Confirm acceptance of running configuration",
+			"persist-id": "Persist-id of pending confirmed commit",
+		}
+	case 2:
+		m = map[string]string{
+			"<text>": "Persist-id of pending confirmed commit",
+		}
+	default:
+		m = defaultcomps
+	}
+	return doComplete(ctx, true, m, printHelp)
+}
+
+// Check for a keyword, and if present, check there is only a single argument
+// following it.
+func validateArgumentIfAny(args []string, keywordPos int, prefix, keyword string) error {
+
+	// Command finishes at <keyword> (or at least at point at which that is
 	// the only valid command.  For tab completion usage, prefix will be set,
 	// and the first HasPrefix() call will be in play.  For 'run' usage,
 	// prefix is set to __noncomp__ and so we need to check the full keyword
 	// provided.  Note that we cannot use the second check for tab completion
 	// as that will fail on mid-word tab completion where we have the likes of
-	// 'comXXX' as the full keyword.
+	// 'keyXXX' as the full keyword.
 	if len(args) == keywordPos+1 {
-		if !strings.HasPrefix("comment", prefix) &&
-			!strings.HasPrefix("comment", args[keywordPos]) {
+		if !strings.HasPrefix(keyword, prefix) &&
+			!strings.HasPrefix(keyword, args[keywordPos]) {
 			return fmt.Errorf("Invalid command: %s [%s]",
 				strings.Join(args[0:keywordPos], " "), args[keywordPos])
 		}
-		// No comment provided, but 'comment' keyword present and correct.
+		// No argument provided, but the keyword is present and correct.
 		return nil
 	}
 
 	if len(args) > keywordPos+1 &&
-		strings.Index("comment", args[keywordPos]) != 0 {
+		strings.Index(keyword, args[keywordPos]) != 0 {
 		return fmt.Errorf("Invalid command: %s [%s]",
 			strings.Join(args[0:keywordPos], " "), args[keywordPos])
 	}
@@ -605,6 +644,14 @@ func validateCommentIfAny(args []string, keywordPos int, prefix string) error {
 	}
 
 	return nil
+}
+
+func validateCommentIfAny(args []string, keywordPos int, prefix string) error {
+	return validateArgumentIfAny(args, keywordPos, prefix, "comment")
+}
+
+func validatePersistIdIfAny(args []string, keywordPos int, prefix string) error {
+	return validateArgumentIfAny(args, keywordPos, prefix, "persist-id")
 }
 
 // If last argument is a space, remove it rather than constantly having

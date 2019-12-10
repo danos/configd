@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2018-2020, AT&T Intellectual Property. All rights reserved.
 //
 // SPDX-License-Identifier: LGPL-2.1-only
 
@@ -100,6 +100,10 @@ func (tc *testClient) setCommitLog(numEntries int) *testClient {
 	return tc
 }
 
+func (tc *testClient) CancelCommit(comment string, force, debug bool) (string, error) {
+	panic("Rollback testClient method not yet implemented")
+}
+
 func (tc *testClient) Commit(message string, debug bool) (string, error) {
 	panic("Commit testClient method not yet implemented")
 }
@@ -119,6 +123,10 @@ func (tc *testClient) CompareSessionChanges() (string, error) {
 
 func (tc *testClient) Confirm() (string, error) {
 	panic("Confirm testClient method not yet implemented")
+}
+
+func (tc *testClient) ConfirmPersistId(persistid string) (string, error) {
+	panic("ConfirmPersistId testClient method not yet implemented")
 }
 func (tc *testClient) ConfirmSilent() (string, error) {
 	panic("ConfirmSilent testClient method not yet implemented")

@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, AT&T Intellectual Property.
+// Copyright (c) 2018-2020, AT&T Intellectual Property.
 // All rights reserved.
 //
 // Copyright (c) 2015-2017 by Brocade Communications Systems, Inc.
@@ -105,6 +105,9 @@ func updateDynamicCommands(c cfgManager) error {
 		Commands["confirm"] = NewCommand("confirm",
 			"Confirm configuration changes",
 			confirmComp, confirmRun, confirmValid)
+		Commands["cancel-commit"] = NewCommand("cancel-commit",
+			"Cancel a confirmed commit",
+			cancelcommitComp, cancelcommitRun, cancelcommitValid)
 		Commands["rollback"] = NewCommand("rollback",
 			"Rollback to a previous configuration",
 			rollbackComp, rollbackRun, rollbackValid)
