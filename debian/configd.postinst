@@ -21,25 +21,25 @@ case "$1" in
     configure)
         g="secrets"
         if ! getent group $g >/dev/null; then
-	        addgroup --system $g
+            addgroup --system $g
         fi
         if ! getent passwd configd >/dev/null; then
-	        adduser \
-		        --system \
-		        --group \
-		        --home /var/run/configd \
-		        --gecos "Vyatta Configuration Daemon" \
-		        --shell /bin/false \
-		        configd  >/dev/null
+            adduser \
+                --system \
+                --group \
+                --home /var/run/configd \
+                --gecos "Vyatta Configuration Daemon" \
+                --shell /bin/false \
+                configd  >/dev/null
 
-	        usermod -a -G $g configd
+            usermod -a -G $g configd
         fi
         setcap cap_audit_control+ep /usr/sbin/configd
-	;;
+    ;;
 
-	triggered)
-		deb-systemd-invoke reload-or-restart configd
-	;;
+    triggered)
+        deb-systemd-invoke reload-or-restart configd
+    ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
     ;;
