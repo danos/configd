@@ -38,7 +38,9 @@ case "$1" in
     ;;
 
     triggered)
-        deb-systemd-invoke reload-or-restart configd
+        if [ -d /run/systemd/system ] ; then
+            deb-systemd-invoke reload-or-restart configd || true
+        fi
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
