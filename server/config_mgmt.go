@@ -1,4 +1,4 @@
-// Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2019-2020, AT&T Intellectual Property. All rights reserved.
 //
 // SPDX-License-Identifier: LGPL-2.1-only
 
@@ -28,7 +28,7 @@ var configDir = "/config"
 var spawnCommandAsCallerFn = spawnCommandAsCaller
 
 func userSandboxPath(user string) string {
-	return "/run/cli-sandbox/" + user + "/cli-" + user
+	return "/run/cli-sandbox/" + user
 }
 
 func (d *Disp) callerIsSandboxed() bool {
