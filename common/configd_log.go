@@ -1,4 +1,4 @@
-// Copyright (c) 2019, AT&T Intellectual Property.
+// Copyright (c) 2019-2020, AT&T Intellectual Property.
 // All rights reserved.
 //
 // SPDX-License-Identifier: LGPL-2.1-only
@@ -6,6 +6,7 @@ package common
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -57,13 +58,32 @@ const (
 	TypeNone LogType = iota
 	TypeCommit
 	TypeState
+	TypeMust
 	TypeLast // Keep at end so we can size slices
 )
 
-var cfgDebugSettings = []LogLevel{
-	LevelNone,  // TypeNone
-	LevelError, // TypeCommit
-	LevelNone,  // TypeState
+type ValueType int
+
+const (
+	StringVal ValueType = iota
+	IntVal
+)
+
+// cfgDebugSetting
+//
+// StringVal: use LogLevel and ignore value
+// Intval:    use value, disabled if LogLevel is LevelNone
+type cfgDebugSetting struct {
+	valType ValueType
+	level   LogLevel
+	value   int
+}
+
+var cfgDebugSettings = map[LogType]cfgDebugSetting{
+	TypeNone:   {valType: StringVal, level: LevelNone, value: 0},
+	TypeCommit: {valType: StringVal, level: LevelError, value: 0},
+	TypeState:  {valType: StringVal, level: LevelNone, value: 0},
+	TypeMust:   {valType: IntVal, level: LevelNone, value: 0},
 }
 
 func MapLogNameToType(name string) (LogType, error) {
@@ -72,6 +92,8 @@ func MapLogNameToType(name string) (LogType, error) {
 		return TypeCommit, nil
 	case "state":
 		return TypeState, nil
+	case "must":
+		return TypeMust, nil
 	}
 	return TypeNone, fmt.Errorf(
 		"LogType '%s' not recognised. Use <validate|commit|state>.", name)
@@ -83,6 +105,8 @@ func MapLogTypeToName(logType LogType) string {
 		return "commit"
 	case TypeState:
 		return "state"
+	case TypeMust:
+		return "must"
 	default:
 		return "none"
 	}
@@ -92,28 +116,48 @@ func LoggingIsEnabledAtLevel(level LogLevel, logType LogType) bool {
 	if logType >= TypeLast || level >= LevelLast {
 		return false
 	}
-	return cfgDebugSettings[logType] >= level
+	return cfgDebugSettings[logType].level >= level
+}
+
+func LoggingValueAndStatus(logType LogType) (int, bool) {
+	if logType >= TypeLast {
+		return 0, false
+	}
+	if cfgDebugSettings[logType].valType != IntVal {
+		return 0, false
+	}
+	enabled := (cfgDebugSettings[logType].level != LevelNone)
+	return cfgDebugSettings[logType].value, enabled
 }
 
 func CurrentLogStatus() string {
 	var retStr = "\nCurrent Debug Status:\n\n"
-	for logType, level := range cfgDebugSettings {
+	for logType, dbgSetting := range cfgDebugSettings {
 		if LogType(logType) == TypeNone {
 			continue
 		}
-		retStr += fmt.Sprintf("%-8s\t%s\n",
-			MapLogTypeToName(LogType(logType)),
-			MapLogLevelToName(level))
+		switch dbgSetting.valType {
+		case StringVal:
+			retStr += fmt.Sprintf("%-8s\t%s\n",
+				MapLogTypeToName(LogType(logType)),
+				MapLogLevelToName(dbgSetting.level))
+		case IntVal:
+			retStr += fmt.Sprintf("%-8s\t%d\n",
+				MapLogTypeToName(LogType(logType)),
+				dbgSetting.value)
+		default:
+			// Ignore.
+		}
 	}
 	retStr += "\nValid levels: none, error, debug\n"
 
 	return retStr
 }
 
-func SetConfigDebug(logName, level string) (string, error) {
+func SetConfigDebug(logName, levelOrValue string) (string, error) {
 	// Allows us to let users know what valid options are w/o encoding them
 	// explicitly in API, and also to get current status.
-	if logName == "" && level == "" {
+	if logName == "" && levelOrValue == "" {
 		return CurrentLogStatus(), nil
 	}
 
@@ -125,12 +169,33 @@ func SetConfigDebug(logName, level string) (string, error) {
 		return CurrentLogStatus(),
 			fmt.Errorf("%s\n%s", typeErr, CurrentLogStatus())
 	}
-	logLevel, levelErr := MapLevelNameToLevel(level)
-	if levelErr != nil {
-		return CurrentLogStatus(),
-			fmt.Errorf("%s\n%s", levelErr, CurrentLogStatus())
+	switch cfgDebugSettings[logType].valType {
+	case StringVal:
+		logLevel, levelErr := MapLevelNameToLevel(levelOrValue)
+		if levelErr != nil {
+			return CurrentLogStatus(),
+				fmt.Errorf("%s\n%s", levelErr, CurrentLogStatus())
+		}
+
+		newCfgSetting := cfgDebugSetting{valType: StringVal, level: logLevel}
+		cfgDebugSettings[logType] = newCfgSetting
+
+	case IntVal:
+		// If we can parse value as number, all good
+		val, err := strconv.Atoi(levelOrValue)
+		if val < 0 || err != nil {
+			return CurrentLogStatus(),
+				fmt.Errorf("Use +ve integer value for %s (0 = disable)\n%s",
+					logName, CurrentLogStatus())
+		}
+		newLevel := LevelDebug
+		if val == 0 {
+			newLevel = LevelNone
+		}
+		newCfgSetting := cfgDebugSetting{
+			valType: IntVal, level: newLevel, value: val}
+		cfgDebugSettings[logType] = newCfgSetting
 	}
 
-	cfgDebugSettings[logType] = logLevel
 	return CurrentLogStatus(), nil
 }
