@@ -89,7 +89,13 @@ func (c *commitInfo) arguments(session string) []string {
 	return args
 }
 
-func (d *Disp) isCommitAllowed(pid string, cmt *commitInfo, revert bool) error {
+// performConfirmingCommitIfRequired checks if a confirmed commit is
+// pending and confirms it if appropriate.
+// True will be returned if a pending confirmed commit is confirmed,
+// False otherwise.
+// An error will be returned if the pending confirmed commit can not be
+// confirmed, such as if the persist-id does not match.
+func (d *Disp) performConfirmingCommitIfRequired(pid string, cmt *commitInfo, revert bool) (bool, error) {
 	info := getConfirmedCommitInfo()
 
 	if info.Session != "" {
@@ -97,30 +103,32 @@ func (d *Disp) isCommitAllowed(pid string, cmt *commitInfo, revert bool) error {
 		switch {
 		case revert == true:
 			d.ConfirmingCommit()
+			return true, nil
 		case cmt == nil:
 			// CLI commit, can't proceed if ongoing confirmed commit
 			err := mgmterror.NewAccessDeniedApplicationError()
 			err.Message = "Operation blocked by outstanding confirmed commit"
-			return err
+			return false, err
 		case info.PersistId != cmt.persistId:
 			// persist-id does not match outstanding confirmed-commit
 			err := mgmterror.NewInvalidValueProtocolError()
 			err.Message = "persist-id does not match outstanding confirmed commit"
-			return err
+			return false, err
 
 		case cmt.persistId == "" && info.Session != pid:
 			// Only consider the session identifier if there given persist-id
 			err := mgmterror.NewAccessDeniedApplicationError()
 			err.Message = "operation blocked by outstanding confirmed commit"
-			return err
+			return false, err
 		case cmt.confirmed == false:
 			// We have a valid confirming commit
 			// confirm the pending confirmed-commit
 			d.ConfirmingCommit()
+			return true, nil
 		default:
 			//Follow-up confirmed commit
 		}
 	}
 
-	return nil
+	return false, nil
 }

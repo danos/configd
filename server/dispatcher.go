@@ -1119,14 +1119,22 @@ func (d *Disp) confirmedCommitInternal(
 ) (string, error) {
 
 	var rpcout bytes.Buffer
+
 	sess, err := d.smgr.Get(sid)
 	if err != nil {
 		return "", err
 	}
 
-	if err := d.isCommitAllowed(strconv.Itoa(int(d.ctx.Pid)), cmt, revert); err != nil {
+	confirming, err := d.performConfirmingCommitIfRequired(strconv.Itoa(int(d.ctx.Pid)), cmt, revert)
+	if err != nil {
 		return "", err
 	}
+
+	if confirming && !sess.Changed(d.ctx) {
+		// Confirming commit, but no changes to commit
+		return "", err
+	}
+
 	outs, errs, ok := sess.Commit(d.ctx, message, debug)
 
 	if outs != nil {
