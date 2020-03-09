@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2019, AT&T Intellectual Property.
+// Copyright (c) 2017-2020, AT&T Intellectual Property.
 // All rights reserved.
 // Copyright (c) 2014-2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -619,7 +619,8 @@ Loop:
 
 func (s *session) changed(ctx *configd.Context) bool {
 	mcan := s.getUnion().Merge()
-	c := newctx(s.sid, ctx, nil, mcan, s.getRunning(), s.schema, "", false)
+	c := newctx(s.sid, ctx, nil, mcan, s.getRunning(), s.schema, "", false,
+		0 /* no must debug */)
 	return commit.Changed(c)
 }
 
@@ -639,8 +640,10 @@ func (s *session) validate(ctx *configd.Context) *commitresp {
 	defer s.unlock(int32(configd.COMMIT))
 
 	mcan := s.getUnion().Merge()
+	mustThreshold, _ := common.LoggingValueAndStatus(common.TypeMust)
 	c := newctx(s.sid, ctx, nil, mcan, s.getRunning(), s.schema, "",
-		common.LoggingIsEnabledAtLevel(common.LevelDebug, common.TypeCommit))
+		common.LoggingIsEnabledAtLevel(common.LevelDebug, common.TypeCommit),
+		mustThreshold)
 
 	respch := make(chan *commitresp)
 	go func() {

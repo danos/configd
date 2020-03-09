@@ -24,26 +24,37 @@ import (
 )
 
 type commitctx struct {
-	debug     bool
-	effective *Session
-	candidate *data.Node
-	running   *data.Node
-	schema    schema.Node
-	sid       string
-	sctx      *configd.Context
-	ctx       *configd.Context
-	message   string
+	debug              bool
+	mustDebugThreshold int // Time in ms above which we log time taken. 0 = off
+	effective          *Session
+	candidate          *data.Node
+	running            *data.Node
+	schema             schema.Node
+	sid                string
+	sctx               *configd.Context
+	ctx                *configd.Context
+	message            string
 }
 
-func newctx(sid string, sctx *configd.Context, effective *Session, candidate, running *data.Node, sch schema.Node, message string, debug bool) *commitctx {
+func newctx(
+	sid string,
+	sctx *configd.Context,
+	effective *Session,
+	candidate, running *data.Node,
+	sch schema.Node,
+	message string,
+	debug bool,
+	mustDebugThreshold int,
+) *commitctx {
 	return &commitctx{
-		debug:     debug,
-		effective: effective,
-		candidate: candidate,
-		running:   running,
-		schema:    sch,
-		sid:       sid,
-		sctx:      sctx,
+		debug:              debug,
+		mustDebugThreshold: mustDebugThreshold,
+		effective:          effective,
+		candidate:          candidate,
+		running:            running,
+		schema:             sch,
+		sid:                sid,
+		sctx:               sctx,
 		ctx: &configd.Context{
 			Configd: true,
 			Config:  sctx.Config,
@@ -98,6 +109,10 @@ func (c *commitctx) LogCommitTime(msg string, startTime time.Time) {
 			fmt.Sprintf("%s: %s%s", commitLogMsgPrefix, pad(msg),
 				time.Since(startTime).Round(time.Millisecond)))
 	}
+}
+
+func (c *commitctx) MustDebugThreshold() int {
+	return c.mustDebugThreshold
 }
 
 func (c *commitctx) Log(msgs ...interface{}) {

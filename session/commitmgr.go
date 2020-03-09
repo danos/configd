@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2018-2020, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2014-2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -101,7 +101,9 @@ func (m *CommitMgr) commit(sid string, sctx *configd.Context, candidate *data.No
 	// set OR if configd 'commit' logging is set to debug level.
 	debug = debug || common.LoggingIsEnabledAtLevel(
 		common.LevelDebug, common.TypeCommit)
-	ctx := newctx(sid, sctx, m.effective, mcan, run, m.schema, message, debug)
+	mustThreshold, _ := common.LoggingValueAndStatus(common.TypeMust)
+	ctx := newctx(sid, sctx, m.effective, mcan, run, m.schema, message,
+		debug, mustThreshold)
 	ctx.LogCommitMsg("Starting validation and commit")
 	outs, errs, ok := ctx.validate()
 	if !ok {
