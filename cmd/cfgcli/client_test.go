@@ -100,7 +100,7 @@ func (tc *testClient) setCommitLog(numEntries int) *testClient {
 	return tc
 }
 
-func (tc *testClient) CancelCommit(comment string, force, debug bool) (string, error) {
+func (tc *testClient) CancelCommit(comment, persistid string, force, debug bool) (string, error) {
 	panic("Rollback testClient method not yet implemented")
 }
 

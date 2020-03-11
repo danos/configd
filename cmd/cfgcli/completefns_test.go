@@ -54,6 +54,20 @@ func TestCancelCommitCommand(t *testing.T) {
 			success: true,
 		},
 		{
+			name:    "persist-id completion",
+			cmdLine: "cancel-commit per",
+			expOutput: []string{
+				"COMPREPLY=( persist-id  )"},
+			success: true,
+		},
+		{
+			name:    "cancel-commit force completion",
+			cmdLine: "cancel-commit for",
+			expOutput: []string{
+				"COMPREPLY=( force  )"},
+			success: true,
+		},
+		{
 			name:    "Comment completion with trailing text",
 			cmdLine: "cancel-commit comTrailingText",
 			expOutput: []string{
@@ -87,6 +101,48 @@ func TestCancelCommitCommand(t *testing.T) {
 			cmdLine: "cancel-commit comment text extra-text",
 			expOutput: []string{
 				"Invalid command: cancel-commit comment text [extra-text]"},
+			success: false,
+		},
+		{
+			name:    "Persist Comment Text",
+			cmdLine: "cancel-commit persist-id commit_test comment \"Cancel commit\"",
+			expOutput: []string{
+				"<text> Comment for the commit log"},
+			success: true,
+		},
+		{
+			name:    "Force completion",
+			cmdLine: "cancel-commit for",
+			expOutput: []string{
+				"COMPREPLY=( force  )"},
+			success: true,
+		},
+		{
+			name:    "Force with comment text",
+			cmdLine: "cancel-commit force comment \"Cancel commit\"",
+			expOutput: []string{
+				"<text> Comment for the commit log"},
+			success: true,
+		},
+		{
+			name:    "lots Text",
+			cmdLine: "cancel-commit force comm",
+			expOutput: []string{
+				"COMPREPLY=( comment  )"},
+			success: true,
+		},
+		{
+			name:    "Persist-id only at beginning",
+			cmdLine: "cancel-commit comment text persist-",
+			expOutput: []string{
+				"Invalid command: cancel-commit comment text [persist-]"},
+			success: false,
+		},
+		{
+			name:    "Force only at beginning",
+			cmdLine: "cancel-commit comment text force",
+			expOutput: []string{
+				"Invalid command: cancel-commit comment text [force]"},
 			success: false,
 		},
 	}

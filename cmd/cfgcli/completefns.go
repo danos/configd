@@ -549,37 +549,72 @@ func rollbackComp(ctx *Ctx) (completionText string) {
 	return doComplete(ctx, true, m, printHelp)
 }
 
+// processCancelCommitCmd takes a Ctx and validates that it is a valid
+// cancel-commit command. The command is:
+//
+//   cancel-commit [{ force | persist-id <text> }] [comment <text>]
+//
+// It returns a populated cmdDefs, the last keyword matched and an error
+// if the command is invalid.
+func processCancelCommitCmd(ctx *Ctx) (cmdDefs, string, error) {
+	cmds := cmdDefs{
+		"force": {needArg: false, atStart: true,
+			help: "Force cancelling of pending confirmed commit"},
+		"comment": {needArg: true,
+			help: "Comment for the commit log"},
+		"persist-id": {needArg: true, atStart: true,
+			help: "Persist-id of confirmed commit"},
+	}
+
+	args := removeTrailingEmptyArgument(ctx.Args)
+	lastMatch, err := validateKeywordsAndArguments(args, ctx.CompCurIdx, ctx.Prefix, cmds)
+	return cmds, lastMatch, err
+}
+
 // cancelcommitValid - check if cancel-commit command is valid
 //
-// Format of command is 'cancel-commit [persist-id <persist-id>]'
-// Thus, if only 1 args (allow for fewer though should never get that here)
-// we have no persist-id.
-// Otherwise we check that we have 'persist-id <persist-id>' present and correct
-// with no trailing text.
+// Format of command is
+//      'cancel-commit [force | persist-id <persist-id>] [comment <comment>]'
 func cancelcommitValid(ctx *Ctx) error {
 	if len(ctx.Args) == 1 {
 		return nil
 	}
 
-	args := removeTrailingEmptyArgument(ctx.Args)
-	return validateCommentIfAny(args, 1, ctx.Prefix)
+	_, _, err := processCancelCommitCmd(ctx)
+
+	return err
+
 }
 
 func cancelcommitComp(ctx *Ctx) (completionText string) {
-	var m map[string]string
-	switch ctx.CompCurIdx {
-	case 1:
-		m = map[string]string{
-			"<Enter>": "Cancel pending confirmed commit",
-			"comment": "Comment for commit log",
+	m := make(map[string]string, 0)
+
+	commands, match, _ := processCancelCommitCmd(ctx)
+	if match != "" {
+		// get argument for last matched keyword if required
+		def := commands[match]
+		if (def.needArg && !def.argpresent &&
+			def.pos != len(ctx.Args)-1) ||
+			def.pos == len(ctx.Args)-2 {
+			m["<text>"] = def.help
 		}
-	case 2:
-		m = map[string]string{
-			"<text>": "Comment for the commit log",
-		}
-	default:
-		m = defaultcomps
 	}
+
+	if len(m) == 0 {
+		m["<Enter>"] = "Cancel pending confirmed commit"
+		for keyword, def := range commands {
+			// Include keywords not already included
+			// with it's argument.
+			// only include an atStart keyword if at
+			// begining of command
+			if (!def.present || def.pos == len(ctx.Args)-1 || (def.needArg && !def.argpresent)) &&
+				(!def.atStart || len(ctx.Args) <= 2) {
+				m[keyword] = def.help
+			}
+		}
+
+	}
+
 	return doComplete(ctx, true, m, printHelp)
 }
 
@@ -608,6 +643,92 @@ func confirmComp(ctx *Ctx) (completionText string) {
 		m = defaultcomps
 	}
 	return doComplete(ctx, true, m, printHelp)
+}
+
+type cmdDef struct {
+	needArg    bool
+	argpresent bool
+	argval     string
+	present    bool
+	pos        int
+	help       string
+	atStart    bool
+}
+
+type cmdDefs map[string]cmdDef
+
+func (c cmdDefs) assignArgument(keyword, value string) {
+	if def, ok := c[keyword]; ok {
+		def.argpresent = true
+		def.argval = value
+		c[keyword] = def
+	}
+}
+
+func (c cmdDefs) keywordPresent(keyword string, pos int) bool {
+	if def, ok := c[keyword]; ok {
+		def.pos = pos
+		def.present = true
+		c[keyword] = def
+		return def.needArg
+	}
+	return false
+}
+
+func (c cmdDefs) matchKeyword(keywordPos, idx int, prefix, val string) string {
+	match := ""
+	for keyword, def := range c {
+		// Keyword matches if permitted at current position or
+		// if it is a partial match of the current prefix
+		if (!def.atStart || idx == 0) && (strings.HasPrefix(keyword, val) ||
+			(prefix != "" && keywordPos == idx+1 &&
+				strings.HasPrefix(keyword, prefix))) {
+			// We have a match
+			match = keyword
+			break
+		}
+	}
+	return match
+}
+
+// validateKeywordsAndArguments takes a CLI args slice,
+// and validates that it is a valid command, as defined
+// by the cmdDefs.
+// args is the current CLI to validate
+// keywordPos is the location on the cursor on the CLI
+// prefix is the current partial keyword at keywordPos
+// cmds is the command definition
+//
+// Returns are a string, giving the last matched keyword
+// and an error if the command is not valid
+func validateKeywordsAndArguments(args []string,
+	keywordPos int,
+	prefix string,
+	cmds cmdDefs) (string, error) {
+
+	match := ""
+	needarg := false
+
+	for idx, val := range args[1:] {
+		if needarg {
+			// Get argument for currently matched keyword
+			cmds.assignArgument(match, val)
+			needarg = false
+		} else {
+			match = cmds.matchKeyword(keywordPos, idx, prefix, val)
+
+			if match == "" {
+				return "", fmt.Errorf("Invalid command: %s [%s]\n",
+					strings.Join(args[0:idx+1], " "), args[idx+1])
+			}
+			needarg = cmds.keywordPresent(match, idx+1)
+			if !needarg {
+				match = ""
+			}
+		}
+	}
+
+	return match, nil
 }
 
 // Check for a keyword, and if present, check there is only a single argument
@@ -652,6 +773,10 @@ func validateCommentIfAny(args []string, keywordPos int, prefix string) error {
 
 func validatePersistIdIfAny(args []string, keywordPos int, prefix string) error {
 	return validateArgumentIfAny(args, keywordPos, prefix, "persist-id")
+}
+
+func validateForceIfAny(args []string, keywordPos int, prefix string) error {
+	return validateArgumentIfAny(args, keywordPos, prefix, "force")
 }
 
 // If last argument is a space, remove it rather than constantly having

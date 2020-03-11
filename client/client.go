@@ -285,8 +285,8 @@ func (c *Client) Copy(fpath, tpath string) error {
 func (c *Client) Comment(path string) error {
 	return c.callBoolIgnore(GetFuncName(), c.sid, path)
 }
-func (c *Client) CancelCommit(comment string, force, debug bool) (string, error) {
-	return c.callString(GetFuncName(), c.sid, comment, "", force, debug)
+func (c *Client) CancelCommit(comment, persistid string, force, debug bool) (string, error) {
+	return c.callString(GetFuncName(), c.sid, comment, persistid, force, debug)
 }
 func (c *Client) Rollback(revision, comment string, debug bool) (string, error) {
 	return c.callString(GetFuncName(), c.sid, revision, comment, debug)

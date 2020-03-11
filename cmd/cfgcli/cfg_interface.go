@@ -21,7 +21,7 @@ type getSetter interface {
 // These represent implementations of cfgcli's keywords, so make a logical
 // grouping.
 type commander interface {
-	CancelCommit(comment string, force, debug bool) (string, error)
+	CancelCommit(comment, persistid string, force, debug bool) (string, error)
 	Commit(message string, debug bool) (string, error)
 	CommitConfirm(message string, debug bool, mins int) (string, error)
 	CompareConfigRevisions(revOne, revTwo string) (string, error)

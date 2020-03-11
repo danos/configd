@@ -240,11 +240,26 @@ func logRollbackEvent(msg string) {
 	}
 }
 
+func getCmdArg(cmds cmdDefs, arg string) (bool, string) {
+
+	if def, ok := cmds[arg]; ok {
+		present := def.present
+		val := def.argval
+		return present, val
+	}
+
+	return false, ""
+}
+
 func cancelcommitRun(ctx *Ctx) {
+	cmds, _, _ := processCancelCommitCmd(ctx)
 
-	comment := validateCommitCommentIfAny(ctx, 1)
+	_, persistid := getCmdArg(cmds, "persist-id")
+	_, comment := getCmdArg(cmds, "comment")
+	force, _ := getCmdArg(cmds, "force")
 
-	out, err := ctx.Client.CancelCommit(comment, true, isCommitDebugOn())
+	out, err := ctx.Client.CancelCommit(comment, persistid, force, isCommitDebugOn())
+
 	if out != "" {
 		doSnippit(ctx, fmt.Sprintf("echo \"%s\"\n", out))
 	}
