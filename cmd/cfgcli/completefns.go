@@ -308,9 +308,10 @@ func getCompReply(
 		// some attention to the one in:
 		//   configd/schema/validation_errors.go
 		//
-		// Escape backslashes and double quotes in help text to
+		// Escape backslashes, double quotes, and '`' in help text to
 		// ensure they appear correctly post bash processing
-		escapedHelp := strings.NewReplacer(`\`, `\\`, `"`, `\"`).Replace(helptext)
+		escapedHelp := strings.NewReplacer(
+			`\`, `\\`, `"`, `\"`, "`", "\\`").Replace(helptext)
 		fmt.Fprintf(buf, "echo \"%s\" | %s;", escapedHelp, pager)
 	}
 	fmt.Fprintf(buf, "COMPREPLY=( %s )", strings.Join(compreply, " "))

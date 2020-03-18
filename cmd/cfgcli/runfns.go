@@ -611,13 +611,14 @@ func setRun(ctx *Ctx) {
 
 // escapeConfig - escape config for show (and other) commands.
 // In some cases, config destined for the console needs to be (re)escaped
-// so it appears correctly.  Specifically, '\', '"' and '$' are escaped here.
+// so it appears correctly.  Specifically, '\', '"', '$' and '`' are escaped
+// here.
 //
 // Note that the order of replacement matters - escape '\' first so we don't
 // re-escape backslashes added to escape other characters!
 func escapeConfig(in string) string {
 	return strings.NewReplacer(
-		`\`, `\\`, `"`, `\"`, `$`, `\$`).
+		`\`, `\\`, `"`, `\"`, `$`, `\$`, "`", "\\`").
 		Replace(in)
 }
 

@@ -15,6 +15,7 @@
 package main
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/danos/configd/common"
@@ -870,5 +871,37 @@ func TestCheckValidPathPass(t *testing.T) {
 			checkNoError(t, err)
 			tc.CheckAllCallsMade(t)
 		})
+	}
+}
+
+type compReplyTest struct {
+	name   string
+	input  string
+	output string
+}
+
+func formatCompReply(input string) string {
+	return fmt.Sprintf("echo \"%s\" | ${VYATTA_PAGER:-cat};COMPREPLY=(  )",
+		input)
+}
+
+func TestGetCompReplyEscaping(t *testing.T) {
+	testStrings := []compReplyTest{
+		{
+			name:   "Backticks in single quotes",
+			input:  "'`echo 001`'",
+			output: "'\\`echo 001\\`'",
+		},
+	}
+
+	for _, test := range testStrings {
+		actualOutput := getCompReply(
+			true, /* doHelp */
+			test.input,
+			[]string{""} /* existing compReply*/)
+		expOutput := formatCompReply(test.output)
+		if actualOutput != expOutput {
+			t.Fatalf("\nGot: %s\nExp: %s\n", actualOutput, expOutput)
+		}
 	}
 }
