@@ -123,10 +123,12 @@ func (d *Disp) performConfirmingCommitIfRequired(pid string, cmt *commitInfo, re
 		case cmt.confirmed == false:
 			// We have a valid confirming commit
 			// confirm the pending confirmed-commit
+			d.logConfirmedCommitEvent("Confirming pending confirmed commit: persist-id [" + info.PersistId + "]")
 			d.ConfirmingCommit()
 			return true, nil
 		default:
 			//Follow-up confirmed commit
+			d.logConfirmedCommitEvent("Follow-up commit: persist-id [" + info.PersistId + "]")
 		}
 	}
 

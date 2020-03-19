@@ -797,10 +797,18 @@ func (d *Disp) logRollbackError(err error) {
 }
 
 func (d *Disp) logRollbackEvent(msg string) {
+	d.logEvent("Rollback", msg)
+}
+
+func (d *Disp) logConfirmedCommitEvent(msg string) {
+	d.logEvent("Confirmed Commit", msg)
+}
+
+func (d *Disp) logEvent(pfx, msg string) {
 	// Log only the first non-blank line
 	for _, s := range strings.Split(msg, "\n") {
 		if s != "" {
-			d.ctx.Wlog.Println("Rollback: " + s)
+			d.ctx.Wlog.Println(pfx + ": " + s)
 			break
 		}
 	}
@@ -866,8 +874,8 @@ func (d *Disp) sessionTermination() error {
 }
 
 func (d *Disp) CancelCommit(sid, comment, persistid string, force, debug bool) (string, error) {
+	info := getConfirmedCommitInfo()
 	if !force {
-		info := getConfirmedCommitInfo()
 		switch {
 		case info.Session == "":
 			err := mgmterror.NewOperationFailedApplicationError()
@@ -879,10 +887,12 @@ func (d *Disp) CancelCommit(sid, comment, persistid string, force, debug bool) (
 			return "", err
 		case info.PersistId == "" && info.Session != strconv.Itoa(int(d.ctx.Pid)):
 			err := mgmterror.NewAccessDeniedApplicationError()
-			err.Message = "Pending confirmed commit initiated by ther session"
+			err.Message = "Pending confirmed commit initiated by another session"
 			return "", err
 		}
 	}
+	d.logConfirmedCommitEvent("Cancelling pending confirmed-commit with persist-id [" + info.PersistId + "]")
+
 	res, err := d.Rollback(sid, "revert", comment, debug)
 	return res, err
 }
@@ -921,7 +931,7 @@ func (d *Disp) Rollback(sid, revision, comment string, debug bool) (string, erro
 			return retStr, err
 		}
 
-		d.logRollbackEvent(fmt.Sprintf("Restoring revision %s [%s] from archive",
+		d.logConfirmedCommitEvent(fmt.Sprintf("Reverting confirmed-commit revision %s [%s] from archive",
 			revision, log[revision]))
 	} else {
 		if _, err := os.Stat(configRevisionFileName(revision)); err != nil {
@@ -1031,6 +1041,8 @@ func (d *Disp) setConfirmedCommitTimeout(cmt *commitInfo) (string, error) {
 		err := mgmterror.NewOperationFailedApplicationError()
 		err.Message = string(out)
 		return "", err
+	} else {
+		d.logConfirmedCommitEvent("Scheduled revert for persist-id [" + cmt.persist + "]")
 	}
 	return string(out), err
 }
