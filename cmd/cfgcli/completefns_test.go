@@ -892,6 +892,11 @@ func TestGetCompReplyEscaping(t *testing.T) {
 			input:  "'`echo 001`'",
 			output: "'\\`echo 001\\`'",
 		},
+		{
+			name:   "Double dollar in single quotes",
+			input:  "'$$'",
+			output: "'\\$\\$'",
+		},
 	}
 
 	for _, test := range testStrings {
