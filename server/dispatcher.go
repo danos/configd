@@ -1152,23 +1152,23 @@ func (d *Disp) confirmedCommitInternal(
 			}
 		}
 	}
-	if cmt != nil && cmt.confirmed {
-		out, err := d.setConfirmedCommitTimeout(cmt)
-		if out != "" {
-			rpcout.WriteByte('\n')
-			rpcout.WriteString(out)
-			rpcout.WriteByte('\n')
-		}
-		if err != nil {
-			errs = append(errs, err)
-		}
-	}
 
 	if ok && len(errs) == 0 {
 		if ok, err := d.Save(""); !ok {
 			return "", err
 		}
-		if confirmTimeout != 0 {
+		if cmt != nil && cmt.confirmed {
+
+			out, err := d.setConfirmedCommitTimeout(cmt)
+			if out != "" {
+				rpcout.WriteByte('\n')
+				rpcout.WriteString(out)
+				rpcout.WriteByte('\n')
+			}
+			if err != nil {
+				errs = append(errs, err)
+			}
+		} else if confirmTimeout != 0 {
 			out, err := d.setConfirmTimeout(confirmTimeout)
 			rpcout.WriteByte('\n')
 			rpcout.WriteString(out)
