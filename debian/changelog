@@ -1,3 +1,36 @@
+configd (2.8) unstable; urgency=medium
+
+  [ Erik Ziegenbalg ]
+  * Configd.postinstall: Tab noise cleanup
+  * Configd.postinstall: Sanatize triggered)
+
+  [ Paul Carson ]
+  * Support NETCONF confirmed commit (Closes: VRVDR-32867)
+
+  [ Duncan Eastoe ]
+  * config_mgmt: Update user sandbox path
+  * configd.tmpfile: /var/run -> /run
+
+  [ Paul Carson ]
+  * Prevent undesired errors on confirming commit (Fixes: VRVDR-50002)
+
+  [ William Ivory ]
+  * Add must threshold debug to cfgdbg utility
+  * Pass must debug threshold to validation code
+
+  [ Paul Carson ]
+  * Improve cancel-commit command (Fixes: VRVDR-50028)
+
+  [ William Ivory ]
+  * Fix escaping for backticks
+  * Fix auto-completion of '$$'
+
+  [ Paul Carson ]
+  * Prevent scheulling revert if commit fails (Fixes: VRVDR-50125)
+  * Improve confirmed-commit logging (Closes: VRVDR-50125)
+
+ -- William Ivory <william.ivory@intl.att.com>  Fri, 03 Apr 2020 11:35:57 +0100
+
 configd (2.7) unstable; urgency=medium
 
   * DANOS Import Master
