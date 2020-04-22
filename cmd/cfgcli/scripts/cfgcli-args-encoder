@@ -1,42 +1,8 @@
-# Copyright (c) 2019 AT&T Intellectual Property.
+# Copyright (c) 2019-2020 AT&T Intellectual Property.
 # All Rights Reserved.
 #
 # SPDX-License-Identifier: LGPL-2.1-only
 
-# This is a special case for tab completion where the quoted variable
-# exactly as entered on the CLI is presented instead of the interpreted
-# versions. 'dequote' is part of the bash_completion framework and
-# can have commands injected due to being implemented with exec. Since
-# this runs in the users local context this is not a security concern
-_cfgcli_unquote_arg() {
-    local REGEXP='^[\"].*[\"]$'
-    [[ -n $COMP_WORDS && "$*" =~ $REGEXP ]] && dequote "$*" || echo "$*"
-}
-
-# escape required sequences for JSON encoding
-_cfgcli_json_escape() {
-    local data="$*"
-    data="${data//\\/\\\\}"
-    data="${data//\"/\\\"}"
-    data="${data//	/\\t}"
-    data="${data//
-/\\\n}"
-    data="${data//^M/\\\r}"
-    data="${data//^L/\\\f}"
-    data="${data//^H/\\\b}"
-    echo "$data"
-}
-
-# encode arguments for cfgcli as an environment variable. Note, only
-# bash builtins and shell functions may be used to do this computation
-# otherwise we may leak secrets via the process list.
 cfgcli_encode_args() {
-    local ARGS="";
-    for arg in "$@"; do
-        arg=$(_cfgcli_unquote_arg "$arg")
-        arg=$(_cfgcli_json_escape "$arg")
-        ARGS=$(printf '%s"%s"' "$ARGS", "$arg");
-    done
-    ARGS=${ARGS#,}
-    echo "{ \"args\": [$ARGS] }"
+    /lib/cfgcli/bin/cfgcli-args-encoder "$@"
 }

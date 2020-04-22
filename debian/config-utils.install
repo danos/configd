@@ -1,6 +1,7 @@
 usr/bin/args2cpath
 usr/bin/callrpc
 usr/bin/cfgcli
+usr/bin/cfgcli-args-encoder lib/cfgcli/bin
 usr/bin/cfgcmds
 usr/bin/cfgdbg
 usr/bin/cfgdiff
