@@ -6,6 +6,7 @@ Restart=always
 #ExecReload=/bin/kill -HUP $MAINPID  # For when we reload YANG
 ExecStart=/opt/vyatta/sbin/lu -user configd /usr/sbin/configd -user configd -group vyattacfg -socketfile /var/run/vyatta/configd/main.sock -runfile /var/run/vyatta/configd/running.config
 OOMScoreAdjust=-1000
+SyslogIdentifier=configd
 
 [Install]
 WantedBy=multi-user.target
