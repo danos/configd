@@ -20,6 +20,7 @@ import (
 	"github.com/danos/configd"
 	"github.com/danos/configd/common"
 	"github.com/danos/configd/rpc"
+	rfc7951utils "github.com/danos/configd/session/internal/rfc7951"
 	"github.com/danos/encoding/rfc7951"
 	rfc7951data "github.com/danos/encoding/rfc7951/data"
 	"github.com/danos/mgmterror"
@@ -547,7 +548,7 @@ Loop:
 	// is built)
 	vciStart := time.Now()
 	logStateEvent(errLogger, "Start VCI scripts")
-
+	mrgr := rfc7951utils.NewRFC7951Merger(s.schemaFull, ft)
 	client, vciErr := vci.Dial()
 	if vciErr == nil {
 		defer client.Close()
@@ -571,12 +572,12 @@ Loop:
 					model, err)
 				continue
 			}
-			ft = ft.Merge(state)
+			mrgr.Merge(state)
 			logStateTime(errLogger, fmt.Sprintf("  %s", model),
 				compStartTime)
 		}
 	}
-
+	ft = mrgr.Tree()
 	logStateTime(errLogger, "End VCI scripts", vciStart)
 
 	// 4. Convert back to a union tree.
