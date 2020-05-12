@@ -30,8 +30,8 @@ Files: cmd/cfgcli/getpass.go
 Copyright: 2013-2014, Andrew Dunham.
 License: MIT
 
-Files: client/vci.go /client/client.go /rpc/rpc.go
-Copyright: 2017-2019, AT&T Intellectual Property.
+Files: client/vci.go /client/client.go /rpc/rpc.go session/internal/rfc7951/*.go
+Copyright: 2017-2020, AT&T Intellectual Property.
            2014-2017, Brocade Communications Systems, Inc.
 License: MPL-2.0
 
