@@ -12,11 +12,14 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"os"
 	"runtime"
 	"strings"
 
 	"github.com/danos/configd/rpc"
 )
+
+const DEFAULT_CONFIG_SOCKET = "/var/run/vyatta/configd/main.sock"
 
 var defaultOpts = map[string]interface{}{"Defaults": true, "Secrets": true}
 
@@ -33,6 +36,49 @@ func GetFuncName() string {
 	name := fn.Name()
 	i := strings.LastIndex(name, ".")
 	return name[i+1:]
+}
+
+type ConnectOption func(*connectOptions)
+
+type connectOptions struct {
+	sid         string
+	addr        string
+	networkType string
+}
+
+func SessionID(sid string) ConnectOption {
+	return func(opts *connectOptions) {
+		opts.sid = sid
+	}
+}
+
+func Address(addr string) ConnectOption {
+	return func(opts *connectOptions) {
+		opts.addr = addr
+	}
+}
+
+func Network(network string) ConnectOption {
+	return func(opts *connectOptions) {
+		opts.networkType = network
+	}
+}
+
+func Connect(opts ...ConnectOption) (*Client, error) {
+	cOpts := connectOptions{
+		networkType: "unix",
+	}
+	for _, opt := range opts {
+		opt(&cOpts)
+	}
+	if cOpts.addr == "" {
+		addr := os.Getenv("VYATTA_CONFIG_SOCKET")
+		if addr == "" {
+			addr = DEFAULT_CONFIG_SOCKET
+		}
+		cOpts.addr = addr
+	}
+	return Dial(cOpts.networkType, cOpts.addr, cOpts.sid)
 }
 
 type Client struct {
