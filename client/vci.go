@@ -1,6 +1,6 @@
-// Copyright (c) 2018-2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2018-2020, AT&T Intellectual Property. All rights reserved.
 //
-// SPDX-License-Identifier: LGPL-2.1-only
+// SPDX-License-Identifier: MPL-2.0
 
 package client
 
