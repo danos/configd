@@ -22,7 +22,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/danos/configd/common"
 	"github.com/danos/configd/rpc"
+	"github.com/danos/mgmterror"
 	"github.com/danos/utils/pathutil"
 )
 
@@ -64,12 +66,19 @@ func handleNoError(msg string) {
 	fmt.Fprintf(os.Stderr, "\n  %s\n\n", strings.Replace(msg, "\n", "\n  ", -1))
 }
 
-func handleErrorNoIndent(err error) {
+// Used for confirm, commit and validate.
+func handleErrorNoIndent(operation string, err error) {
 	if err == nil {
 		return
 	}
 
-	fmt.Fprintf(os.Stderr, "\n%s\n\n", err)
+	if merr, ok := err.(mgmterror.MgmtErrorList); ok {
+		message := fmt.Sprintf("%s\n\n%s failed!\n",
+			merr.CustomError(common.FormatCommitOrValErrors), operation)
+		fmt.Fprintf(os.Stderr, "\n%s\n\n", message)
+	} else {
+		fmt.Fprintf(os.Stderr, "\n%s\n\n", err)
+	}
 	os.Exit(1)
 }
 
@@ -139,7 +148,7 @@ func confirmRun(ctx *Ctx) {
 	default:
 		out, err = ctx.Client.ConfirmPersistId(persistid)
 	}
-	handleErrorNoIndent(err)
+	handleErrorNoIndent("Confirm", err)
 	logRollbackEvent("Commit confirmed.")
 	if out != "" {
 		doSnippit(ctx, fmt.Sprintf("echo \"%s\"\n", out))
@@ -203,14 +212,14 @@ func commitRunInternal(ctx *Ctx, comment string, confirmTimeout int) {
 	var err error
 	if confirmTimeout != 0 {
 		out, err = ctx.Client.CommitConfirm(comment, debug, confirmTimeout)
-		handleErrorNoIndent(err)
+		handleErrorNoIndent("Commit", err)
 		// Only log once timer set via RPC, and no error returned.
 		logRollbackEvent(
 			fmt.Sprintf("Commit will rollback in %d minutes unless confirmed.",
 				confirmTimeout))
 	} else {
 		out, err = ctx.Client.Commit(comment, debug)
-		handleErrorNoIndent(err)
+		handleErrorNoIndent("Commit", err)
 	}
 	if out != "" {
 		doSnippitAndContinue(ctx, fmt.Sprintf("echo \"%s\"\n", out))
@@ -673,7 +682,9 @@ func validateRun(ctx *Ctx) {
 		handleError(errors.New("No configuration changes to validate"))
 	}
 	out, err := ctx.Client.Validate()
-	handleErrorNoIndent(err)
+
+	handleErrorNoIndent("Validate", err)
+
 	if out != "" {
 		doSnippit(ctx, fmt.Sprintf("echo \"%s\"\n", out))
 	} else {

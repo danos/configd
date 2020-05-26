@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2019 AT&T Intellectual Property
+// Copyright (c) 2017-2020 AT&T Intellectual Property
 // All rights reserved.
 //
 // Copyright (c) 2016-2017 by Brocade Communications Systems, Inc.
@@ -7,6 +7,9 @@
 // SPDX-License-Identifier: LGPL-2.1-only
 
 // These tests verify commit and validation behaviour (success and failure).
+// They verify error content by individual fields; pretty-printed CLI format
+// is not tested here because that is done on the receiving side of the configd
+// socket, not the sending side (which is where these tests sit).
 
 package server_test
 
@@ -14,9 +17,12 @@ import (
 	"testing"
 
 	"github.com/danos/config/auth"
-	"github.com/danos/config/testutils/assert"
 	"github.com/danos/configd/session/sessiontest"
 	"github.com/danos/mgmterror/errtest"
+)
+
+const (
+	noPath = ""
 )
 
 // Commit and Validation warning / error message testing.
@@ -46,101 +52,128 @@ const commitSchema = `
 // Successful commit should return a message, no error, and config
 // should be changed.
 func TestCommitSuccess(t *testing.T) {
-	d := newTestDispatcher(t, auth.TestAutherAllowAll(), commitSchema, emptyConfig)
-	d.Set("RUNNING", "testContainer/testLeaf/foo")
-	_, err := d.Commit("RUNNING", "Test Commit", false /* debug */)
-	if err != nil {
-		t.Fatalf("TestCommit: err '%s'\n", err.Error())
-	}
+	testPath := "testContainer/testLeaf/foo"
+
+	oc := newOutputChecker(t).
+		setSchema(commitSchema).
+		setInitConfig(emptyConfig).
+		setAuther(auth.TestAutherAllowAll(), ConfigdUser, InSecretsGroup)
+
+	oc.set(testPath)
+	oc.verifyOutputOkNoError("")
+
+	oc.commit()
+	oc.verifyNoError()
 }
 
 // 'Nothing to commit' should be reported as an error.
 func TestNothingToCommitError(t *testing.T) {
-	d := newTestDispatcher(t, auth.TestAutherAllowAll(), commitSchema, emptyConfig)
-	_, actual := d.Commit("RUNNING", "Test Commit", false /* debug */)
 
-	expErrs := assert.NewExpectedMessages(
-		"No configuration changes to commit",
-		"Commit failed!")
+	oc := newOutputChecker(t).
+		setSchema(commitSchema).
+		setInitConfig(emptyConfig).
+		setAuther(auth.TestAutherAllowAll(), ConfigdUser, InSecretsGroup)
 
-	expErrs.ContainedIn(t, actual.Error())
+	errList := []*errtest.ExpMgmtError{
+		errtest.NewExpMgmtError(
+			[]string{"No configuration changes to commit"},
+			noPath,
+			noInfo).
+			SetType("protocol").
+			SetTag("operation-failed"),
+	}
+
+	oc.commit()
+	oc.verifyMgmtErrorList(errList)
 }
 
 // Matching previous releases, validation error when running commit is
 // reported as a commit error.
 func TestCommitValidationError(t *testing.T) {
-	d := newTestDispatcher(t, auth.TestAutherAllowAll(), commitSchema, emptyConfig)
-	nodePath := "testContainer/generateValidateFail/foo"
-	_, err := d.Set("RUNNING", nodePath)
-	if err != nil {
-		t.Fatalf("Unable to set config for validation error: %s\n",
-			err.Error())
-		return
+
+	testPath := "testContainer/generateValidateFail/foo"
+
+	oc := newOutputChecker(t).
+		setSchema(commitSchema).
+		setInitConfig(emptyConfig).
+		setAuther(auth.TestAutherAllowAll(), ConfigdUser, InSecretsGroup)
+
+	oc.set(testPath)
+	oc.verifyOutputOkNoError("")
+
+	errList := []*errtest.ExpMgmtError{
+		errtest.MustViolationMgmtErr(
+			"'must' condition is false: '../nonExistentLeaf'",
+			"/"+testPath),
 	}
 
-	_, actual := d.Commit("RUNNING", "Test Commit", false /* debug */)
-
-	expErrs := assert.NewExpectedMessages(
-		errtest.NewMustDefaultError(t,
-			nodePath,
-			"../nonExistentLeaf").CommitCliErrorStrings()...)
-
-	expErrs.ContainedIn(t, actual.Error())
+	oc.commit()
+	oc.verifyMgmtErrorList(errList)
 }
 
 // Other than the 'nothing to commit' error, commits should not generate an
 // error.  Instead they generate a warning, and the commit proceeds.
 func TestCommitWarning(t *testing.T) {
-	d := newTestDispatcher(t, auth.TestAutherAllowAll(), commitSchema, emptyConfig)
-	nodePath := "testContainer/generateWarning/foo"
-	d.Set("RUNNING", nodePath)
-	msg, err := d.Commit("RUNNING", "Test Commit", false /* debug */)
+	testPath := "testContainer/generateWarning/foo"
 
-	if err != nil {
-		t.Fatalf("Commit shouldn't have failed; err '%s'\n", err.Error())
-	} else {
-		expMsgs := assert.NewExpectedMessages(
-			errtest.NonFatalCommitErrorStrings(t, nodePath)...)
-		expMsgs.ContainedIn(t, msg)
-	}
+	oc := newOutputChecker(t).
+		setSchema(commitSchema).
+		setInitConfig(emptyConfig).
+		setAuther(auth.TestAutherAllowAll(), ConfigdUser, InSecretsGroup)
+
+	oc.set(testPath)
+	oc.verifyOutputOkNoError("")
+
+	oc.commit()
+	oc.verifyOutputContentNoError(
+		errtest.NonFatalCommitErrorStrings(t, testPath))
 }
 
 // Returns no error.
 func TestValidateSuccess(t *testing.T) {
-	d := newTestDispatcher(t, auth.TestAutherAllowAll(), commitSchema, emptyConfig)
-	d.Set("RUNNING", "testContainer/testLeaf/foo")
-	msg, err := d.Validate("RUNNING")
-	if err != nil {
-		t.Fatalf("TestValidate: msg '%s', err '%s'\n", msg, err.Error())
-	}
+	oc := newOutputChecker(t).
+		setSchema(commitSchema).
+		setInitConfig(emptyConfig).
+		setAuther(auth.TestAutherAllowAll(), ConfigdUser, InSecretsGroup)
+
+	oc.set("testContainer/testLeaf/foo")
+	oc.verifyOutputOkNoError("")
+
+	oc.validate()
+	oc.verifyNoError()
 }
 
 // 'Nothing to validate' should NOT be reported as an error.
 func TestNothingToValidate(t *testing.T) {
-	d := newTestDispatcher(
-		t, auth.TestAutherAllowAll(), commitSchema, emptyConfig)
+	oc := newOutputChecker(t).
+		setSchema(commitSchema).
+		setInitConfig(emptyConfig).
+		setAuther(auth.TestAutherAllowAll(), ConfigdUser, InSecretsGroup)
 
-	dispTestValidate(t, d, "RUNNING")
+	oc.validate()
+	oc.verifyNoError()
 }
 
 // Returns error "Validate failed!"
 func TestValidateError(t *testing.T) {
-	d := newTestDispatcher(
-		t, auth.TestAutherAllowAll(), commitSchema, emptyConfig)
-	_, err := d.Set("RUNNING", "testContainer/generateValidateFail/foo")
-	if err != nil {
-		t.Fatalf("Unable to set config for validation error: %s\n",
-			err.Error())
-		return
+	testPath := "testContainer/generateValidateFail/foo"
+
+	oc := newOutputChecker(t).
+		setSchema(commitSchema).
+		setInitConfig(emptyConfig).
+		setAuther(auth.TestAutherAllowAll(), ConfigdUser, InSecretsGroup)
+
+	oc.set(testPath)
+	oc.verifyOutputOkNoError("")
+
+	errList := []*errtest.ExpMgmtError{
+		errtest.MustViolationMgmtErr(
+			"'must' condition is false: '../nonExistentLeaf'",
+			"/testContainer/generateValidateFail/foo"),
 	}
 
-	_, actual := d.Validate("RUNNING")
-
-	expErrs := assert.NewExpectedMessages(
-		"testContainer generateValidateFail foo",
-		"'must' condition is false: '../nonExistentLeaf'")
-
-	expErrs.ContainedIn(t, actual.Error())
+	oc.validate()
+	oc.verifyMgmtErrorList(errList)
 }
 
 const singleErrorSchema = `
@@ -156,28 +189,24 @@ container currentCont {
 const errFmtConfig = "currentCont"
 
 func TestCommitFailSingleErrorFormat(t *testing.T) {
-	d := newTestDispatcher(t, auth.TestAutherAllowAll(), singleErrorSchema, "")
-	if ok, err := d.SessionSetup(testSID); !ok {
-		t.Fatalf("Unable to setup session: %s\n", err.Error())
-		return
-	}
-	if _, err := d.Set(testSID, "currentCont/aLeaf/foo"); err != nil {
-		t.Fatalf("Unable to configure session: %s\n", err.Error())
-		return
+	testPath := "currentCont/aLeaf/foo"
+
+	oc := newOutputChecker(t).
+		setSchema(singleErrorSchema).
+		setInitConfig(emptyConfig).
+		setAuther(auth.TestAutherAllowAll(), ConfigdUser, InSecretsGroup)
+
+	oc.set(testPath)
+	oc.verifyOutputOkNoError("")
+
+	errList := []*errtest.ExpMgmtError{
+		errtest.MustViolationMgmtErr(
+			"'must' condition is false: 'not(contains(., 'foo'))'",
+			"/currentCont"),
 	}
 
-	_, err := d.Commit(testSID, "message", false /* debug */)
-	if err == nil {
-		t.Fatalf("Expected error running tests.\n")
-		return
-	}
-
-	expect := errtest.NewExpectedFormattedErrors(t).
-		AddNode("currentCont",
-			errtest.NewErrDesc(errtest.DefaultMustError,
-				"not(contains(., 'foo'))")).
-		AddEndMessage(errtest.TestCommitFailStr)
-	expect.Matches(err)
+	oc.commit()
+	oc.verifyMgmtErrorList(errList)
 }
 
 const multipleErrorSchema = `
@@ -212,44 +241,39 @@ container currentCont {
 }`
 
 func TestCommitFailMultipleErrorFormat(t *testing.T) {
-	d := newTestDispatcher(
-		t, auth.TestAutherAllowAll(), multipleErrorSchema, "")
-	if ok, err := d.SessionSetup(testSID); !ok {
-		t.Fatalf("Unable to setup session: %s\n", err.Error())
-		return
+
+	oc := newOutputChecker(t).
+		setSchema(multipleErrorSchema).
+		setInitConfig(emptyConfig).
+		setAuther(auth.TestAutherAllowAll(), ConfigdUser, InSecretsGroup)
+
+	oc.set("currentCont/aLeaf/foo")
+	oc.set("currentCont/aLeafRef/bar")
+	oc.set("currentCont/aList/first/otherLeaf/something")
+	oc.set("currentCont/aList/second/otherLeaf/something")
+	oc.verifyOutputOkNoError("")
+
+	errList := []*errtest.ExpMgmtError{
+		errtest.MissingMandatoryNodeMgmtErr(
+			"aLeafList",
+			"/currentCont"),
+		errtest.MustViolationMgmtErr(
+			"'must' condition is false: 'local-name(.) = 'oldCont''",
+			"/currentCont"),
+		errtest.MustViolationMgmtErr(
+			"aLeaf's value may not contain 'foo' anywhere.",
+			"/currentCont"),
+		errtest.LeafrefMgmtErr(
+			"currentCont aLeaf bar",
+			"/currentCont/aLeafRef/bar"),
+		errtest.UniqueViolationMgmtErr(
+			"otherLeaf something",
+			"first second",
+			"/currentCont/aList"),
 	}
-	dispTestSet(t, d, testSID, "currentCont/aLeaf/foo")
-	dispTestSet(t, d, testSID, "currentCont/aLeafRef/bar")
-	dispTestSet(t, d, testSID,
-		"currentCont/aList/first/otherLeaf/something")
-	dispTestSet(t, d, testSID,
-		"currentCont/aList/second/otherLeaf/something")
 
-	_, err := d.Commit(testSID, "message", false /* debug */)
-	if err == nil {
-		t.Fatalf("Expected error running tests.\n")
-		return
-	}
-
-	currentContPath := "currentCont"
-	expect := errtest.NewExpectedFormattedErrors(t).
-		AddNode(currentContPath,
-			errtest.NewErrDesc(errtest.MissingMandatory, "aLeafList")).
-		AddNode(currentContPath,
-			errtest.NewErrDesc(errtest.DefaultMustError,
-				"local-name(.) = 'oldCont'")).
-		AddNode(currentContPath,
-			errtest.NewErrDesc(errtest.CustomMustError,
-				"aLeaf's value may not contain 'foo' anywhere.")).
-		AddNode("currentCont aLeafRef bar",
-			errtest.NewErrDesc(errtest.LeafrefMissing,
-				"currentCont aLeaf bar")).
-		AddNode("currentCont aList",
-			errtest.NewErrDesc(errtest.NotUnique,
-				"otherLeaf something", "first second")).
-		AddEndMessage(errtest.TestCommitFailStr)
-
-	expect.Matches(err)
+	oc.commit()
+	oc.verifyMgmtErrorList(errList)
 }
 
 const leafrefErrorSchema = `
@@ -285,39 +309,32 @@ container currentCont {
 }`
 
 func TestCommitFailLeafrefErrorFormat(t *testing.T) {
-	d := newTestDispatcher(t, auth.TestAutherAllowAll(), leafrefErrorSchema, "")
-	if ok, err := d.SessionSetup(testSID); !ok {
-		t.Fatalf("Unable to setup session: %s\n", err.Error())
-		return
+
+	oc := newOutputChecker(t).
+		setSchema(leafrefErrorSchema).
+		setInitConfig(emptyConfig).
+		setAuther(auth.TestAutherAllowAll(), ConfigdUser, InSecretsGroup)
+
+	oc.set("currentCont/aLeaf/foo")
+	oc.set("currentCont/absLeafref/bar")
+	oc.set("currentCont/relLeafref/bar2")
+	oc.set("currentCont/keyLeafref/bar3")
+	oc.verifyOutputOkNoError("")
+
+	errList := []*errtest.ExpMgmtError{
+		errtest.LeafrefMgmtErr(
+			"currentCont aLeaf bar",
+			"/currentCont/absLeafref/bar"),
+		errtest.LeafrefMgmtErr(
+			"currentCont aList otherLeaf bar3",
+			"/currentCont/keyLeafref/bar3"),
+		errtest.LeafrefMgmtErr(
+			"currentCont aLeaf bar2",
+			"/currentCont/relLeafref/bar2"),
 	}
-	fooPath := "currentCont/aLeaf/foo"
-	dispTestSet(t, d, testSID, fooPath)
-	barPath := "currentCont/absLeafref/bar"
-	dispTestSet(t, d, testSID, barPath)
-	bar2Path := "currentCont/relLeafref/bar2"
-	dispTestSet(t, d, testSID, bar2Path)
-	bar3Path := "currentCont/keyLeafref/bar3"
-	dispTestSet(t, d, testSID, bar3Path)
 
-	_, err := d.Commit(testSID, "message", false /* debug */)
-	if err == nil {
-		t.Fatalf("Expected error running tests.\n")
-		return
-	}
-
-	expect := errtest.NewExpectedFormattedErrors(t).
-		AddNode(barPath,
-			errtest.NewErrDesc(errtest.LeafrefMissing,
-				"currentCont aLeaf bar")).
-		AddNode(bar3Path,
-			errtest.NewErrDesc(errtest.LeafrefMissing,
-				"currentCont aList otherLeaf bar3")).
-		AddNode(bar2Path,
-			errtest.NewErrDesc(errtest.LeafrefMissing,
-				"currentCont aLeaf bar2")).
-		AddEndMessage(errtest.TestCommitFailStr)
-
-	expect.Matches(err)
+	oc.commit()
+	oc.verifyMgmtErrorList(errList)
 }
 
 const localSchema = `
@@ -356,45 +373,41 @@ var prefixSchemas = []sessiontest.TestSchema{
 }
 
 func TestCommitFailPrefixedLeafref(t *testing.T) {
-	d := newTestDispatcherWithMultipleSchemas(
-		t, auth.TestAutherAllowAll(), prefixSchemas, "")
-	if ok, err := d.SessionSetup(testSID); !ok {
-		t.Fatalf("Unable to setup session: %s\n", err.Error())
-		return
-	}
-	dispTestSet(t, d, testSID, "localCont/localLeaf/nonexistentValue")
-	_, err := d.Commit(testSID, "message", false /* debug */)
-	if err == nil {
-		t.Fatalf("Expected error running tests.\n")
-		return
+
+	oc := newOutputChecker(t).
+		setSchemaDefs(prefixSchemas).
+		setInitConfig(emptyConfig).
+		setAuther(auth.TestAutherAllowAll(), ConfigdUser, InSecretsGroup)
+
+	oc.set("localCont/localLeaf/nonexistentValue")
+	oc.verifyOutputOkNoError("")
+
+	errList := []*errtest.ExpMgmtError{
+		errtest.LeafrefMgmtErr(
+			"remoteCont remoteLeaf nonexistentValue",
+			"/localCont/localLeaf/nonexistentValue"),
 	}
 
-	errtest.NewExpectedFormattedErrors(t).
-		AddNode("localCont localLeaf nonexistentValue",
-			errtest.NewErrDesc(errtest.LeafrefMissing,
-				"remoteCont remoteLeaf nonexistentValue")).
-		AddEndMessage(errtest.TestCommitFailStr).
-		Matches(err)
+	oc.commit()
+	oc.verifyMgmtErrorList(errList)
 }
 
 func TestValidateFailPrefixedLeafref(t *testing.T) {
-	d := newTestDispatcherWithMultipleSchemas(
-		t, auth.TestAutherAllowAll(), prefixSchemas, "")
-	if ok, err := d.SessionSetup(testSID); !ok {
-		t.Fatalf("Unable to setup session: %s\n", err.Error())
-		return
-	}
-	dispTestSet(t, d, testSID, "localCont/localLeaf/nonexistentValue")
-	_, err := d.Validate(testSID)
-	if err == nil {
-		t.Fatalf("Expected error running tests.\n")
-		return
+
+	oc := newOutputChecker(t).
+		setSchemaDefs(prefixSchemas).
+		setInitConfig(emptyConfig).
+		setAuther(auth.TestAutherAllowAll(), ConfigdUser, InSecretsGroup)
+
+	oc.set("localCont/localLeaf/nonexistentValue")
+	oc.verifyOutputOkNoError("")
+
+	errList := []*errtest.ExpMgmtError{
+		errtest.LeafrefMgmtErr(
+			"remoteCont remoteLeaf nonexistentValue",
+			"/localCont/localLeaf/nonexistentValue"),
 	}
 
-	errtest.NewExpectedFormattedErrors(t).
-		AddNode("localCont localLeaf nonexistentValue",
-			errtest.NewErrDesc(errtest.LeafrefMissing,
-				"remoteCont remoteLeaf nonexistentValue")).
-		AddEndMessage(errtest.TestValidateFailStr).
-		Matches(err)
+	oc.validate()
+	oc.verifyMgmtErrorList(errList)
 }

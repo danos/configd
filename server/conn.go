@@ -33,7 +33,16 @@ type any interface{}
 func newResponse(result any, err error, id int) *rpc.Response {
 	var resp rpc.Response
 	if err != nil {
-		resp = rpc.Response{Error: err.Error(), Id: id}
+		switch val := err.(type) {
+		case mgmterror.MgmtErrorList:
+			resp = rpc.Response{MgmtErrList: val, Id: id}
+		case mgmterror.MgmtErrorRef:
+			var mel mgmterror.MgmtErrorList
+			mel.MgmtErrorListAppend(err)
+			resp = rpc.Response{MgmtErrList: mel, Id: id}
+		default:
+			resp = rpc.Response{Error: err.Error(), Id: id}
+		}
 	} else {
 		resp = rpc.Response{Result: result, Id: id}
 	}
@@ -215,7 +224,12 @@ func (conn *SrvConn) Handle() {
 	return
 }
 
-func (conn *SrvConn) Call(disp *Disp, method string, args []interface{}) (any, error) {
+func (conn *SrvConn) Call(
+	disp *Disp,
+	method string,
+	args []interface{},
+) (any, error) {
+
 	m, ok := conn.srv.m[method]
 	if !ok {
 		return nil, &rpc.MethErr{Name: method}
@@ -254,7 +268,7 @@ func (conn *SrvConn) Call(disp *Disp, method string, args []interface{}) (any, e
 	err, ok := rets[1].Interface().(error)
 	if ok {
 		return rets[0].Interface(), err
-	} else {
-		return rets[0].Interface(), nil
 	}
+
+	return rets[0].Interface(), nil
 }

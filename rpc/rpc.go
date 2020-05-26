@@ -1,4 +1,4 @@
-// Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2019-2020, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2014 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -10,6 +10,8 @@ package rpc
 import (
 	"bytes"
 	"fmt"
+
+	"github.com/danos/mgmterror"
 )
 
 //Request represents an RPC request
@@ -22,13 +24,18 @@ type Request struct {
 	Id int `json:"id"`
 }
 
-//Response represents an RPC response
+//Response represents an RPC response.
+//
+//Result and Error are encoded as 'null' if not present, whereas MgmtErrList is
+//always encoded, even as an empty list.
 type Response struct {
 	//Result is any value returned by the handler
 	//The client library uses reflection to ensure it received the appropriate type.
 	Result interface{} `json:"result"`
 	//Error contains a message describing a problem
 	Error interface{} `json:"error"`
+	// MgmtErrList contains the NETCONF <rpc-error> element(s).
+	MgmtErrList mgmterror.MgmtErrorList `json:"mgmterrorlist"`
 	//Id is the unique request identifier
 	Id int `json:"id"`
 }

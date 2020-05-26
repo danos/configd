@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2019, AT&T Intellectual Property Inc. All rights reserved.
+// Copyright (c) 2017-2020, AT&T Intellectual Property Inc. All rights reserved.
 //
 // SPDX-License-Identifier: LGPL-2.1-only
 
@@ -16,6 +16,7 @@ import (
 	"github.com/danos/configd/rpc"
 	"github.com/danos/configd/server"
 	"github.com/danos/configd/session/sessiontest"
+	"github.com/danos/mgmterror"
 	"github.com/danos/mgmterror/errtest"
 	"github.com/danos/utils/pathutil"
 )
@@ -132,6 +133,18 @@ func (oc *outputChecker) init() *outputChecker {
 func (oc *outputChecker) set(testPath string) *outputChecker {
 	oc.init()
 	oc.actOutput, oc.actErr = oc.d.Set(testSID, testPath)
+	return oc
+}
+
+func (oc *outputChecker) validate() *outputChecker {
+	oc.init()
+	oc.actOutput, oc.actErr = oc.d.Validate(testSID)
+	return oc
+}
+
+func (oc *outputChecker) commit() *outputChecker {
+	oc.init()
+	oc.actOutput, oc.actErr = oc.d.Commit(testSID, "commit msg", false)
 	return oc
 }
 
@@ -339,7 +352,7 @@ func (oc *outputChecker) checkSchemasNotGettable(
 
 // 'then' - set expected results and verify them
 
-// verifyOutputOkNoError - check result is true, and no error
+// verifyOutputOkNoError - check no error, and output matches expOut
 func (oc *outputChecker) verifyOutputOkNoError(expOut string) *outputChecker {
 	if oc.actErr != nil {
 		oc.t.Fatalf("Operation failed: %s\n", oc.actErr)
@@ -348,6 +361,34 @@ func (oc *outputChecker) verifyOutputOkNoError(expOut string) *outputChecker {
 	if oc.actOutput != expOut {
 		oc.t.Fatalf("Unexpected Output.\nExp: %s\nGot: %s\n",
 			expOut, oc.actOutput)
+		return nil
+	}
+	return oc
+}
+
+// verifyOutputContentNoError - check no error and output contains exp strings.
+// Useful where we don't need (or want) an exact match, eg for multiline output
+// or where in testing we get the likes of 'run-parts: failed to open ...'
+// errors in commits that we can ignore.
+func (oc *outputChecker) verifyOutputContentNoError(
+	expOuts []string,
+) *outputChecker {
+
+	if oc.actErr != nil {
+		oc.t.Fatalf("Operation failed: %s\n", oc.actErr)
+		return nil
+	}
+
+	expMsgs := assert.NewExpectedMessages(expOuts...)
+	expMsgs.ContainedIn(oc.t, oc.actOutput)
+
+	return oc
+}
+
+// verifyNoError - check no error. Don't care what's in output.
+func (oc *outputChecker) verifyNoError() *outputChecker {
+	if oc.actErr != nil {
+		oc.t.Fatalf("Operation failed: %s\n", oc.actErr)
 		return nil
 	}
 	return oc
@@ -386,10 +427,32 @@ func (oc *outputChecker) verifyRawError() *outputChecker {
 	return oc
 }
 
+// ExpMgmtErrors are formatted for pretty-print output.
 func (oc *outputChecker) verifyMgmtErrors(
 	expErrs *errtest.ExpMgmtErrors,
 ) *outputChecker {
 	expErrs.Matches(oc.actErr)
+	return oc
+}
+
+// ExpMgmtError objects are 'raw' MgmtError so we can verify each field in the
+// error individually using this method.
+func (oc *outputChecker) verifyMgmtErrorList(
+	expErrList []*errtest.ExpMgmtError,
+) *outputChecker {
+	// Check type
+	mel, ok := oc.actErr.(mgmterror.MgmtErrorList)
+	if !ok {
+		oc.t.Fatalf("Actual error was not MgmtErrorList")
+	}
+
+	actErrs := mel.Errors()
+	if len(actErrs) != len(expErrList) {
+		oc.t.Fatalf("Expected %d errors, but got %d\n",
+			len(expErrList), len(actErrs))
+	}
+
+	errtest.CheckMgmtErrors(oc.t, expErrList, actErrs)
 	return oc
 }
 

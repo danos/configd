@@ -116,13 +116,25 @@ func (c *Client) Close() {
 func (c *Client) call(method string, args ...interface{}) (interface{}, error) {
 	var rep rpc.Response
 	c.id++
-	c.enc.Encode(&rpc.Request{Method: method, Args: args, Id: c.id})
-	c.dec.Decode(&rep)
-	//fmt.Printf("%#v\n", &rpc.Request{Method: method, Args: args, Id: c.id})
-	//fmt.Printf("%#v\n", rep)
+	enc_err := c.enc.Encode(&rpc.Request{Method: method, Args: args, Id: c.id})
+	if enc_err != nil {
+		return nil, enc_err
+	}
+	dec_err := c.dec.Decode(&rep)
+	if dec_err != nil {
+		return nil, dec_err
+	}
+
+	// If we have an error, it may be a basic error (encoded as a string) or
+	// it may be a MgmtErrorList in which case it is stored as a map.
 	if err, ok := rep.Error.(string); ok {
 		return rep.Result, errors.New(err)
 	}
+
+	if len(rep.MgmtErrList.Errors()) != 0 {
+		return rep.Result, rep.MgmtErrList
+	}
+
 	return rep.Result, nil
 }
 

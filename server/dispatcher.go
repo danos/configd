@@ -660,7 +660,7 @@ func (d *Disp) Exists(db rpc.DB, sid string, path string) (bool, error) {
 
 	ps := pathutil.Makepath(path)
 	if err := d.validatePath(ps); err != nil {
-		return false, formatConfigPathError(err)
+		return false, common.FormatConfigPathError(err)
 	}
 
 	if !d.authRead(ps) {
@@ -720,7 +720,7 @@ func (d *Disp) setInternal(sid string, ps []string) (string, error) {
 
 	err = sess.Set(d.ctx, ps)
 	if err != nil {
-		return "", formatConfigPathErrorMultiline(err)
+		return "", common.FormatConfigPathErrorMultiline(err)
 	}
 	return "", nil
 }
@@ -730,7 +730,7 @@ func (d *Disp) Set(sid string, path string) (string, error) {
 
 	ps, err := d.normalizePath(pathutil.Makepath(path))
 	if err != nil {
-		return "", formatConfigPathErrorMultiline(err)
+		return "", common.FormatConfigPathErrorMultiline(err)
 	}
 
 	// Do command authorization now
@@ -762,7 +762,7 @@ func (d *Disp) Delete(sid string, path string) (bool, error) {
 
 	err = sess.Delete(d.ctx, ps)
 	if err != nil {
-		return false, formatConfigPathErrorMultiline(err)
+		return false, common.FormatConfigPathErrorMultiline(err)
 	}
 	return true, nil
 }
@@ -1194,7 +1194,7 @@ func (d *Disp) confirmedCommitInternal(
 	merr.MgmtErrorListAppend(errs...)
 	if ok {
 		if len(errs) != 0 {
-			rpcout.WriteString(merr.CustomError(formatCommitOrValErrors))
+			rpcout.WriteString(merr.CustomError(common.FormatCommitOrValErrors))
 			rpcout.WriteByte('\n')
 		}
 		rpcout.WriteString(
@@ -1204,8 +1204,7 @@ func (d *Disp) confirmedCommitInternal(
 
 	// NB: a validation error found during commit will be reported as a commit
 	//     failure, with validation errors printed out.
-	return "", fmt.Errorf("%s\n\nCommit failed!\n",
-		merr.CustomError(formatCommitOrValErrors))
+	return "", merr
 }
 
 func (d *Disp) Compare(old, new, spath string, ctxdiff bool) (string, error) {
@@ -1373,7 +1372,7 @@ func (d *Disp) loadReportWarningsReader(sid string, file string, r io.Reader) (b
 		return false, err
 	}
 
-	return true, formatWarnings(warns)
+	return true, common.FormatWarnings(warns)
 }
 
 func (d *Disp) Merge(sid string, file string) (bool, error) {
@@ -1402,7 +1401,7 @@ func (d *Disp) MergeReportWarnings(sid string, file string) (bool, error) {
 		return false, err
 	}
 
-	return true, formatWarnings(warns)
+	return true, common.FormatWarnings(warns)
 }
 func (d *Disp) Validate(sid string) (string, error) {
 	defer d.accountCommand(d.newCommandArgsForAaa("validate", nil, nil))
@@ -1431,8 +1430,7 @@ func (d *Disp) Validate(sid string) (string, error) {
 
 	var merr mgmterror.MgmtErrorList
 	merr.MgmtErrorListAppend(errs...)
-	return "", fmt.Errorf("%s\n\nValidate failed!\n",
-		merr.CustomError(formatCommitOrValErrors))
+	return "", merr
 }
 
 func (d *Disp) ValidatePath(sid string, path string) (string, error) {
@@ -2031,7 +2029,7 @@ func (d *Disp) callRpcInternal(
 		}
 		output, err := d.handleVciRpc(
 			moduleId, encoding, rpc, rpcName, args, vrc)
-		return output, formatRpcPathError(err)
+		return output, common.FormatRpcPathError(err)
 	}
 
 	err := mgmterror.NewOperationFailedApplicationError()
@@ -2060,7 +2058,7 @@ func (d *Disp) ExpandWithPrefix(path, prefix string, pos int) (string, error) {
 	// Need prefix, and 'argpos'
 	ps, err := d.expandPath(pathutil.Makepath(path), prefix, pos+1)
 	if err != nil {
-		return "", formatConfigPathError(err)
+		return "", common.FormatConfigPathError(err)
 	}
 	return pathutil.Pathstr(ps), nil
 }

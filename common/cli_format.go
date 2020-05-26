@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2017-2020, AT&T Intellectual Property. All rights reserved.
 //
 // SPDX-License-Identifier: LGPL-2.1-only
 
@@ -18,7 +18,7 @@
 // strings), but don't check precise ordering and newlines, to keep them
 // slightly less brittle.
 
-package server
+package common
 
 import (
 	"bytes"
@@ -67,8 +67,8 @@ func errpath(fwdSlashPath string) string {
 	return retStr
 }
 
-// formatConfigPathError - pretty print Exists() / Expands() errors for CLI
-func formatConfigPathError(err error) error {
+// FormatConfigPathError - pretty print Exists() / Expands() errors for CLI
+func FormatConfigPathError(err error) error {
 	var b bytes.Buffer
 
 	if err == nil {
@@ -86,8 +86,8 @@ func formatConfigPathError(err error) error {
 	return fmt.Errorf(b.String())
 }
 
-// formatRpcPathError - pretty print RPC errors for the CLI
-func formatRpcPathError(err error) error {
+// FormatRpcPathError - pretty print RPC errors for the CLI
+func FormatRpcPathError(err error) error {
 	var b bytes.Buffer
 
 	if err == nil {
@@ -113,12 +113,12 @@ func formatRpcPathError(err error) error {
 	return fmt.Errorf(b.String())
 }
 
-// formatCommitOrValErrors - pretty print commit / validation errors
+// FormatCommitOrValErrors - pretty print commit / validation errors
 //
 // These are somewhat verbose, and in the case of multiple errors for a single
 // node, very repetitive.  We print the path, then the error, then repeat the
 // path (CLI format) for good measure.
-func formatCommitOrValErrors(err error) string {
+func FormatCommitOrValErrors(err error) string {
 	var b bytes.Buffer
 
 	if me, ok := err.(mgmterror.Formattable); ok {
@@ -136,7 +136,7 @@ func formatCommitOrValErrors(err error) string {
 	return b.String()
 }
 
-func formatWarnings(warns []error) error {
+func FormatWarnings(warns []error) error {
 	if len(warns) == 0 {
 		return nil
 	}
@@ -161,11 +161,11 @@ const (
 	noPathInvalid   = false
 )
 
-// formatConfigPathErrorMultiline - pretty print multiline config path errors
+// FormatConfigPathErrorMultiline - pretty print multiline config path errors
 //
 // Deal with various formats of set/delete 'configuration path' errors, which
 // may or may not include 'Set failed' or 'Value validation failed'.
-func formatConfigPathErrorMultiline(err error) error {
+func FormatConfigPathErrorMultiline(err error) error {
 	return fmt.Errorf(formatMultilineSetWarnings(err,
 		noPathPrefix, withSetFailed, noPathInvalid))
 }

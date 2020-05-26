@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2017-2020, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -534,20 +534,25 @@ func TestMergeReportWarningShowsTypeWarning(t *testing.T) {
 
 func TestMergeMustDefaultErrorValidationWarning(t *testing.T) {
 
-	d := createLoadTestDispatcherAndSession(
-		t, loadOrMergeSchema, initConfig, testSID)
+	oc := newOutputChecker(t).
+		setSchema(loadOrMergeSchema).
+		setInitConfig(emptyConfig).
+		setAuther(auth.TestAutherAllowAll(), ConfigdUser, InSecretsGroup)
 
 	testConfig := testutils.Root(
 		testutils.Leaf("testint", "8"))
 
-	expErrs := assert.NewExpectedMessages(
-		errtest.NewMustDefaultError(t,
-			"/testint/8", "../testbool = true()").CommitCliErrorStrings()...)
+	oc.mergeConfig(testConfig)
+	oc.verifyNoError()
 
-	handleDispTestLoadOrMergePass(
-		t, d.MergeReportWarnings, testSID, testConfig)
-	checkValidateFails(t, d, testSID, expErrs)
+	errList := []*errtest.ExpMgmtError{
+		errtest.MustViolationMgmtErr(
+			"'must' condition is false: '../testbool = true()'",
+			"/testint/8"),
+	}
 
+	oc.validate()
+	oc.verifyMgmtErrorList(errList)
 }
 
 var normalizeSchema = `
