@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2018-2021, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2016-2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -27,6 +27,43 @@ const (
 	target_candidate
 	target_running
 )
+
+func choiceNodesToRemove(chcs []yang.Node, name string, rslt map[string]struct{}) map[string]struct{} {
+
+	for _, choice := range chcs {
+		switch choice.(type) {
+		case schema.Choice:
+			if choice.Child(name) != nil {
+				rslt = caseNodesToRemove(choice.Choices(), name, rslt)
+			}
+		}
+	}
+
+	return rslt
+}
+func caseNodesToRemove(chcs []yang.Node, name string, rslt map[string]struct{}) map[string]struct{} {
+
+	for _, choice := range chcs {
+		switch choice.(type) {
+
+		case schema.Case:
+			if choice.Child(name) != nil {
+				rslt = choiceNodesToRemove(choice.Choices(), name, rslt)
+			} else {
+				for _, ch := range choice.Children() {
+					rslt[ch.Name()] = struct{}{}
+				}
+			}
+
+		default:
+			if choice.Name() != name {
+				rslt[choice.Name()] = struct{}{}
+			}
+		}
+	}
+
+	return rslt
+}
 
 type config_target uint32
 
@@ -500,6 +537,42 @@ func (en edit_node) traverseSubtree(ec *edit_config, parentop operation, curpath
 	en.traversePreOrder(ec, parentop, curpath)
 }
 
+func (en edit_node) checkNode(
+	curpath []string,
+	parentop operation,
+	sch schema.Node,
+	exclude map[string]struct{},
+) map[string]struct{} {
+	op := en.getOperation(parentop)
+	if op == op_delete || op == op_remove {
+		return exclude
+	}
+	if _, ok := exclude[en.XMLName.Local]; ok {
+		cerr := mgmterror.NewBadElementApplicationError(en.XMLName.Local)
+		cerr.Path = pathutil.Pathstr(curpath)
+		cerr.Message = "Only one case is allowed per choice"
+		panic(cerr)
+	}
+	return choiceNodesToRemove(sch.Choices(), en.XMLName.Local, exclude)
+
+}
+
+func (en edit_node) validateChoices(
+	curpath []string,
+	parentop operation,
+	sch schema.Node,
+) {
+	if sch.Choices() == nil {
+		// no choices to evaluate
+		return
+	}
+
+	exclude := make(map[string]struct{}, 0)
+	for _, c := range en.Children {
+		exclude = c.checkNode(curpath, parentop, sch, exclude)
+	}
+}
+
 func (en edit_node) traverseContainer(ec *edit_config, parentop operation, curpath []string) {
 	op := en.getOperation(parentop)
 	sch := schema.Descendant(ec.sess.schema, curpath)
@@ -511,6 +584,9 @@ func (en edit_node) traverseContainer(ec *edit_config, parentop operation, curpa
 	if sch.Namespace() != en.XMLName.Space {
 		panic(mgmterror.NewUnknownNamespaceApplicationError(pathutil.Pathstr(curpath), en.XMLName.Space))
 	}
+
+	en.validateChoices(curpath, parentop, sch)
+
 	if !sch.HasPresence() && (len(en.Children) > 0) &&
 		(op != op_delete) && (op != op_remove) {
 		for _, c := range en.Children {
@@ -535,6 +611,8 @@ func (en edit_node) traverseList(ec *edit_config, parentop operation, curpath []
 	if !ok {
 		return // This should not happen; bail.
 	}
+
+	en.validateChoices(curpath, parentop, sch)
 
 	// Find list key
 	var path []string
@@ -649,6 +727,24 @@ func (ec edit_config) perform() error {
 	}
 	return perr
 }
+func (ec edit_config) validateChoices() {
+	parentop := ec.DefaultOperation.Get()
+
+	sch := schema.Descendant(ec.sess.schema, []string{})
+	if sch == nil {
+		return
+	}
+
+	if sch.Choices() == nil {
+		// no choices to evaluate
+		return
+	}
+
+	exclude := make(map[string]struct{}, 0)
+	for _, c := range ec.Children {
+		exclude = c.checkNode([]string{}, parentop, sch, exclude)
+	}
+}
 
 func (ec edit_config) EditConfig() (reterr error) {
 	defer func() {
@@ -659,6 +755,8 @@ func (ec edit_config) EditConfig() (reterr error) {
 			reterr = r.(error)
 		}
 	}()
+
+	ec.validateChoices()
 
 	for _, en := range ec.Children {
 		err := en.traverse(&ec, ec.DefaultOperation.Get(), []string{})

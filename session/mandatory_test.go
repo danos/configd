@@ -1,4 +1,4 @@
-// Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2019-2021, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2015-2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -554,4 +554,314 @@ testcontainer {
 	sess.Kill()
 }
 
-// TODO: (pac) Test cases for choice and anyxml once implemented.
+/*
+ * Validate that min-elements and max-elements constraint is correctly
+ * enforced for list and leaf-list yang elements
+ */
+func TestChoice(t *testing.T) {
+
+	var testone = "testone"
+	var testonepath = pathutil.CopyAppend(testcontainerpath, testone)
+	var testtwo = "testtwo"
+	var testtwopath = pathutil.CopyAppend(testcontainerpath, testtwo)
+	var notamandatorypath = pathutil.CopyAppend(testcontainerpath, "notamandatory")
+	var isachoicemand = pathutil.CopyAppend(testcontainerpath, "isachoicemand")
+	var deeponepath = pathutil.CopyAppend(testcontainerpath, "deep-one")
+	var deeptwopath = pathutil.CopyAppend(testcontainerpath, "deep-two")
+	var deepthreepath = pathutil.CopyAppend(deeptwopath, "deep-three")
+	var deepfourpath = pathutil.CopyAppend(deepthreepath, "deep-four")
+	var greekpath = pathutil.CopyAppend(testcontainerpath, "greek")
+	var gammapath = pathutil.CopyAppend(greekpath, "gamma")
+	var deltapath = pathutil.CopyAppend(greekpath, "delta")
+	const schema = `
+container testcontainer {
+	presence "A presence container";
+
+	leaf defdef {
+		type string;
+		default "non-choice-default";
+	}
+	choice testchoice {
+		mandatory true;
+
+		leaf testone {
+			type string;
+		}
+
+		leaf testtwo {
+			type string;
+		}
+	}
+	choice book {
+		case abook {
+			leaf notamandatory {
+				type string;
+			}
+			leaf isachoicemand {
+				mandatory true;
+				type string;
+			}
+		}
+	}
+	choice deep {
+		case deep {
+			leaf deep-one {
+				type string;
+			}
+			container deep-two {
+				container deep-three {
+					leaf deep-four {
+						mandatory true;
+						type string;
+					}
+				}
+			}
+			container deep-five {
+				presence "shield below mandatory";
+				container deep-six {
+					leaf deep-seven {
+						mandatory true;
+						type string;
+					}
+				}
+			}
+		}
+		container implicitcase {
+			leaf mandinimplcase {
+				mandatory true;
+				type string;
+			}
+		}
+	}
+	container blah {
+		choice blah {
+			container blah {
+				leaf blah {
+					mandatory true;
+					type string;
+				}
+			}
+		}
+	}
+	container greek {
+		choice alpha {
+			case beta {
+				choice iota {
+					leaf gamma {
+						type string;
+					}
+					leaf delta {
+						type string;
+						mandatory true;
+					}
+				}
+			}
+		}
+	}
+}
+`
+
+	const configDelete = `
+testcontainer {
+	testone foo
+}
+`
+
+	tblSet := []ValidateOpTbl{
+		{"", testcontainerpath, "", false},
+		{"", testtwopath, "foo", true},
+		{"", gammapath, "foo", true},
+		{"", deltapath, "foo", true},
+		{"", notamandatorypath, "foo", false},
+		{"", isachoicemand, "foo", true},
+		{"", deeponepath, "foo", false},
+		{"", deepfourpath, "foo", true},
+	}
+
+	tblDelete := []ValidateOpTbl{
+		{"", testonepath, "", false},
+		{"", testcontainerpath, "", true}, // everything now gone, commit succeeds
+	}
+
+	srv, sess := TstStartup(t, schema, emptyconfig)
+	ValidateOperationTable(t, sess, srv.Ctx, tblSet, SET_AND_COMMIT)
+	sess.Kill()
+	srv, sess = TstStartup(t, schema, configDelete)
+	ValidateOperationTable(t, sess, srv.Ctx, tblDelete, DELETE_AND_COMMIT)
+	sess.Kill()
+}
+
+func TestChoiceTwo(t *testing.T) {
+
+	var testone = "test-one"
+	var testonepath = []string{testone}
+	var isachoicemandpath = pathutil.CopyAppend(testonepath, "isachoicemand")
+	var notamandatorypath = pathutil.CopyAppend(testonepath, "notamandatory")
+	var timepath = pathutil.CopyAppend(testonepath, "time")
+	var newpath = pathutil.CopyAppend(testonepath, "new")
+	var choochoopath = pathutil.CopyAppend(testonepath, "choochoo")
+	var digitalpath = pathutil.CopyAppend(testonepath, "digital")
+	var powerpath = pathutil.CopyAppend(testonepath, "power")
+	var batterypath = pathutil.CopyAppend(powerpath, "battery")
+	var voltagepath = pathutil.CopyAppend(powerpath, "voltage")
+	const schema = `
+		container test-one {
+		presence "";
+		choice book {
+			mandatory true;
+			container spiderman {
+				leaf spidername {
+					type string;
+					default spring;
+				}
+			}
+			case blank {
+				leaf choochoo {
+					type string;
+					default "abc";
+				}
+				leaf ardvark {
+					type string;
+					default "xyz";
+				}
+				choice firmness {
+					default softness;
+
+					container softness {
+						leaf value {
+							type string;
+							default grob;
+						}
+						leaf scrib {
+							type string;
+						}
+						container blub {
+							leaf groo {
+								type string;
+								default frop;
+							}
+						}
+					}
+					container hardness {
+						leaf value {
+							type string;
+							default strib;
+						}
+						leaf scrib {
+							type string;
+						}
+					}
+				}
+			}
+			case abook {
+				leaf notamandatory {
+					type string;
+				}
+				leaf isachoicemand {
+					mandatory true;
+					type string;
+				}
+			}
+			case clock {
+				leaf ticktock {
+					type string;
+					default "yes";
+				}
+				leaf time {
+					mandatory true;
+					type string;
+				}
+
+				leaf new {
+					type string;
+				}
+
+				choice type {
+					mandatory true;
+
+					container digital {
+						presence "";
+						leaf led-colour {
+							type string;
+							default red;
+						}
+						container blue {
+							container red {
+								leaf branch {
+									type uint8;
+									default 4;
+								}
+							}
+						}
+					}
+					container style {
+						leaf colour {
+							type string;
+							default black;
+						}
+						leaf face {
+							type string;
+							default analogue;
+						}
+					}
+					container power {
+						leaf voltage {
+							mandatory true;
+							type uint32;
+						}
+						choice source {
+							mandatory true;
+							leaf battery {
+								type empty;
+							}
+							leaf mains {
+								type empty;
+							}
+							leaf adefault {
+								type string;
+								default "defaultvaule";
+							}
+						}
+					}
+				}
+			}
+		}
+
+	}
+`
+
+	const configDelete = `
+	test-one {
+		isachoicemand foo
+		notamandatory bar
+	}
+	`
+
+	tblSet := []ValidateOpTbl{
+		{"", testonepath, "", false},
+		{"", choochoopath, "chewchew", true},
+		{"", notamandatorypath, "foo", false},
+		{"", isachoicemandpath, "foo", true},
+		{"", timepath, "16:44", false},
+		{"", newpath, "16:44", false},
+		{"", digitalpath, "", true},
+		{"", voltagepath, "212", false},
+		{"", batterypath, "", true},
+		{"", notamandatorypath, "foo", false},
+		{"", isachoicemandpath, "foo", true},
+	}
+
+	tblDelete := []ValidateOpTbl{
+		{"", isachoicemandpath, "", false},
+		{"", testonepath, "", true}, // everything now gone, commit succeeds
+	}
+
+	srv, sess := TstStartup(t, schema, emptyconfig)
+	ValidateOperationTable(t, sess, srv.Ctx, tblSet, SET_AND_COMMIT)
+	sess.Kill()
+	srv, sess = TstStartup(t, schema, configDelete)
+	ValidateOperationTable(t, sess, srv.Ctx, tblDelete, DELETE_AND_COMMIT)
+	sess.Kill()
+}
+
+// TODO: (pac) Test anyxml once implemented.

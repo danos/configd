@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2019-2021, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2016-2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -94,6 +94,65 @@ augment "/protocols:protocols" {
 }
 `
 
+const schemaChoices = `
+grouping foobars {
+	choice foobar {
+		leaf foo {
+			type string;
+		}
+
+		container bar {
+			leaf barbaz {
+				type string;
+			}
+		}
+
+		case foobar {
+			choice morefoobars {
+				// provides a choice in a case
+				list foobar {
+					key foobar;
+
+					leaf foobar {
+						type string;
+					}
+
+					leaf foozbaz {
+						type string;
+					}
+				}
+				case foozball {
+					leaf foozball {
+						type string;
+					}
+					leaf foozbat {
+						type string;
+					}
+				}
+			}
+		}
+	}
+}
+container under-a-container {
+	// for under a container tests.
+	uses foobars;
+}
+
+list under-a-list {
+	// For under a list tests.
+	key under-a-list;
+
+	leaf under-a-list {
+		type string;
+	}
+
+	uses foobars;
+}
+
+// for top level tests
+uses foobars;
+`
+
 var edit_config_schema = []TestSchema{
 	{
 		Name:          NameDef{"vyatta-protocols", "vyatta-protocols"},
@@ -105,6 +164,11 @@ var edit_config_schema = []TestSchema{
 		Prefix:        "vyatta-protocols-ospf",
 		Imports:       []NameDef{{"vyatta-protocols", "protocols"}},
 		SchemaSnippet: schemaOspf,
+	},
+	{
+		Name:          NameDef{"vyatta-choices", "vyatta-choices"},
+		Prefix:        "vyatta-choices",
+		SchemaSnippet: schemaChoices,
 	},
 }
 
@@ -1657,5 +1721,114 @@ func TestEditConfigEnumLeafDeleteDefault(t *testing.T) {
 	defer sess.Kill()
 	// Deleting a non-existent but default value should fail
 	validateEditConfig(t, true, sess, srv.Ctx, target_candidate, defop_none, testopt_testset, erropt_stop, edit_config)
+	ValidateShow(t, sess, srv.Ctx, emptypath, true, config, true)
+}
+
+// Check that two cases in a single case, under a container is rejected with error
+func TestEditConfigChoiceUnderContainerFail(t *testing.T) {
+	const edit_config = `
+<config xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
+<under-a-container xmlns="urn:vyatta.com:test:vyatta-choices">
+    <foo>foo</foo>
+    <foozball>foozball</foozball>
+</under-a-container>
+</config>
+`
+	srv, sess := TstStartupMultipleSchemas(t, edit_config_schema, emptyconfig)
+	defer sess.Kill()
+	validateEditConfig(t, true, sess, srv.Ctx, target_candidate, defop_none, testopt_testset, erropt_stop, edit_config)
+	ValidateShow(t, sess, srv.Ctx, emptypath, true, emptyconfig, true)
+}
+
+// Check that two cases in a single case, under a list is rejected with error
+func TestEditConfigChoiceUnderListFail(t *testing.T) {
+	const edit_config = `
+<config xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
+<under-a-list xmlns="urn:vyatta.com:test:vyatta-choices">
+    <under-a-list>alist</under-a-list>
+    <foo>foo</foo>
+    <foozball>foozball</foozball>
+</under-a-list>
+</config>
+`
+	srv, sess := TstStartupMultipleSchemas(t, edit_config_schema, emptyconfig)
+	defer sess.Kill()
+	validateEditConfig(t, true, sess, srv.Ctx, target_candidate, defop_none, testopt_testset, erropt_stop, edit_config)
+	ValidateShow(t, sess, srv.Ctx, emptypath, true, emptyconfig, true)
+}
+
+// Check that two cases in a single case, at the top level is rejected with error
+func TestEditConfigChoiceTopLevelFail(t *testing.T) {
+	const edit_config = `
+<config xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
+<bar xmlns="urn:vyatta.com:test:vyatta-choices">
+    <barbaz>avalue</barbaz>
+</bar>
+<foobar xmlns="urn:vyatta.com:test:vyatta-choices">
+    <foobar>foobar</foobar>
+    <foozbaz>afoozbaz</foozbaz>
+</foobar>
+</config>
+`
+	srv, sess := TstStartupMultipleSchemas(t, edit_config_schema, emptyconfig)
+	defer sess.Kill()
+	validateEditConfig(t, true, sess, srv.Ctx, target_candidate, defop_none, testopt_testset, erropt_stop, edit_config)
+	ValidateShow(t, sess, srv.Ctx, emptypath, true, emptyconfig, true)
+}
+
+// Check that two case values, in same case are permitted
+// also that other case data in same choice is removed
+func TestEditConfigMultipleInACaseAllowed(t *testing.T) {
+	const edit_config = `
+<config xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
+<under-a-container xmlns="urn:vyatta.com:test:vyatta-choices">
+<foozball xc:operation="create">afoozball</foozball>
+<foozbat xc:operation="create">afoozbat</foozbat>
+</under-a-container>
+</config>
+`
+	const config = `under-a-container {
+	foo afoo
+}
+`
+
+	const expconfig = `under-a-container {
+	foozball afoozball
+	foozbat afoozbat
+}
+`
+	srv, sess := TstStartupMultipleSchemas(t, edit_config_schema, config)
+	defer sess.Kill()
+	ValidateShow(t, sess, srv.Ctx, emptypath, true, config, true)
+	validateEditConfig(t, false, sess, srv.Ctx, target_candidate, defop_none, testopt_testset, erropt_stop, edit_config)
+	ValidateShow(t, sess, srv.Ctx, emptypath, true, expconfig, true)
+}
+
+// Check that a discard reverts auto removed choices
+func TestEditConfigChoicesRevertedOnDiscard(t *testing.T) {
+	const edit_config = `
+<config xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
+<under-a-container xmlns="urn:vyatta.com:test:vyatta-choices">
+<foozball xc:operation="create">afoozball</foozball>
+<foozbat xc:operation="create">afoozbat</foozbat>
+</under-a-container>
+</config>
+`
+	const config = `under-a-container {
+	foo afoo
+}
+`
+
+	const expconfig = `under-a-container {
+	foozball afoozball
+	foozbat afoozbat
+}
+`
+	srv, sess := TstStartupMultipleSchemas(t, edit_config_schema, config)
+	defer sess.Kill()
+	ValidateShow(t, sess, srv.Ctx, emptypath, true, config, true)
+	validateEditConfig(t, false, sess, srv.Ctx, target_candidate, defop_none, testopt_testset, erropt_stop, edit_config)
+	ValidateShow(t, sess, srv.Ctx, emptypath, true, expconfig, true)
+	sess.Discard(srv.Ctx)
 	ValidateShow(t, sess, srv.Ctx, emptypath, true, config, true)
 }

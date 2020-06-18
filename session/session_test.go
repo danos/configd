@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2017-2021, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2014-2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -573,6 +573,361 @@ container testcontainer {
 	srv, sess := TstStartup(t, schema, emptyconfig)
 	ValidateSetTable(t, sess, srv.Ctx, tbl)
 	sess.Kill()
+}
+
+func TestChoiceSet(t *testing.T) {
+	var targetpath = []string{"testcontainer", "target", "a-target-value"}
+	var abstargetpath = []string{"testcontainer", "abs-target", "a-target-value"}
+	var relativetargetpath = []string{"testcontainer", "relative-target", "a-target-value"}
+	const schema = `
+container testcontainer {
+	list target {
+		key value;
+
+		leaf value {
+			type string;
+		}
+	}
+
+	choice achoice {
+		case one {
+			leaf testempty {
+				type empty;
+			}
+			choice alpha {
+				leaf alpha-one {
+					type string;
+				}
+				case alpha-case {
+					leaf alpha-two {
+						type string;
+					}
+					leaf alpha-three {
+						type string;
+					}
+
+					leaf abs-target {
+						type leafref {
+							path "/testcontainer/target/value";
+						}
+					}
+					leaf relative-target {
+						type leafref {
+							path "../target/value";
+						}
+					}
+				}
+			}
+			leaf one-one {
+				type string;
+			}
+			leaf one-two {
+				type string;
+			}
+		}
+		case two {
+			leaf testboolean {
+				type boolean;
+				default false;
+			}
+			choice beta {
+				leaf beta-one {
+					type string;
+				}
+				case beta-case {
+					leaf beta-two {
+						type string;
+					}
+					leaf beta-three {
+						type string;
+					}
+				}
+			}
+			leaf two-one {
+				type string;
+			}
+			leaf two-two {
+				type string;
+			}
+		}
+		leaf teststring {
+			type string;
+		}
+	}
+}
+`
+	var teststringpath_bam = pathutil.CopyAppend(teststringpath, "bam")
+	teststringpath_bam = pathutil.CopyAppend(teststringpath_bam, "")
+	tbl := []ValidateOpTbl{
+		{"Set empty path", emptypath, "", true},
+		{"Set empty path", targetpath, "", false},
+		{"Set empty path", abstargetpath, "", false},
+		{"Set empty path", relativetargetpath, "", false},
+		{"Set invalid path", invalidpath, "", true},
+		{"Set root path", rootpath, "", true},
+		{"Set empty leaf", testemptypath, "", false},
+		{"Set boolean node true", testbooleanpath, "true", false},
+		{"Set boolean node false", testbooleanpath, "false", false},
+		{"Set string value", teststringpath, "foo", false},
+		{"Set string value with trailing /", teststringpath_bam, "", true},
+	}
+	srv, sess := TstStartup(t, schema, emptyconfig)
+	ValidateSetTable(t, sess, srv.Ctx, tbl)
+	sess.Kill()
+}
+
+// Tests that work through a series of set operations
+// do verify that other cases in a choice are deleted
+func TestChoiceAutoDelete(t *testing.T) {
+	const schema = `
+	container testcontainer {
+
+	choice achoice {
+		case one {
+			leaf one-one {
+				type string;
+			}
+		}
+
+		case two {
+			leaf one-two {
+				type string;
+			}
+			leaf mand-node {
+				mandatory true;
+				type string;
+			}
+		}
+		case three {
+			container one-three {
+				leaf one-three-leaf {
+					type string;
+				}
+			}
+
+			choice anotherchoice {
+				container two-one {
+					leaf two-one-leaf {
+						type string;
+					}
+				}
+
+				case a {
+					container two-two {
+						leaf two-two-a {
+							type string;
+						}
+						leaf two-two-b {
+							type string;
+						}
+					}
+				}
+			}
+		}
+	}
+}
+`
+
+	var cOneOne = []string{"testcontainer", "one-one", "11"}
+	var cOneTwo = []string{"testcontainer", "one-two", "12"}
+	var cMandNode = []string{"testcontainer", "mand-node", "foo"}
+	var cOneThreeLeaf = []string{"testcontainer", "one-three", "one-three-leaf", "13"}
+	var cTwoOneLeaf = []string{"testcontainer", "two-one", "two-one-leaf", "21"}
+	var cTwoTwoA = []string{"testcontainer", "two-two", "two-two-a", "22A"}
+	var cTwoTwoB = []string{"testcontainer", "two-two", "two-two-b", "22B"}
+
+	srv, sess := TstStartup(t, schema, emptyconfig)
+	defer sess.Kill()
+
+	ValidateSet(t, sess, srv.Ctx, cOneOne, false)
+
+	const sOneOne = `testcontainer {
+	one-one 11
+}
+`
+	ValidateShow(t, sess, srv.Ctx, emptypath, false, sOneOne, true)
+
+	// Applying this config should remove the one-one config applied earlier
+	ValidateSet(t, sess, srv.Ctx, cOneTwo, false)
+
+	const sOneTwo = `testcontainer {
+	mand-node foo
+	one-two 12
+}
+`
+	// Fails as mand-node is missing
+	ValidateCommit(t, sess, srv.Ctx, false, sOneTwo)
+	ValidateSet(t, sess, srv.Ctx, cMandNode, false)
+
+	// Success again as mandatory (mand-node) present
+	ValidateCommit(t, sess, srv.Ctx, true, sOneTwo)
+	ValidateShow(t, sess, srv.Ctx, emptypath, false, sOneTwo, true)
+
+	// this will result in previous config being removed
+	ValidateSet(t, sess, srv.Ctx, cOneThreeLeaf, false)
+
+	const sOneThreeLeaf = `testcontainer {
+	one-three {
+		one-three-leaf 13
+	}
+}
+`
+	ValidateShow(t, sess, srv.Ctx, emptypath, false, sOneThreeLeaf, true)
+
+	// Check config in a hierarchical choice behaves correctly
+	ValidateSet(t, sess, srv.Ctx, cTwoTwoA, false)
+	ValidateSet(t, sess, srv.Ctx, cTwoTwoB, false)
+
+	const sTwoTwo = `testcontainer {
+	one-three {
+		one-three-leaf 13
+	}
+	two-two {
+		two-two-a 22A
+		two-two-b 22B
+	}
+}
+`
+	ValidateShow(t, sess, srv.Ctx, emptypath, false, sTwoTwo, true)
+
+	ValidateSet(t, sess, srv.Ctx, cTwoOneLeaf, false)
+
+	const sTwoOneLeaf = `testcontainer {
+	one-three {
+		one-three-leaf 13
+	}
+	two-one {
+		two-one-leaf 21
+	}
+}
+`
+	ValidateShow(t, sess, srv.Ctx, emptypath, false, sTwoOneLeaf, true)
+}
+
+// Tests to verify a choice default
+// Verify that initial defaults appear in show output
+// instantiate values in other cases, and verify the correct
+// defaults are shown
+func TestChoiceDefaults(t *testing.T) {
+	const schema = `
+
+	choice top-level {
+		default top-default-seen;
+
+		leaf top-default-seen {
+			type string;
+			default "seen";
+		}
+		leaf top-default-hidden {
+			type string;
+			default "hidden";
+		}
+	}
+
+	container testcontainer {
+
+	choice achoice {
+		default three-four;
+		case one {
+			leaf one {
+				type string;
+			}
+			leaf default-one {
+				type string;
+				default "1";
+			}
+		}
+
+		case two {
+			leaf two {
+				type string;
+			}
+			leaf default-two {
+				type string;
+				default "2";
+			}
+		}
+		case three-four {
+			container three {
+				leaf three {
+					type string;
+				}
+				leaf default-three {
+					type string;
+					default "3";
+				}
+				choice sub-three {
+					default sub-three-a;
+
+					case sub-three-a {
+						container defaults-seen {
+							leaf def-one {
+								type string;
+								default "1";
+							}
+							leaf def-two {
+								type string;
+								default "2";
+							}
+						}
+						container defaults-hidden {
+							presence "";
+
+							leaf def-three {
+								type string;
+								default "3";
+							}
+							leaf def-four {
+								type string;
+								default "4";
+							}
+						}
+					}
+				}
+			}
+			container four {
+				presence "guard default-four";
+				leaf four {
+					type string;
+				}
+				leaf default-four {
+					type string;
+					default four;
+				}
+			}
+		}
+	}
+}
+`
+
+	srv, sess := TstStartup(t, schema, emptyconfig)
+	defer sess.Kill()
+
+	//ValidateSet(t, sess, srv.Ctx, cOneOne, false)
+
+	const initConfig = `testcontainer {
+	three {
+		default-three 3
+		defaults-seen {
+			def-one 1
+			def-two 2
+		}
+	}
+}
+top-default-seen seen
+`
+	ValidateShowWithDefaults(t, sess, srv.Ctx, emptypath, false, initConfig, true)
+
+	const finalConfig = `testcontainer {
+	default-one 1
+	one one
+}
+top-default-hidden override
+`
+	ValidateSet(t, sess, srv.Ctx, []string{"top-default-hidden", "override"}, false)
+	ValidateSet(t, sess, srv.Ctx, []string{"testcontainer", "one", "one"}, false)
+	ValidateShowWithDefaults(t, sess, srv.Ctx, emptypath, false, finalConfig, true)
+
 }
 
 func TestSetLeafList(t *testing.T) {
