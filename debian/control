@@ -19,6 +19,7 @@ Build-Depends:
  golang-github-danos-utils-os-group-dev,
  golang-github-danos-utils-patherr-dev,
  golang-github-danos-utils-pathutil-dev,
+ golang-github-danos-utils-shell-dev,
  golang-github-danos-utils-tsort-dev,
  golang-github-danos-utils-tty-dev,
  golang-github-danos-vci-dev (>= 0.3),

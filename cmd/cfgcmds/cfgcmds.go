@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2018-2020, AT&T Intellectual Property. All rights reserved.
 // All rights reserved.
 //
 // SPDX-License-Identifier: LGPL-2.1-only
@@ -14,38 +14,12 @@ import (
 
 	"github.com/danos/config/parse"
 	"github.com/danos/utils/pathutil"
+	"github.com/danos/utils/shell"
 )
-
-const (
-	specialChars    = "#\\&><!|*}{)(][:?^;"
-	whitespaceChars = "\011\012\013\014\015 "
-	strongChars     = "$\""
-	weakChars       = "'"
-)
-
-func quote(in string) string {
-	hasSpecial := strings.ContainsAny(in,
-		strongChars+weakChars+specialChars+whitespaceChars)
-	needsStrongQuote := strings.ContainsAny(in, strongChars)
-	needsWeakQuote := strings.Contains(in, weakChars)
-	switch {
-	case needsStrongQuote && needsWeakQuote:
-		out := strings.Replace(in, "'", "\\'", -1)
-		return "$'" + out + "'"
-	case needsStrongQuote:
-		return "'" + in + "'"
-	case needsWeakQuote:
-		return "\"" + in + "\""
-	case hasSpecial:
-		return "'" + in + "'"
-	default:
-		return in
-	}
-}
 
 func buildpath(n *parse.Node, path []string) []string {
 	if n.HasArg {
-		return append(path, n.Id, quote(n.Arg))
+		return append(path, n.Id, shell.Quote(n.Arg))
 	} else {
 		return append(path, n.Id)
 	}
