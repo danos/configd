@@ -1,3 +1,10 @@
+configd (2.7.1) unstable; urgency=medium
+
+  [ Duncan Eastoe ]
+  * config_mgmt: Update user sandbox path
+
+ -- William Ivory <william.ivory@intl.att.com>  Thu, 02 Jul 2020 11:18:56 +0100
+
 configd (2.7) unstable; urgency=medium
 
   * DANOS Import Master
