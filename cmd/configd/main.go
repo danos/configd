@@ -1,4 +1,4 @@
-// Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2019-2020, AT&T Intellectual Property. All rights reserved.
 // Copyright (c) 2014-2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
 //
@@ -48,6 +48,8 @@ import (
 	"os"
 	"os/signal"
 	"os/user"
+	"runtime"
+	"runtime/debug"
 	"runtime/pprof"
 	"strconv"
 	"syscall"
@@ -198,6 +200,8 @@ func getIds(username, groupname string) (uid, gid int) {
 func init() {
 	var err error
 
+	debug.SetGCPercent(25)
+
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
 		flag.PrintDefaults()
@@ -278,6 +282,11 @@ func main() {
 		config, elog)
 
 	writePid()
+
+	// Initialization may generate significant garbage ensure that
+	// it is cleaned up immediately.
+	runtime.GC()
+	debug.FreeOSMemory()
 
 	fatal(srv.Serve())
 }
