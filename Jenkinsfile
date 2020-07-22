@@ -11,7 +11,9 @@ pipeline {
     stages {
         stage('Go Code Formatting') {
             agent {
-                docker { image 'golang:1.10' }
+                docker { image 'golang:1.10'
+                         reuseNode true
+                }
             }
             steps {
 		sh script: "./gofmt.sh"
@@ -25,7 +27,9 @@ pipeline {
         }
         stage('golint') {
             agent {
-                docker { image 'golang:1.10' }
+                docker { image 'golang:1.10'
+                         reuseNode true
+                }
             }
             steps {
                 sh script: "go get -u golang.org/x/lint/golint"
@@ -45,7 +49,9 @@ pipeline {
         stage('golangci-lint') {
             agent {
                 docker { image 'golangci/golangci-lint:v1.10.2'
-                         args '--entrypoint=\'\'' }
+                         args '--entrypoint=\'\''
+                         reuseNode true
+                }
             }
             steps {
                 // .golangci.yml can contain config on which checks to perform
