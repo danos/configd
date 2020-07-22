@@ -1,3 +1,23 @@
+configd (2.9) unstable; urgency=medium
+
+  [ John Southworth ]
+  * Create a binary argument encoder to speed up argument encoding.
+
+  [ Nicholas Brown ]
+  * Specify SyslogIdentifier= in the systemd service file (Fixes: VRVDR-50783)
+
+  [ John Southworth ]
+  * Create rfc7951 merge helper that understands our schema representation
+  * Add new library to debian/copyright
+  * Add additional Connect function.
+  * Fix SPDX reference for configd/client/vci.go
+  * Use new shell library for quoting in cfgcmds
+
+  [ Nicholas Brown ]
+  * Add a revive.toml file with exported disabled
+
+ -- William Ivory <william.ivory@intl.att.com>  Wed, 22 Jul 2020 11:35:13 +0100
+
 configd (2.8) unstable; urgency=medium
 
   [ Erik Ziegenbalg ]
