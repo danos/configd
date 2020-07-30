@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2018-2020, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2016-2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -331,15 +331,19 @@ func (e edit_op) Set(ec edit_config) error {
 		return e.Delete(ec)
 	case op_remove:
 		return e.Remove(ec)
-	default:
-		switch ec.DefaultOperation {
-		case defop_notset, defop_merge:
-			return e.Merge(ec)
-		case defop_replace:
-			return e.Replace(ec)
+	case op_notset:
+		// e.op should only be op_notset if it has been inherited
+		// from the default operation. Otherwise e.op will have been
+		// set to one of the other op_* values either by its own operation
+		// attribute or that of a parent, or by inheriting defop_merge
+		// or defop_replace.
+		if ec.DefaultOperation == defop_none {
+			return nil
 		}
+		fallthrough
+	default:
+		return mgmterror.NewOperationFailedApplicationError()
 	}
-	return nil
 }
 
 func (e edit_op) Perform(ec edit_config) error {
@@ -364,7 +368,7 @@ type edit_config struct {
 	XMLName          xml.Name     `xml:"config,"`
 	Children         []*edit_node `xml:",any"`
 	Target           config_target
-	DefaultOperation operation
+	DefaultOperation default_operation
 	TestOption       test_option
 	ErrorOption      error_option
 	sess             *session
@@ -377,11 +381,9 @@ func newEditConfigXML(s *session, ctx *configd.Context, config_target, def_opera
 	if err := ec.Target.Set(config_target); err != nil {
 		return nil, err
 	}
-	var defop default_operation
-	if err := defop.Set(def_operation); err != nil {
+	if err := ec.DefaultOperation.Set(def_operation); err != nil {
 		return nil, err
 	}
-	ec.DefaultOperation = defop.Get()
 	if err := ec.TestOption.Set(test_option); err != nil {
 		return nil, err
 	}
@@ -586,7 +588,7 @@ func (ec edit_config) EditConfig() (reterr error) {
 	}()
 
 	for _, en := range ec.Children {
-		err := en.traverse(&ec, ec.DefaultOperation, []string{})
+		err := en.traverse(&ec, ec.DefaultOperation.Get(), []string{})
 		if err != nil {
 			return err
 		}
