@@ -1,4 +1,4 @@
-// Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2019-2020, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2016-2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -895,6 +895,111 @@ func TestEditConfigRemoveEmptyLeaf(t *testing.T) {
 	ValidateShow(t, sess, srv.Ctx, emptypath, true, expconfig, true)
 }
 
+func TestEditConfigDefOpNone(t *testing.T) {
+	const config = `protocols {
+	ospf {
+		area 0 {
+			network 10.1.1.0/24
+		}
+		area 1 {
+			network 2.2.2.2/32
+		}
+	}
+}
+`
+
+	const edit_config = `
+<config xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
+<protocols xmlns="urn:vyatta.com:test:vyatta-protocols">
+  <ospf xmlns="urn:vyatta.com:test:vyatta-protocols-ospf">
+    <area>
+      <tagnode>0</tagnode>
+      <network>1.1.1.1/32</network>
+    </area>
+    <area>
+      <tagnode>2</tagnode>
+      <network>3.3.3.3/32</network>
+    </area>
+  </ospf>
+</protocols>
+</config>
+`
+	srv, sess := TstStartupMultipleSchemas(t, edit_config_schema, config)
+	defer sess.Kill()
+	validateEditConfig(t, false, sess, srv.Ctx, target_candidate, defop_none, testopt_testset, erropt_stop, edit_config)
+	ValidateShow(t, sess, srv.Ctx, emptypath, true, config, true)
+}
+
+func TestEditConfigDefOpNoneWithOps(t *testing.T) {
+	const config = `protocols {
+	ospf {
+		area 0 {
+			network 10.1.1.0/24
+		}
+		area 1 {
+			network 2.2.2.2/32
+		}
+		area 2 {
+			network 10.3.3.0/24
+		}
+		area 3 {
+			network 10.4.4.0/24
+		}
+	}
+}
+`
+	const expconfig = `protocols {
+	ospf {
+		area 0 {
+			network 10.1.1.0/24
+			network 1.1.1.1/32
+		}
+		area 1 {
+			network 2.2.2.2/32
+		}
+		area 3 {
+			network 4.4.4.4/32
+		}
+		area 5 {
+			network 6.6.6.6/32
+		}
+	}
+}
+`
+
+	const edit_config = `
+<config xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
+<protocols xmlns="urn:vyatta.com:test:vyatta-protocols">
+  <ospf xmlns="urn:vyatta.com:test:vyatta-protocols-ospf">
+    <area xc:operation="merge">
+      <tagnode>0</tagnode>
+      <network>1.1.1.1/32</network>
+    </area>
+    <area xc:operation="delete">
+      <tagnode>2</tagnode>
+    </area>
+    <area xc:operation="replace">
+      <tagnode>3</tagnode>
+      <network>4.4.4.4/32</network>
+    </area>
+    <area>
+      <tagnode>4</tagnode>
+      <network>5.5.5.5/32</network>
+    </area>
+    <area xc:operation="create">
+      <tagnode>5</tagnode>
+      <network>6.6.6.6/32</network>
+    </area>
+  </ospf>
+</protocols>
+</config>
+`
+	srv, sess := TstStartupMultipleSchemas(t, edit_config_schema, config)
+	defer sess.Kill()
+	validateEditConfig(t, false, sess, srv.Ctx, target_candidate, defop_none, testopt_testset, erropt_stop, edit_config)
+	ValidateShow(t, sess, srv.Ctx, emptypath, true, expconfig, true)
+}
+
 func TestEditConfigDefOpMerge(t *testing.T) {
 	const config = `protocols {
 	ospf {
@@ -933,6 +1038,79 @@ func TestEditConfigDefOpMerge(t *testing.T) {
     <area>
       <tagnode>2</tagnode>
       <network>3.3.3.3/32</network>
+    </area>
+  </ospf>
+</protocols>
+</config>
+`
+	srv, sess := TstStartupMultipleSchemas(t, edit_config_schema, config)
+	defer sess.Kill()
+	validateEditConfig(t, false, sess, srv.Ctx, target_candidate, defop_merge, testopt_testset, erropt_stop, edit_config)
+	ValidateShow(t, sess, srv.Ctx, emptypath, true, expconfig, true)
+}
+
+func TestEditConfigDefOpMergeWithOps(t *testing.T) {
+	const config = `protocols {
+	ospf {
+		area 0 {
+			network 10.1.1.0/24
+		}
+		area 1 {
+			network 2.2.2.2/32
+		}
+		area 2 {
+			network 10.3.3.0/24
+		}
+		area 3 {
+			network 10.4.4.0/24
+		}
+	}
+}
+`
+	const expconfig = `protocols {
+	ospf {
+		area 0 {
+			network 10.1.1.0/24
+			network 1.1.1.1/32
+		}
+		area 1 {
+			network 2.2.2.2/32
+		}
+		area 3 {
+			network 4.4.4.4/32
+		}
+		area 4 {
+			network 5.5.5.5/32
+		}
+		area 5 {
+			network 6.6.6.6/32
+		}
+	}
+}
+`
+
+	const edit_config = `
+<config xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
+<protocols xmlns="urn:vyatta.com:test:vyatta-protocols">
+  <ospf xmlns="urn:vyatta.com:test:vyatta-protocols-ospf">
+    <area>
+      <tagnode>0</tagnode>
+      <network>1.1.1.1/32</network>
+    </area>
+    <area xc:operation="delete">
+      <tagnode>2</tagnode>
+    </area>
+    <area xc:operation="replace">
+      <tagnode>3</tagnode>
+      <network>4.4.4.4/32</network>
+    </area>
+    <area xc:operation="merge">
+      <tagnode>4</tagnode>
+      <network>5.5.5.5/32</network>
+    </area>
+    <area xc:operation="create">
+      <tagnode>5</tagnode>
+      <network>6.6.6.6/32</network>
     </area>
   </ospf>
 </protocols>
@@ -983,6 +1161,74 @@ func TestEditConfigDefOpReplace(t *testing.T) {
 </protocols>
 </config>
 `
+	srv, sess := TstStartupMultipleSchemas(t, edit_config_schema, config)
+	defer sess.Kill()
+	validateEditConfig(t, false, sess, srv.Ctx, target_candidate, defop_replace, testopt_testset, erropt_stop, edit_config)
+	ValidateShow(t, sess, srv.Ctx, emptypath, true, expconfig, true)
+}
+
+func TestEditConfigDefOpReplaceWithOps(t *testing.T) {
+	const config = `protocols {
+	ospf {
+		area 0 {
+			network 10.1.1.0/24
+		}
+		area 1 {
+			network 2.2.2.2/32
+		}
+		area 2 {
+			network 10.3.3.0/24
+		}
+		area 3 {
+			network 10.4.4.0/24
+		}
+	}
+}
+`
+	const expconfig = `protocols {
+	ospf {
+		area 0 {
+			network 10.1.1.0/24
+			network 1.1.1.1/32
+		}
+		area 3 {
+			network 4.4.4.4/32
+		}
+		area 4 {
+			network 5.5.5.5/32
+		}
+		area 5 {
+			network 6.6.6.6/32
+		}
+	}
+}
+`
+
+	const edit_config = `
+<config xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
+<protocols xmlns="urn:vyatta.com:test:vyatta-protocols">
+  <ospf xmlns="urn:vyatta.com:test:vyatta-protocols-ospf">
+    <area xc:operation="merge">
+      <tagnode>0</tagnode>
+      <network>1.1.1.1/32</network>
+    </area>
+    <area xc:operation="replace">
+      <tagnode>3</tagnode>
+      <network>4.4.4.4/32</network>
+    </area>
+    <area>
+      <tagnode>4</tagnode>
+      <network>5.5.5.5/32</network>
+    </area>
+    <area xc:operation="create">
+      <tagnode>5</tagnode>
+      <network>6.6.6.6/32</network>
+    </area>
+  </ospf>
+</protocols>
+</config>
+`
+	t.Skip("area 0 config is replaced instead of being merged")
 	srv, sess := TstStartupMultipleSchemas(t, edit_config_schema, config)
 	defer sess.Kill()
 	validateEditConfig(t, false, sess, srv.Ctx, target_candidate, defop_replace, testopt_testset, erropt_stop, edit_config)
