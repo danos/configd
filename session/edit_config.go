@@ -184,16 +184,14 @@ func (en *edit_node) setPath(curPath string) error {
 }
 
 type edit_op struct {
-	op   operation
-	path []string
+	op        operation
+	path      []string
+	pathAttrs *pathutil.PathAttrs
 }
 
-func (ec edit_config) authorize(
-	perm auth.AuthPerm,
-	path []string,
-) bool {
-
+func (e edit_op) getPathAttrsForPerm(perm auth.AuthPerm, ec edit_config) ([]string, *pathutil.PathAttrs) {
 	// Generate a corresponding command to perform command authorization
+
 	var perm_cmd string
 	switch perm {
 	case auth.P_CREATE, auth.P_UPDATE:
@@ -201,27 +199,55 @@ func (ec edit_config) authorize(
 	case auth.P_DELETE:
 		perm_cmd = "delete"
 	default:
-		return false
+		return []string{}, nil
 	}
 
-	attrs := schema.AttrsForPath(ec.sess.schemaFull, path)
+	if e.pathAttrs == nil {
+		e.pathAttrs = schema.AttrsForPath(ec.sess.schemaFull, e.path)
+	}
 
 	// Prepend command keyword and corresponding attributes
-	cmd := append([]string{perm_cmd}, path...)
-	perm_cmd_attrs := []pathutil.PathElementAttrs{
-		pathutil.PathElementAttrs{Secret: false},
+	cmd := append([]string{perm_cmd}, e.path...)
+	attrs := pathutil.NewPathAttrs()
+	attrs.Attrs = append(attrs.Attrs, pathutil.PathElementAttrs{Secret: false})
+	attrs.Attrs = append(attrs.Attrs, e.pathAttrs.Attrs...)
+	return cmd, &attrs
+}
+
+func (ec edit_config) authorize(
+	perm auth.AuthPerm,
+	e edit_op,
+) bool {
+
+	cmd, attrs := e.getPathAttrsForPerm(perm, ec)
+	if attrs == nil {
+		return false
 	}
-	attrs.Attrs = append(perm_cmd_attrs, attrs.Attrs...)
 
 	// Do command authorization and accounting
 	if !ec.ctx.Auth.AuthorizeCommand(ec.ctx.Uid, ec.ctx.Groups, cmd, attrs) {
 		return false
 	}
-	ec.ctx.Auth.AccountCommand(ec.ctx.Uid, ec.ctx.Groups, cmd, attrs)
 
-	// Drop path attrs for "command" keyword and do path authorization
-	attrs.Attrs = attrs.Attrs[1:]
-	return ec.ctx.Auth.AuthorizePath(ec.ctx.Uid, ec.ctx.Groups, path, attrs, perm)
+	/*
+	 * Some subtle (and intentional) behaviour here.
+	 * This will always pass for TACACS+ users when command authorization is enabled.
+	 * ie. at this point we know those users are authorized to run the "command".
+	 *
+	 * However it can fail for other users, and when that happens we account the
+	 * "command" now, even though the effect is not actually executed. Conversely
+	 * when the authorization succeeds the accounting happens later, when the
+	 * effect is actually applied to the session.
+	 *
+	 * If we are only doing a test operation, there is no need to account anything
+	 * since the session is never changed in this case.
+	 */
+	pathAuthed := ec.ctx.Auth.AuthorizePath(ec.ctx.Uid, ec.ctx.Groups, e.path, e.pathAttrs, perm)
+
+	if !pathAuthed && ec.TestOption != testopt_testonly {
+		ec.ctx.Auth.AccountCommand(ec.ctx.Uid, ec.ctx.Groups, cmd, attrs)
+	}
+	return pathAuthed
 }
 
 func (e edit_op) Auth(ec edit_config) bool {
@@ -230,20 +256,20 @@ func (e edit_op) Auth(ec edit_config) bool {
 	switch e.op {
 	case op_merge:
 		if exist {
-			return ec.authorize(auth.P_UPDATE, e.path)
+			return ec.authorize(auth.P_UPDATE, e)
 		}
-		return ec.authorize(auth.P_CREATE, e.path)
+		return ec.authorize(auth.P_CREATE, e)
 	case op_replace:
 		if exist {
-			if !ec.authorize(auth.P_DELETE, e.path) {
+			if !ec.authorize(auth.P_DELETE, e) {
 				return false
 			}
 		}
-		return ec.authorize(auth.P_CREATE, e.path)
+		return ec.authorize(auth.P_CREATE, e)
 	case op_create:
-		return ec.authorize(auth.P_CREATE, e.path)
+		return ec.authorize(auth.P_CREATE, e)
 	case op_delete, op_remove:
-		return ec.authorize(auth.P_DELETE, e.path)
+		return ec.authorize(auth.P_DELETE, e)
 	case op_notset:
 		return true
 	}
@@ -284,39 +310,68 @@ func (e edit_op) Test(ec edit_config) error {
 	return nil
 }
 
-func (e edit_op) Merge(ec edit_config) error {
+func (e edit_op) merge(ec edit_config) error {
 	if ec.sess.existsInTree(ec.sess.getUnion(), ec.ctx, e.path, excludeDefault) {
 		return nil
 	}
 	return ec.sess._set(ec.ctx, e.path)
 }
 
+func (e edit_op) Merge(ec edit_config) error {
+	// Could be P_CREATE or P_UPDATE, however they both map to "set"
+	cmd, attrs := e.getPathAttrsForPerm(auth.P_UPDATE, ec)
+	defer ec.ctx.Auth.AccountCommand(ec.ctx.Uid, ec.ctx.Groups, cmd, attrs)
+	return e.merge(ec)
+}
+
 func (e edit_op) Replace(ec edit_config) error {
-	if err := e.Remove(ec); err != nil {
+	doAcct := ec.sess.existsInTree(ec.sess.getUnion(), ec.ctx, e.path, excludeDefault)
+	if err := e.removeInternal(ec, doAcct); err != nil {
 		return err
 	}
 	return e.Merge(ec)
 }
 
-func (e edit_op) Create(ec edit_config) error {
+func (e edit_op) create(ec edit_config) error {
 	if ec.sess.existsInTree(ec.sess.getUnion(), ec.ctx, e.path, excludeDefault) {
 		return yang.NewNodeExistsError(e.path)
 	}
 	return ec.sess._set(ec.ctx, e.path)
 }
 
-func (e edit_op) Delete(ec edit_config) error {
+func (e edit_op) Create(ec edit_config) error {
+	cmd, attrs := e.getPathAttrsForPerm(auth.P_CREATE, ec)
+	defer ec.ctx.Auth.AccountCommand(ec.ctx.Uid, ec.ctx.Groups, cmd, attrs)
+	return e.create(ec)
+}
+
+func (e edit_op) delete(ec edit_config) error {
 	if !ec.sess.existsInTree(ec.sess.getUnion(), ec.ctx, e.path, excludeDefault) {
 		return yang.NewNodeNotExistsError(e.path)
 	}
-	return e.Remove(ec)
+	return e.removeInternal(ec, false)
 }
 
-func (e edit_op) Remove(ec edit_config) error {
+func (e edit_op) Delete(ec edit_config) error {
+	cmd, attrs := e.getPathAttrsForPerm(auth.P_DELETE, ec)
+	defer ec.ctx.Auth.AccountCommand(ec.ctx.Uid, ec.ctx.Groups, cmd, attrs)
+	return e.delete(ec)
+}
+
+func (e edit_op) removeInternal(ec edit_config, doAcct bool) error {
+	if doAcct {
+		cmd, attrs := e.getPathAttrsForPerm(auth.P_DELETE, ec)
+		defer ec.ctx.Auth.AccountCommand(ec.ctx.Uid, ec.ctx.Groups, cmd, attrs)
+	}
+
 	t := ec.sess.getUnion()
 	// Remove succeeds even when delete fails
 	t.Delete(ec.sess.newAuther(ec.ctx), e.path, union.DontCheckAuth)
 	return nil
+}
+
+func (e edit_op) Remove(ec edit_config) error {
+	return e.removeInternal(ec, true)
 }
 
 func (e edit_op) Set(ec edit_config) error {
