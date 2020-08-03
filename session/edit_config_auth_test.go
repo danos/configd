@@ -1,4 +1,4 @@
-// Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2019-2020, AT&T Intellectual Property. All rights reserved.
 //
 // SPDX-License-Identifier: LGPL-2.1-only
 
@@ -242,7 +242,7 @@ func TestEditConfigAuth(t *testing.T) {
 
 		res := op.Auth(*ec)
 		if res != tc.expAuthd {
-			t.Fatalf(tcDesc+"Auth() result was %v but expected %v",
+			t.Errorf(tcDesc+"Auth() result was %v but expected %v",
 				res, tc.expAuthd)
 		}
 
@@ -273,12 +273,12 @@ func TestEditConfigAuth(t *testing.T) {
 		// Verify expected command authorization and accounting were seen
 		err = auth.CheckRequests(a.GetCmdRequests(), expReqs)
 		if err != nil {
-			t.Fatalf(tcDesc+"%v", err)
+			t.Errorf(tcDesc+"%v", err)
 		}
 
 		err = auth.CheckRequests(a.GetCmdAcctRequests(), expReqs)
 		if err != nil {
-			t.Fatalf(tcDesc+"%v", err)
+			t.Errorf(tcDesc+"%v", err)
 		}
 
 		a.ClearCmdRequests()
