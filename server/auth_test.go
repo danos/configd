@@ -156,7 +156,7 @@ func assertCommandAaa(
 	attrs.Attrs = append(attrs.Attrs, elemAttrs...)
 
 	expReqs := auth.NewTestAutherRequests(
-		auth.NewTestAutherCommandRequest(cmd, &attrs))
+		auth.NewTestAutherCommandRequest(auth.T_REQ_AUTH, cmd, &attrs))
 
 	// If the command is on the "no authorization" whitelist then
 	// verify that no command authorization requests were seen.
@@ -168,6 +168,8 @@ func assertCommandAaa(
 	}
 
 	// All commands are accounted
+	expReqs = auth.NewTestAutherRequests(
+		auth.NewTestAutherCommandRequest(auth.T_REQ_ACCT_STOP, cmd, &attrs))
 	assertCmdAcctRequests(t, a, expReqs)
 
 	// And all accounted commands get sent to the audit logs

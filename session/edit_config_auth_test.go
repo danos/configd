@@ -264,6 +264,7 @@ func doTestEditConfigAuth(t *testing.T, topt string) {
 		}
 
 		expReqs := auth.NewTestAutherRequests()
+		expAcctReqs := auth.NewTestAutherRequests()
 		for _, cmd := range tc.expCmds {
 			attrs := cmd.attrs
 
@@ -283,7 +284,10 @@ func doTestEditConfigAuth(t *testing.T, topt string) {
 
 			// Build expected auth/acct request list
 			expReqs.Reqs = append(expReqs.Reqs,
-				auth.NewTestAutherCommandRequest(cmd.cmd, attrs))
+				auth.NewTestAutherCommandRequest(auth.T_REQ_AUTH, cmd.cmd, attrs))
+
+			expAcctReqs.Reqs = append(expAcctReqs.Reqs,
+				auth.NewTestAutherCommandRequest(auth.T_REQ_ACCT_STOP, cmd.cmd, attrs))
 		}
 
 		err = auth.CheckRequests(a.GetCmdRequests(), expReqs)
@@ -298,7 +302,6 @@ func doTestEditConfigAuth(t *testing.T, topt string) {
 		 * requests if the test fails for any reason other than a (path based)
 		 * authorization failure.
 		 */
-		expAcctReqs := expReqs
 		switch topt {
 		case testopt_testset:
 			if tc.passTest {
