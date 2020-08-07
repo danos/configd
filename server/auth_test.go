@@ -169,6 +169,7 @@ func assertCommandAaa(
 
 	// All commands are accounted
 	expReqs = auth.NewTestAutherRequests(
+		auth.NewTestAutherCommandRequest(auth.T_REQ_ACCT_START, cmd, &attrs),
 		auth.NewTestAutherCommandRequest(auth.T_REQ_ACCT_STOP, cmd, &attrs))
 	assertCmdAcctRequests(t, a, expReqs)
 

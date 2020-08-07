@@ -662,9 +662,10 @@ func (d *Disp) Set(sid string, path string) (string, error) {
 	if !d.authCommand(args) {
 		return "", mgmterror.NewAccessDeniedApplicationError()
 	}
-	defer d.accountCommand(args)
 
-	return d.setInternal(sid, ps)
+	return d.accountCmdWrapStrErr(args, func() (interface{}, error) {
+		return d.setInternal(sid, ps)
+	})
 }
 
 func (d *Disp) deleteInternal(sid string, ps []string) (bool, error) {
@@ -691,9 +692,10 @@ func (d *Disp) Delete(sid string, path string) (bool, error) {
 	if !d.authCommand(args) {
 		return false, mgmterror.NewAccessDeniedApplicationError()
 	}
-	defer d.accountCommand(args)
 
-	return d.deleteInternal(sid, ps)
+	return d.accountCmdWrapBoolErr(args, func() (interface{}, error) {
+		return d.deleteInternal(sid, ps)
+	})
 }
 
 func (d *Disp) Rename(sid string, fpath string, tpath string) (bool, error) {
@@ -898,9 +900,10 @@ func (d *Disp) Rollback(sid, revision, comment string, debug bool) (string, erro
 	if !d.authCommand(args) {
 		return "", mgmterror.NewAccessDeniedApplicationError()
 	}
-	defer d.accountCommand(args)
 
-	return d.rollbackInternal(sid, revision, comment, debug)
+	return d.accountCmdWrapStrErr(args, func() (interface{}, error) {
+		return d.rollbackInternal(sid, revision, comment, debug)
+	})
 }
 
 func (d *Disp) confirmInternal(sid string) (string, error) {
@@ -918,8 +921,10 @@ func (d *Disp) confirmInternal(sid string) (string, error) {
 }
 
 func (d *Disp) Confirm(sid string) (string, error) {
-	defer d.accountCommand(d.newCommandArgsForAaa("confirm", nil, nil))
-	return d.confirmInternal(sid)
+	args := d.newCommandArgsForAaa("confirm", nil, nil)
+	return d.accountCmdWrapStrErr(args, func() (interface{}, error) {
+		return d.confirmInternal(sid)
+	})
 }
 
 func (d *Disp) confirmPersistIdInternal(persistid string) (string, error) {
@@ -938,9 +943,12 @@ func (d *Disp) confirmPersistIdInternal(persistid string) (string, error) {
 }
 
 func (d *Disp) ConfirmPersistId(persistid string) (string, error) {
-	defer d.accountCommand(d.newCommandArgsForAaa(
-		"confirm", []string{"persist-id", persistid}, nil))
-	return d.confirmPersistIdInternal(persistid)
+	args := d.newCommandArgsForAaa(
+		"confirm", []string{"persist-id", persistid}, nil)
+
+	return d.accountCmdWrapStrErr(args, func() (interface{}, error) {
+		return d.confirmPersistIdInternal(persistid)
+	})
 }
 
 func (d *Disp) ConfirmingCommit() (string, error) {
@@ -1012,8 +1020,11 @@ func (d *Disp) CommitConfirm(
 	if message != "" {
 		args = append(args, "comment", message)
 	}
-	defer d.accountCommand(d.newCommandArgsForAaa("commit-confirm", args, nil))
-	return d.commitInternal(sid, message, debug, mins, false)
+	cmdArgs := d.newCommandArgsForAaa("commit-confirm", args, nil)
+
+	return d.accountCmdWrapStrErr(cmdArgs, func() (interface{}, error) {
+		return d.commitInternal(sid, message, debug, mins, false)
+	})
 }
 
 func (d *Disp) Commit(
@@ -1025,8 +1036,11 @@ func (d *Disp) Commit(
 	if message != "" {
 		args = append(args, "comment", message)
 	}
-	defer d.accountCommand(d.newCommandArgsForAaa("commit", args, nil))
-	return d.commitInternal(sid, message, debug, 0, false)
+	cmdArgs := d.newCommandArgsForAaa("commit", args, nil)
+
+	return d.accountCmdWrapStrErr(cmdArgs, func() (interface{}, error) {
+		return d.commitInternal(sid, message, debug, 0, false)
+	})
 }
 
 func (d *Disp) ConfirmedCommit(
@@ -1048,8 +1062,10 @@ func (d *Disp) ConfirmedCommit(
 		return "", err
 	}
 
-	defer d.accountCommand(d.newCommandArgsForAaa("commit", args, nil))
-	return d.confirmedCommitInternal(sid, message, debug, 0, cmt, false)
+	cmdArgs := d.newCommandArgsForAaa("commit", args, nil)
+	return d.accountCmdWrapStrErr(cmdArgs, func() (interface{}, error) {
+		return d.confirmedCommitInternal(sid, message, debug, 0, cmt, false)
+	})
 }
 
 func (d *Disp) commitInternal(
@@ -1218,9 +1234,10 @@ func (d *Disp) CompareConfigRevisions(sid, revOne, revTwo string) (string, error
 	if !d.authCommand(args) {
 		return "", mgmterror.NewAccessDeniedApplicationError()
 	}
-	defer d.accountCommand(args)
 
-	return d.compareConfigRevisionsInternal(sid, revOne, revTwo)
+	return d.accountCmdWrapStrErr(args, func() (interface{}, error) {
+		return d.compareConfigRevisionsInternal(sid, revOne, revTwo)
+	})
 }
 
 func (d *Disp) compareSessionChangesInternal(sid string) (string, error) {
@@ -1245,9 +1262,10 @@ func (d *Disp) CompareSessionChanges(sid string) (string, error) {
 	if !d.authCommand(args) {
 		return "", mgmterror.NewAccessDeniedApplicationError()
 	}
-	defer d.accountCommand(args)
 
-	return d.compareSessionChangesInternal(sid)
+	return d.accountCmdWrapStrErr(args, func() (interface{}, error) {
+		return d.compareSessionChangesInternal(sid)
+	})
 }
 
 // If conforms to interface
@@ -1266,8 +1284,11 @@ func (d *Disp) discardInternal(sid string) (bool, error) {
 }
 
 func (d *Disp) Discard(sid string) (bool, error) {
-	defer d.accountCommand(d.newCommandArgsForAaa("discard", nil, nil))
-	return d.discardInternal(sid)
+	args := d.newCommandArgsForAaa("discard", nil, nil)
+
+	return d.accountCmdWrapBoolErr(args, func() (interface{}, error) {
+		return d.discardInternal(sid)
+	})
 }
 
 func (d *Disp) ExtractArchive(sid, revision, destination string) (string, error) {
@@ -1310,8 +1331,10 @@ func (d *Disp) LoadReportWarnings(sid string, file string) (bool, error) {
 	if !d.authCommand(args) {
 		return false, mgmterror.NewAccessDeniedApplicationError()
 	}
-	defer d.accountCommand(args)
-	return d.loadReportWarningsReader(sid, file, nil)
+
+	return d.accountCmdWrapBoolErr(args, func() (interface{}, error) {
+		return d.loadReportWarningsReader(sid, file, nil)
+	})
 }
 
 func (d *Disp) loadReportWarningsReader(sid string, file string, r io.Reader) (bool, error) {
@@ -1356,9 +1379,10 @@ func (d *Disp) MergeReportWarnings(sid string, file string) (bool, error) {
 	if !d.authCommand(args) {
 		return false, mgmterror.NewAccessDeniedApplicationError()
 	}
-	defer d.accountCommand(args)
 
-	return d.mergeReportWarningsInternal(sid, file)
+	return d.accountCmdWrapBoolErr(args, func() (interface{}, error) {
+		return d.mergeReportWarningsInternal(sid, file)
+	})
 }
 
 func (d *Disp) validateInternal(sid string) (string, error) {
@@ -1390,8 +1414,11 @@ func (d *Disp) validateInternal(sid string) (string, error) {
 }
 
 func (d *Disp) Validate(sid string) (string, error) {
-	defer d.accountCommand(d.newCommandArgsForAaa("validate", nil, nil))
-	return d.validateInternal(sid)
+	args := d.newCommandArgsForAaa("validate", nil, nil)
+
+	return d.accountCmdWrapStrErr(args, func() (interface{}, error) {
+		return d.validateInternal(sid)
+	})
 }
 
 func (d *Disp) ValidatePath(sid string, path string) (string, error) {
@@ -1433,9 +1460,10 @@ func (d *Disp) Show(db rpc.DB, sid string, path string, hideSecrets bool) (strin
 	if !d.authCommand(args) {
 		return "", mgmterror.NewAccessDeniedApplicationError()
 	}
-	defer d.accountCommand(args)
 
-	return d.show(db, sid, ps, hideSecrets, false)
+	return d.accountCmdWrapStrErr(args, func() (interface{}, error) {
+		return d.show(db, sid, ps, hideSecrets, false)
+	})
 }
 
 func (d *Disp) ShowDefaults(db rpc.DB, sid string, path string, hideSecrets bool) (string, error) {
@@ -1445,9 +1473,10 @@ func (d *Disp) ShowDefaults(db rpc.DB, sid string, path string, hideSecrets bool
 	if !d.authCommand(args) {
 		return "", mgmterror.NewAccessDeniedApplicationError()
 	}
-	defer d.accountCommand(args)
 
-	return d.show(db, sid, ps, hideSecrets, true)
+	return d.accountCmdWrapStrErr(args, func() (interface{}, error) {
+		return d.show(db, sid, ps, hideSecrets, true)
+	})
 }
 
 func (d *Disp) showConfigWithContextDiffsInternal(
@@ -1476,9 +1505,10 @@ func (d *Disp) ShowConfigWithContextDiffs(sid string, path string, showDefaults 
 	if !d.authCommand(args) {
 		return "", mgmterror.NewAccessDeniedApplicationError()
 	}
-	defer d.accountCommand(args)
 
-	return d.showConfigWithContextDiffsInternal(sid, path, showDefaults)
+	return d.accountCmdWrapStrErr(args, func() (interface{}, error) {
+		return d.showConfigWithContextDiffsInternal(sid, path, showDefaults)
+	})
 }
 
 func (d *Disp) AuthAuthorize(path string, perm int) (bool, error) {

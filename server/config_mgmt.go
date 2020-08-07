@@ -302,13 +302,14 @@ func (d *Disp) LoadFrom(sid, source, routingInstance string) (bool, error) {
 	if !d.authCommand(args) {
 		return false, mgmterror.NewAccessDeniedApplicationError()
 	}
-	defer d.accountCommand(args)
 
 	if !d.ctx.Configd {
 		d.ctx.Wlog.Println("Load config [" + redactedSource + "] by " + d.ctx.User)
 	}
 
-	return d.loadFromInternal(sid, source, routingInstance, local)
+	return d.accountCmdWrapBoolErr(args, func() (interface{}, error) {
+		return d.loadFromInternal(sid, source, routingInstance, local)
+	})
 }
 
 func (d *Disp) saveToInternal(dest, routingInstance string, local bool) (bool, error) {
@@ -354,7 +355,8 @@ func (d *Disp) SaveTo(dest, routingInstance string) (bool, error) {
 	if !d.authCommand(args) {
 		return false, mgmterror.NewAccessDeniedApplicationError()
 	}
-	defer d.accountCommand(args)
 
-	return d.saveToInternal(dest, routingInstance, local)
+	return d.accountCmdWrapBoolErr(args, func() (interface{}, error) {
+		return d.saveToInternal(dest, routingInstance, local)
+	})
 }

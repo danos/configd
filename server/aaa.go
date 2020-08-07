@@ -3,6 +3,7 @@
 package server
 
 import (
+	"github.com/danos/config/auth"
 	"github.com/danos/config/schema"
 	"github.com/danos/utils/pathutil"
 )
@@ -65,12 +66,6 @@ func (d *Disp) newCommandArgsForAaa(cmd string, args []string, pathArgs []string
 	return d.newCommandArgs(cmd, args, pathArgs)
 }
 
-func (d *Disp) accountCommand(args *commandArgs) {
-	if args != nil {
-		d.ctx.Auth.AccountCommand(d.ctx.Uid, d.ctx.Groups, args.cmd, args.attrs)
-	}
-}
-
 // Perform "command authorization" for a given command and args
 func (d *Disp) authCommand(args *commandArgs) bool {
 	if d.ctx.Configd {
@@ -81,4 +76,41 @@ func (d *Disp) authCommand(args *commandArgs) bool {
 	}
 
 	return d.ctx.Auth.AuthorizeCommand(d.ctx.Uid, d.ctx.Groups, args.cmd, args.attrs)
+}
+
+func (d *Disp) getAccounter(args *commandArgs) auth.TaskAccounter {
+	if args == nil {
+		return nil
+	}
+
+	return d.ctx.Auth.NewTaskAccounter(d.ctx.Uid, d.ctx.Groups, args.cmd, args.attrs)
+}
+
+func (d *Disp) accountCmdWrap(
+	args *commandArgs, fn func() (interface{}, error)) (interface{}, error,
+) {
+	var err error
+
+	if a := d.getAccounter(args); a != nil {
+		defer a.AccountStop(&err)
+		a.AccountStart()
+	}
+
+	// Must assign any error from Run() to err so it is passed to AccountStop()
+	ret, err := fn()
+	return ret, err
+}
+
+func (d *Disp) accountCmdWrapStrErr(
+	args *commandArgs, fn func() (interface{}, error)) (string, error,
+) {
+	ret, err := d.accountCmdWrap(args, fn)
+	return ret.(string), err
+}
+
+func (d *Disp) accountCmdWrapBoolErr(
+	args *commandArgs, fn func() (interface{}, error)) (bool, error,
+) {
+	ret, err := d.accountCmdWrap(args, fn)
+	return ret.(bool), err
 }

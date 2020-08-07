@@ -218,7 +218,8 @@ func (d *Disp) LoadKeys(sid, user, source, routingInstance string) (string, erro
 	if !d.authCommand(args) {
 		return "", mgmterror.NewAccessDeniedApplicationError()
 	}
-	defer d.accountCommand(args)
 
-	return d.loadKeysInternal(sid, user, source, routingInstance, local, args)
+	return d.accountCmdWrapStrErr(args, func() (interface{}, error) {
+		return d.loadKeysInternal(sid, user, source, routingInstance, local, args)
+	})
 }
