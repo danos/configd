@@ -287,6 +287,7 @@ func doTestEditConfigAuth(t *testing.T, topt string) {
 				auth.NewTestAutherCommandRequest(auth.T_REQ_AUTH, cmd.cmd, attrs))
 
 			expAcctReqs.Reqs = append(expAcctReqs.Reqs,
+				auth.NewTestAutherCommandRequest(auth.T_REQ_ACCT_START, cmd.cmd, attrs),
 				auth.NewTestAutherCommandRequest(auth.T_REQ_ACCT_STOP, cmd.cmd, attrs))
 		}
 

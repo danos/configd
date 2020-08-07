@@ -245,7 +245,11 @@ func (ec edit_config) authorize(
 	pathAuthed := ec.ctx.Auth.AuthorizePath(ec.ctx.Uid, ec.ctx.Groups, e.path, e.pathAttrs, perm)
 
 	if !pathAuthed && ec.TestOption != testopt_testonly {
-		ec.ctx.Auth.AccountCommand(ec.ctx.Uid, ec.ctx.Groups, cmd, attrs)
+		var err error
+		t := ec.ctx.Auth.NewTaskAccounter(ec.ctx.Uid, ec.ctx.Groups, cmd, attrs)
+		t.AccountStart()
+		err = mgmterror.NewAccessDeniedApplicationError()
+		t.AccountStop(&err)
 	}
 	return pathAuthed
 }
@@ -320,8 +324,12 @@ func (e edit_op) merge(ec edit_config) error {
 func (e edit_op) Merge(ec edit_config) error {
 	// Could be P_CREATE or P_UPDATE, however they both map to "set"
 	cmd, attrs := e.getPathAttrsForPerm(auth.P_UPDATE, ec)
-	defer ec.ctx.Auth.AccountCommand(ec.ctx.Uid, ec.ctx.Groups, cmd, attrs)
-	return e.merge(ec)
+	t := ec.ctx.Auth.NewTaskAccounter(ec.ctx.Uid, ec.ctx.Groups, cmd, attrs)
+
+	t.AccountStart()
+	err := e.merge(ec)
+	t.AccountStop(&err)
+	return err
 }
 
 func (e edit_op) Replace(ec edit_config) error {
@@ -341,8 +349,12 @@ func (e edit_op) create(ec edit_config) error {
 
 func (e edit_op) Create(ec edit_config) error {
 	cmd, attrs := e.getPathAttrsForPerm(auth.P_CREATE, ec)
-	defer ec.ctx.Auth.AccountCommand(ec.ctx.Uid, ec.ctx.Groups, cmd, attrs)
-	return e.create(ec)
+	t := ec.ctx.Auth.NewTaskAccounter(ec.ctx.Uid, ec.ctx.Groups, cmd, attrs)
+
+	t.AccountStart()
+	err := e.create(ec)
+	t.AccountStop(&err)
+	return err
 }
 
 func (e edit_op) delete(ec edit_config) error {
@@ -354,14 +366,20 @@ func (e edit_op) delete(ec edit_config) error {
 
 func (e edit_op) Delete(ec edit_config) error {
 	cmd, attrs := e.getPathAttrsForPerm(auth.P_DELETE, ec)
-	defer ec.ctx.Auth.AccountCommand(ec.ctx.Uid, ec.ctx.Groups, cmd, attrs)
-	return e.delete(ec)
+	t := ec.ctx.Auth.NewTaskAccounter(ec.ctx.Uid, ec.ctx.Groups, cmd, attrs)
+
+	t.AccountStart()
+	err := e.delete(ec)
+	t.AccountStop(&err)
+	return err
 }
 
 func (e edit_op) removeInternal(ec edit_config, doAcct bool) error {
 	if doAcct {
 		cmd, attrs := e.getPathAttrsForPerm(auth.P_DELETE, ec)
-		defer ec.ctx.Auth.AccountCommand(ec.ctx.Uid, ec.ctx.Groups, cmd, attrs)
+		t := ec.ctx.Auth.NewTaskAccounter(ec.ctx.Uid, ec.ctx.Groups, cmd, attrs)
+		t.AccountStart()
+		defer t.AccountStop(nil)
 	}
 
 	t := ec.sess.getUnion()
