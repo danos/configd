@@ -43,7 +43,6 @@ type CommitMgr struct {
 	effective *Session
 	schema    schema.ModelSet
 	reqch     chan commitmgrreq
-	hadcommit bool
 }
 
 func NewCommitMgr(running *data.AtomicNode, schema schema.ModelSet) *CommitMgr {
@@ -95,20 +94,7 @@ func (m *CommitMgr) commit(sid string, sctx *configd.Context, candidate *data.No
 	//tree without the default values in it.
 	overallStart := time.Now()
 	rtree := m.Running()
-
-	var run *data.Node
-
-	if !m.hadcommit {
-		// Very first commit. To ensure that defaults values
-		// are configured, set running tree with no defaults
-		// instantiated. When compared to candiate tree, the
-		// defaults will be seen as a difference.
-		m.hadcommit = true
-		run = union.NewNode(nil, rtree, m.schema, nil, 0).MergeWithoutDefaults()
-	} else {
-		run = union.NewNode(nil, rtree, m.schema, nil, 0).Merge()
-	}
-
+	run := union.NewNode(nil, rtree, m.schema, nil, 0).Merge()
 	ucan := union.NewNode(candidate, rtree, m.schema, nil, 0)
 	mcan := ucan.Merge()
 	// debug-level logging should be enabled if the debug flag passed in is
