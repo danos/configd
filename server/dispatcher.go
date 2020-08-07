@@ -666,15 +666,8 @@ func (d *Disp) Set(sid string, path string) (string, error) {
 
 	return d.setInternal(sid, ps)
 }
-func (d *Disp) Delete(sid string, path string) (bool, error) {
-	ps := pathutil.Makepath(path)
 
-	args := d.newCommandArgsForAaa("delete", nil, ps)
-	if !d.authCommand(args) {
-		return false, mgmterror.NewAccessDeniedApplicationError()
-	}
-	defer d.accountCommand(args)
-
+func (d *Disp) deleteInternal(sid string, ps []string) (bool, error) {
 	if !d.authDelete(ps) {
 		return false, mgmterror.NewAccessDeniedApplicationError()
 	}
@@ -690,6 +683,19 @@ func (d *Disp) Delete(sid string, path string) (bool, error) {
 	}
 	return true, nil
 }
+
+func (d *Disp) Delete(sid string, path string) (bool, error) {
+	ps := pathutil.Makepath(path)
+
+	args := d.newCommandArgsForAaa("delete", nil, ps)
+	if !d.authCommand(args) {
+		return false, mgmterror.NewAccessDeniedApplicationError()
+	}
+	defer d.accountCommand(args)
+
+	return d.deleteInternal(sid, ps)
+}
+
 func (d *Disp) Rename(sid string, fpath string, tpath string) (bool, error) {
 	return false, mgmterror.NewOperationNotSupportedApplicationError()
 }
@@ -821,14 +827,8 @@ func (d *Disp) CancelCommit(sid, comment, persistid string, force, debug bool) (
 	return res, err
 }
 
-func (d *Disp) Rollback(sid, revision, comment string, debug bool) (string, error) {
+func (d *Disp) rollbackInternal(sid, revision, comment string, debug bool) (string, error) {
 	var retStr string
-
-	args := d.rollbackCommandAuthArgs(revision, comment)
-	if !d.authCommand(args) {
-		return "", mgmterror.NewAccessDeniedApplicationError()
-	}
-	defer d.accountCommand(args)
 
 	d.ConfirmSilent(sid)
 	d.logRollbackEvent("Commit/Rollback operation - any pending rollback cancelled.")
@@ -893,9 +893,17 @@ func (d *Disp) Rollback(sid, revision, comment string, debug bool) (string, erro
 	return retStr, nil
 }
 
-func (d *Disp) Confirm(sid string) (string, error) {
-	defer d.accountCommand(d.newCommandArgsForAaa("confirm", nil, nil))
+func (d *Disp) Rollback(sid, revision, comment string, debug bool) (string, error) {
+	args := d.rollbackCommandAuthArgs(revision, comment)
+	if !d.authCommand(args) {
+		return "", mgmterror.NewAccessDeniedApplicationError()
+	}
+	defer d.accountCommand(args)
 
+	return d.rollbackInternal(sid, revision, comment, debug)
+}
+
+func (d *Disp) confirmInternal(sid string) (string, error) {
 	cmd := spawn.Command("/opt/vyatta/sbin/vyatta-config-mgmt.pl",
 		"--action=confirm")
 	out, err := cmd.CombinedOutput()
@@ -909,9 +917,12 @@ func (d *Disp) Confirm(sid string) (string, error) {
 	return string(out), err
 }
 
-func (d *Disp) ConfirmPersistId(persistid string) (string, error) {
-	defer d.accountCommand(d.newCommandArgsForAaa("confirm", []string{"persist-id", persistid}, nil))
+func (d *Disp) Confirm(sid string) (string, error) {
+	defer d.accountCommand(d.newCommandArgsForAaa("confirm", nil, nil))
+	return d.confirmInternal(sid)
+}
 
+func (d *Disp) confirmPersistIdInternal(persistid string) (string, error) {
 	cmd := spawn.Command("/opt/vyatta/sbin/vyatta-config-mgmt.pl",
 		"--action=confirm",
 		fmt.Sprintf("--persistid=%s", persistid))
@@ -924,6 +935,12 @@ func (d *Disp) ConfirmPersistId(persistid string) (string, error) {
 		return "", err
 	}
 	return string(out), err
+}
+
+func (d *Disp) ConfirmPersistId(persistid string) (string, error) {
+	defer d.accountCommand(d.newCommandArgsForAaa(
+		"confirm", []string{"persist-id", persistid}, nil))
+	return d.confirmPersistIdInternal(persistid)
 }
 
 func (d *Disp) ConfirmingCommit() (string, error) {
@@ -1164,17 +1181,7 @@ func newInvalidConfigRevisionError(revision string) error {
 	return err
 }
 
-func (d *Disp) CompareConfigRevisions(sid, revOne, revTwo string) (string, error) {
-	authArgs := []string{revTwo}
-	if revOne != "session" {
-		authArgs = append([]string{revOne}, authArgs...)
-	}
-	args := d.newCommandArgsForAaa("compare", authArgs, nil)
-	if !d.authCommand(args) {
-		return "", mgmterror.NewAccessDeniedApplicationError()
-	}
-	defer d.accountCommand(args)
-
+func (d *Disp) compareConfigRevisionsInternal(sid, revOne, revTwo string) (string, error) {
 	if !d.validCompareConfigRevision(revOne) {
 		return "", newInvalidConfigRevisionError(revOne)
 	}
@@ -1202,13 +1209,21 @@ func (d *Disp) CompareConfigRevisions(sid, revOne, revTwo string) (string, error
 	return d.Compare(one, two, "", true)
 }
 
-func (d *Disp) CompareSessionChanges(sid string) (string, error) {
-	args := d.newCommandArgsForAaa("compare", nil, nil)
+func (d *Disp) CompareConfigRevisions(sid, revOne, revTwo string) (string, error) {
+	authArgs := []string{revTwo}
+	if revOne != "session" {
+		authArgs = append([]string{revOne}, authArgs...)
+	}
+	args := d.newCommandArgsForAaa("compare", authArgs, nil)
 	if !d.authCommand(args) {
 		return "", mgmterror.NewAccessDeniedApplicationError()
 	}
 	defer d.accountCommand(args)
 
+	return d.compareConfigRevisionsInternal(sid, revOne, revTwo)
+}
+
+func (d *Disp) compareSessionChangesInternal(sid string) (string, error) {
 	runningSess := d.getROSession(rpc.RUNNING, sid)
 	candSess := d.getROSession(rpc.CANDIDATE, sid)
 
@@ -1225,11 +1240,19 @@ func (d *Disp) CompareSessionChanges(sid string) (string, error) {
 	return d.Compare(candShow, runningShow, "", true)
 }
 
+func (d *Disp) CompareSessionChanges(sid string) (string, error) {
+	args := d.newCommandArgsForAaa("compare", nil, nil)
+	if !d.authCommand(args) {
+		return "", mgmterror.NewAccessDeniedApplicationError()
+	}
+	defer d.accountCommand(args)
+
+	return d.compareSessionChangesInternal(sid)
+}
+
 // If conforms to interface
 
-func (d *Disp) Discard(sid string) (bool, error) {
-	defer d.accountCommand(d.newCommandArgsForAaa("discard", nil, nil))
-
+func (d *Disp) discardInternal(sid string) (bool, error) {
 	sess, err := d.smgr.Get(sid)
 	if err != nil {
 		return false, err
@@ -1241,6 +1264,12 @@ func (d *Disp) Discard(sid string) (bool, error) {
 	}
 	return true, nil
 }
+
+func (d *Disp) Discard(sid string) (bool, error) {
+	defer d.accountCommand(d.newCommandArgsForAaa("discard", nil, nil))
+	return d.discardInternal(sid)
+}
+
 func (d *Disp) ExtractArchive(sid, revision, destination string) (string, error) {
 	cmd := spawn.Command("/opt/vyatta/sbin/vyatta-config-mgmt.pl", "--action=extract-archive", "--revnum="+revision, "--dest="+destination)
 	out, err := cmd.CombinedOutput()
@@ -1308,13 +1337,7 @@ func (d *Disp) Merge(sid string, file string) (bool, error) {
 	return ok, errOrWarns
 }
 
-func (d *Disp) MergeReportWarnings(sid string, file string) (bool, error) {
-	args := d.cfgMgmtCommandArgs("merge", file, "")
-	if !d.authCommand(args) {
-		return false, mgmterror.NewAccessDeniedApplicationError()
-	}
-	defer d.accountCommand(args)
-
+func (d *Disp) mergeReportWarningsInternal(sid string, file string) (bool, error) {
 	sess, err := d.smgr.Get(sid)
 	if err != nil {
 		return false, err
@@ -1327,9 +1350,18 @@ func (d *Disp) MergeReportWarnings(sid string, file string) (bool, error) {
 
 	return true, common.FormatWarnings(warns)
 }
-func (d *Disp) Validate(sid string) (string, error) {
-	defer d.accountCommand(d.newCommandArgsForAaa("validate", nil, nil))
 
+func (d *Disp) MergeReportWarnings(sid string, file string) (bool, error) {
+	args := d.cfgMgmtCommandArgs("merge", file, "")
+	if !d.authCommand(args) {
+		return false, mgmterror.NewAccessDeniedApplicationError()
+	}
+	defer d.accountCommand(args)
+
+	return d.mergeReportWarningsInternal(sid, file)
+}
+
+func (d *Disp) validateInternal(sid string) (string, error) {
 	var rpcout bytes.Buffer
 	sess, err := d.smgr.Get(sid)
 	if err != nil {
@@ -1355,6 +1387,11 @@ func (d *Disp) Validate(sid string) (string, error) {
 	var merr mgmterror.MgmtErrorList
 	merr.MgmtErrorListAppend(errs...)
 	return "", merr
+}
+
+func (d *Disp) Validate(sid string) (string, error) {
+	defer d.accountCommand(d.newCommandArgsForAaa("validate", nil, nil))
+	return d.validateInternal(sid)
 }
 
 func (d *Disp) ValidatePath(sid string, path string) (string, error) {
@@ -1413,15 +1450,9 @@ func (d *Disp) ShowDefaults(db rpc.DB, sid string, path string, hideSecrets bool
 	return d.show(db, sid, ps, hideSecrets, true)
 }
 
-func (d *Disp) ShowConfigWithContextDiffs(sid string, path string, showDefaults bool) (string, error) {
-	ps := pathutil.Makepath(path)
-
-	args := d.showCommandArgs(ps, showDefaults)
-	if !d.authCommand(args) {
-		return "", mgmterror.NewAccessDeniedApplicationError()
-	}
-	defer d.accountCommand(args)
-
+func (d *Disp) showConfigWithContextDiffsInternal(
+	sid string, path string, showDefaults bool,
+) (string, error) {
 	runningSess := d.getROSession(rpc.RUNNING, sid)
 	candSess := d.getROSession(rpc.CANDIDATE, sid)
 
@@ -1436,6 +1467,18 @@ func (d *Disp) ShowConfigWithContextDiffs(sid string, path string, showDefaults 
 	}
 
 	return d.Compare(candShow, runningShow, path, false)
+}
+
+func (d *Disp) ShowConfigWithContextDiffs(sid string, path string, showDefaults bool) (string, error) {
+	ps := pathutil.Makepath(path)
+
+	args := d.showCommandArgs(ps, showDefaults)
+	if !d.authCommand(args) {
+		return "", mgmterror.NewAccessDeniedApplicationError()
+	}
+	defer d.accountCommand(args)
+
+	return d.showConfigWithContextDiffsInternal(sid, path, showDefaults)
 }
 
 func (d *Disp) AuthAuthorize(path string, perm int) (bool, error) {

@@ -272,6 +272,26 @@ func (d *Disp) cfgMgmtCommandArgs(cmd, uri, routingInstance string) *commandArgs
 	return d.newCommandArgsForAaa(cmd, args, nil)
 }
 
+func (d *Disp) loadFromInternal(
+	sid, source, routingInstance string, local bool,
+) (bool, error) {
+	var cfgFile string
+	if local {
+		cfgFile = d.parseLocalPath(source)
+		if err := d.validLocalConfigPath(cfgFile); err != nil {
+			return false, err
+		}
+	} else {
+		cfgFile, err := d.downloadTempFile(source, configDir, ".load.", routingInstance)
+		if err != nil {
+			return false, err
+		}
+		defer os.Remove(cfgFile)
+	}
+
+	return d.loadReportWarningsReader(sid, cfgFile, nil)
+}
+
 func (d *Disp) LoadFrom(sid, source, routingInstance string) (bool, error) {
 	local, redactedSource, err := parseMgmtURI(source)
 	if err != nil {
@@ -288,35 +308,10 @@ func (d *Disp) LoadFrom(sid, source, routingInstance string) (bool, error) {
 		d.ctx.Wlog.Println("Load config [" + redactedSource + "] by " + d.ctx.User)
 	}
 
-	var cfgFile string
-	if local {
-		cfgFile = d.parseLocalPath(source)
-		if err := d.validLocalConfigPath(cfgFile); err != nil {
-			return false, err
-		}
-	} else {
-		cfgFile, err = d.downloadTempFile(source, configDir, ".load.", routingInstance)
-		if err != nil {
-			return false, err
-		}
-		defer os.Remove(cfgFile)
-	}
-
-	return d.loadReportWarningsReader(sid, cfgFile, nil)
+	return d.loadFromInternal(sid, source, routingInstance, local)
 }
 
-func (d *Disp) SaveTo(dest, routingInstance string) (bool, error) {
-	local, redactedDest, err := parseMgmtURI(dest)
-	if err != nil {
-		return false, err
-	}
-
-	args := d.cfgMgmtCommandArgs("save", redactedDest, routingInstance)
-	if !d.authCommand(args) {
-		return false, mgmterror.NewAccessDeniedApplicationError()
-	}
-	defer d.accountCommand(args)
-
+func (d *Disp) saveToInternal(dest, routingInstance string, local bool) (bool, error) {
 	if local {
 		dest = d.parseLocalPath(dest)
 		if err := d.validLocalSaveToDest(dest); err != nil {
@@ -347,4 +342,19 @@ func (d *Disp) SaveTo(dest, routingInstance string) (bool, error) {
 	}
 
 	return err == nil, err
+}
+
+func (d *Disp) SaveTo(dest, routingInstance string) (bool, error) {
+	local, redactedDest, err := parseMgmtURI(dest)
+	if err != nil {
+		return false, err
+	}
+
+	args := d.cfgMgmtCommandArgs("save", redactedDest, routingInstance)
+	if !d.authCommand(args) {
+		return false, mgmterror.NewAccessDeniedApplicationError()
+	}
+	defer d.accountCommand(args)
+
+	return d.saveToInternal(dest, routingInstance, local)
 }

@@ -155,24 +155,9 @@ func (d *Disp) loadKeysIsSupported() bool {
 	return supported
 }
 
-// LoadKeys RPC
-// This provides the implementation for the "loadkey" cfgcli command
-func (d *Disp) LoadKeys(sid, user, source, routingInstance string) (string, error) {
-	if !d.loadKeysIsSupported() {
-		return "", mgmterror.NewOperationNotSupportedApplicationError()
-	}
-
-	local, redactedSource, err := parseMgmtURI(source)
-	if err != nil {
-		return "", err
-	}
-
-	args := d.loadKeyCommandArgs(user, redactedSource, routingInstance)
-	if !d.authCommand(args) {
-		return "", mgmterror.NewAccessDeniedApplicationError()
-	}
-	defer d.accountCommand(args)
-
+func (d *Disp) loadKeysInternal(
+	sid, user, source, routingInstance string, local bool, args *commandArgs,
+) (string, error) {
 	if err := d.userIsConfigured(sid, user); err != nil {
 		return "", err
 	}
@@ -184,7 +169,7 @@ func (d *Disp) LoadKeys(sid, user, source, routingInstance string) (string, erro
 			return "", err
 		}
 	} else {
-		file, err = d.downloadTempFile(source, configDir, ".loadkeys.", routingInstance)
+		file, err := d.downloadTempFile(source, configDir, ".loadkeys.", routingInstance)
 		if err != nil {
 			return "", err
 		}
@@ -215,4 +200,25 @@ func (d *Disp) LoadKeys(sid, user, source, routingInstance string) (string, erro
 		out += "Loaded keys from '" + source + "'"
 	}
 	return out, err
+}
+
+// LoadKeys RPC
+// This provides the implementation for the "loadkey" cfgcli command
+func (d *Disp) LoadKeys(sid, user, source, routingInstance string) (string, error) {
+	if !d.loadKeysIsSupported() {
+		return "", mgmterror.NewOperationNotSupportedApplicationError()
+	}
+
+	local, redactedSource, err := parseMgmtURI(source)
+	if err != nil {
+		return "", err
+	}
+
+	args := d.loadKeyCommandArgs(user, redactedSource, routingInstance)
+	if !d.authCommand(args) {
+		return "", mgmterror.NewAccessDeniedApplicationError()
+	}
+	defer d.accountCommand(args)
+
+	return d.loadKeysInternal(sid, user, source, routingInstance, local, args)
 }
