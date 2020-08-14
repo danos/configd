@@ -102,9 +102,11 @@ func FormatRpcPathError(err error) error {
 			// element, or all bar the final element.
 			b.WriteString(me.GetMessage())
 		default:
-			b.WriteString(errpath(me.GetPath()))
-			b.WriteString(isntValid)
-			b.WriteString("\n\n")
+			if me.GetPath() != "" {
+				b.WriteString(errpath(me.GetPath()))
+				b.WriteString(isntValid)
+				b.WriteString("\n\n")
+			}
 			b.WriteString(me.GetMessage())
 		}
 	} else {
