@@ -1,3 +1,10 @@
+configd (2.8.1) unstable; urgency=medium
+
+  [ Duncan Eastoe ]
+  * edit_config: default-operation none may merge cfg
+
+ -- William Ivory <william.ivory@intl.att.com>  Mon, 17 Aug 2020 18:08:42 +0100
+
 configd (2.8) unstable; urgency=medium
 
   [ Erik Ziegenbalg ]
