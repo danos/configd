@@ -1,3 +1,10 @@
+configd (2.9.3) unstable; urgency=medium
+
+  [ Duncan Eastoe ]
+  * edit_config: default-operation none may merge cfg
+
+ -- William Ivory <william.ivory@intl.att.com>  Mon, 17 Aug 2020 18:07:33 +0100
+
 configd (2.9.2) unstable; urgency=medium
 
   * Revert "Configure top level defaults after boot"
