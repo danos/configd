@@ -166,19 +166,20 @@ func (d *Disp) writeRunningConfigToFile(file *os.File) error {
 	return nil
 }
 
-func (d *Disp) writeTempRunningConfigFile() (string, error) {
+func (d *Disp) writeTempRunningConfigFile() (*os.File, error) {
 	tmpFile, err := ioutil.TempFile(tmpDir, ".save.")
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	err = d.writeRunningConfigToFile(tmpFile)
 	if err != nil {
+		tmpFile.Close()
 		os.Remove(tmpFile.Name())
-		return "", err
+		return nil, err
 	}
 
-	return tmpFile.Name(), nil
+	return tmpFile, nil
 }
 
 func (d *Disp) newCommandAsCaller(cmd []string) *spawn.Cmd {
@@ -285,22 +286,23 @@ func (d *Disp) saveToInternal(dest, routingInstance string, local bool) (bool, e
 	if err != nil {
 		return false, err
 	}
-	defer os.Remove(tmpFile)
+	defer tmpFile.Close()
+	defer os.Remove(tmpFile.Name())
 
 	// Set owner of the saved config to the requesting user
 	// This is necessary since future operations on the file will be performed
 	// as the requesting user
 	if !d.ctx.Configd {
-		err = os.Chown(tmpFile, int(d.ctx.Uid), -1)
+		err = tmpFile.Chown(int(d.ctx.Uid), -1)
 		if err != nil {
 			return false, err
 		}
 	}
 
 	if local {
-		err = d.copyFile(tmpFile, dest)
+		err = d.copyFile(tmpFile.Name(), dest)
 	} else {
-		err = d.uploadFile(tmpFile, dest, routingInstance)
+		err = d.uploadFile(tmpFile.Name(), dest, routingInstance)
 	}
 
 	return err == nil, err
