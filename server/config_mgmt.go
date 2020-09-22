@@ -25,6 +25,7 @@ const (
 
 // Globals which can be manipulated by UTs (see config_mgmt_internal_test.go)
 var configDir = "/config"
+var tmpDir = "/var/tmp/configd"
 var spawnCommandAsCallerFn = spawnCommandAsCaller
 
 func userSandboxPath(user string) string {
@@ -166,7 +167,7 @@ func (d *Disp) writeRunningConfigToFile(file *os.File) error {
 }
 
 func (d *Disp) writeTempRunningConfigFile() (string, error) {
-	tmpFile, err := ioutil.TempFile(configDir, ".save.")
+	tmpFile, err := ioutil.TempFile(tmpDir, ".save.")
 	if err != nil {
 		return "", err
 	}
@@ -282,7 +283,7 @@ func (d *Disp) loadFromInternal(
 			return false, err
 		}
 	} else {
-		cfgFile, err := d.downloadTempFile(source, configDir, ".load.", routingInstance)
+		cfgFile, err := d.downloadTempFile(source, tmpDir, ".load.", routingInstance)
 		if err != nil {
 			return false, err
 		}
