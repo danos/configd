@@ -14,6 +14,12 @@ import (
 	spawn "os/exec"
 )
 
+func TestConfigMgmtProductionTmpDir(t *testing.T) {
+	if server.GetProductionTmpDir() != "/var/tmp/configd" {
+		t.Fatalf("Unexpected tmpDir %v", server.GetProductionTmpDir())
+	}
+}
+
 func TestLoadFromSuccessCommandAuthz(t *testing.T) {
 	a := auth.TestAutherAllowAll()
 	d := newTestDispatcherWithCustomAuth(
@@ -77,8 +83,8 @@ func TestSaveToCommandAuthz(t *testing.T) {
 	server.SetSpawnCommandAsCallerFn(testSpawnCommandAsCaller)
 	defer server.ResetSpawnCommandAsCallerFn()
 
-	server.SetConfigDir(os.TempDir())
-	defer server.ResetConfigDir()
+	server.SetTmpDir(os.TempDir())
+	defer server.SetTmpDir(server.GetProductionTmpDir())
 
 	dispTestSetupSession(t, d, testSID)
 

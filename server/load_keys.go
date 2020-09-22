@@ -169,7 +169,7 @@ func (d *Disp) loadKeysInternal(
 			return "", err
 		}
 	} else {
-		file, err := d.downloadTempFile(source, configDir, ".loadkeys.", routingInstance)
+		file, err := d.downloadTempFile(source, tmpDir, ".loadkeys.", routingInstance)
 		if err != nil {
 			return "", err
 		}
