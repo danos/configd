@@ -1,3 +1,32 @@
+configd (2.10) unstable; urgency=medium
+
+  [ Nicholas Brown ]
+  * Reuse the same build worker node for the docker container
+
+  [ John Southworth ]
+  * Tweak memory settings in the configd process
+
+  [ Paul Carson ]
+  * Configure top level defaults after boot
+
+  [ Duncan Eastoe ]
+  * edit_config: default-operation none may merge cfg
+
+  [ William Ivory ]
+  * Encode MgmtErrors explicitly; decode in client.go
+
+  [ Duncan Eastoe ]
+  * edit_config_auth_test.go: Fatalf() --> Errorf()
+  * edit_config.go: Skip accounting on test only
+  * Update to use latest NewTestAutherCommandRequest
+  * aaa.go: Move AAA related funcs from dispatcher.go
+  * dispatcher: split accounted RPC handlers
+  * dispatcher: Migrate to auth.TaskAccounter API
+  * edit_config: Migrate to auth.TaskAccounter API
+  * cli_format.go: Avoid "[] is not valid" in RPC err
+
+ -- William Ivory <william.ivory@intl.att.com>  Fri, 25 Sep 2020 08:45:06 +0100
+
 configd (2.9) unstable; urgency=medium
 
   [ John Southworth ]
