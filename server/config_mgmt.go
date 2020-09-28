@@ -181,7 +181,7 @@ func (d *Disp) writeTempRunningConfigFile() (string, error) {
 	return tmpFile.Name(), nil
 }
 
-func (d *Disp) spawnCommandAsCaller(cmd []string) (string, error) {
+func (d *Disp) newCommandAsCaller(cmd []string) *spawn.Cmd {
 	// Drop to calling user privileges to try prevent the user from accessing
 	// or doing things they shouldn't be able to.
 	// NB. If user isolation is enabled this is *not* run in the context of the
@@ -191,16 +191,22 @@ func (d *Disp) spawnCommandAsCaller(cmd []string) (string, error) {
 			cmd...)
 	}
 
-	out, err := spawn.Command(cmd[0], cmd[1:]...).CombinedOutput()
+	return spawn.Command(cmd[0], cmd[1:]...)
+}
 
+func handleCallerCommandError(out []byte, err error) error {
 	// If there was output replace error with something a bit more meaningful
 	if err != nil && len(out) > 0 {
 		operr := mgmterror.NewOperationFailedApplicationError()
 		operr.Message = strings.Trim(string(out), "\n")
-		return operr.Message, operr
+		return operr
 	}
+	return err
+}
 
-	return string(out), err
+func (d *Disp) spawnCommandAsCaller(cmd []string) (string, error) {
+	out, err := d.newCommandAsCaller(cmd).CombinedOutput()
+	return string(out), handleCallerCommandError(out, err)
 }
 
 func (d *Disp) copyFile(from, to string) error {
