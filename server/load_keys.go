@@ -94,14 +94,8 @@ func loadKeysParseReader(reader io.Reader) ([]*sshPublicKey, error) {
 	return keys, nil
 }
 
-func (d *Disp) loadKeysParse(file string) ([]*sshPublicKey, error) {
-	// Spawn "cat" to read the file so file access occurs as the calling user
-	out, err := d.spawnCommandAsCaller([]string{"cat", file})
-	if err != nil {
-		return nil, err
-	}
-
-	keys, err := loadKeysParseReader(strings.NewReader(out))
+func (d *Disp) loadKeysParse(reader io.Reader) ([]*sshPublicKey, error) {
+	keys, err := loadKeysParseReader(reader)
 	if err != nil {
 		operr := mgmterror.NewOperationFailedApplicationError()
 		operr.Message = "Parsing key file failed\n" + err.Error()
@@ -176,7 +170,10 @@ func (d *Disp) loadKeysInternal(
 		defer os.Remove(file)
 	}
 
-	keys, err := d.loadKeysParse(file)
+	reader := d.newUserFileReader(file)
+	defer reader.Close()
+
+	keys, err := d.loadKeysParse(reader)
 	if err != nil {
 		return "", err
 	}
