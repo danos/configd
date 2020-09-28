@@ -26,7 +26,7 @@ const (
 // Globals which can be manipulated by UTs (see config_mgmt_internal_test.go)
 var configDir = "/config"
 var tmpDir = "/var/tmp/configd"
-var spawnCommandAsCallerFn = spawnCommandAsCaller
+var callerCmdSetPrivs = true
 
 func userSandboxPath(user string) string {
 	return "/run/cli-sandbox/" + user
@@ -181,12 +181,12 @@ func (d *Disp) writeTempRunningConfigFile() (string, error) {
 	return tmpFile.Name(), nil
 }
 
-func spawnCommandAsCaller(d *Disp, cmd []string) (string, error) {
+func (d *Disp) spawnCommandAsCaller(cmd []string) (string, error) {
 	// Drop to calling user privileges to try prevent the user from accessing
 	// or doing things they shouldn't be able to.
 	// NB. If user isolation is enabled this is *not* run in the context of the
 	//     calling user's container but rather the main container.
-	if !d.ctx.Configd {
+	if !d.ctx.Configd && callerCmdSetPrivs {
 		cmd = append([]string{"/opt/vyatta/sbin/lu", "--setprivs", "--user=" + d.ctx.User},
 			cmd...)
 	}
@@ -201,10 +201,6 @@ func spawnCommandAsCaller(d *Disp, cmd []string) (string, error) {
 	}
 
 	return string(out), err
-}
-
-func (d *Disp) spawnCommandAsCaller(cmd []string) (string, error) {
-	return spawnCommandAsCallerFn(d, cmd)
 }
 
 func (d *Disp) copyFile(from, to string) error {

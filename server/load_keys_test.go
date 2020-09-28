@@ -1,4 +1,4 @@
-// Copyright (c) 2019, AT&T Intellectual Property Inc. All rights reserved.
+// Copyright (c) 2019-2020, AT&T Intellectual Property Inc. All rights reserved.
 //
 // SPDX-License-Identifier: LGPL-2.1-only
 
@@ -118,8 +118,8 @@ func loadKeysTest(t *testing.T) (auth.TestAuther, *server.Disp, string) {
 		false, /* not configd user, so our auther gets used! */
 		false /* not in secrets group */)
 
-	server.SetSpawnCommandAsCallerFn(testSpawnCommandAsCaller)
-	defer server.ResetSpawnCommandAsCallerFn()
+	server.SetCallerCmdSetPrivs(false)
+	defer server.SetCallerCmdSetPrivs(server.GetProductionCallerCmdSetPrivs())
 
 	dispTestSetupSession(t, d, testSID)
 

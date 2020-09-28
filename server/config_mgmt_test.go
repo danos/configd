@@ -1,4 +1,4 @@
-// Copyright (c) 2019, AT&T Intellectual Property Inc. All rights reserved.
+// Copyright (c) 2019-2020, AT&T Intellectual Property Inc. All rights reserved.
 //
 // SPDX-License-Identifier: LGPL-2.1-only
 
@@ -11,8 +11,13 @@ import (
 	"github.com/danos/config/auth"
 	"github.com/danos/config/testutils"
 	"github.com/danos/configd/server"
-	spawn "os/exec"
 )
+
+func TestConfigMgmtProductionCallerCmdSetPrivs(t *testing.T) {
+	if !server.GetProductionCallerCmdSetPrivs() {
+		t.Fatalf("callerCmdSetPrivs unexpectedly disabled")
+	}
+}
 
 func TestConfigMgmtProductionTmpDir(t *testing.T) {
 	if server.GetProductionTmpDir() != "/var/tmp/configd" {
@@ -67,11 +72,6 @@ func TestLoadFromRoutingInstanceCommandAuthz(t *testing.T) {
 		[]string{"load", "routing-instance", "red", "scp://bar:**@localhost/conf"})
 }
 
-func testSpawnCommandAsCaller(_ *server.Disp, cmd []string) (string, error) {
-	out, err := spawn.Command(cmd[0], cmd[1:]...).CombinedOutput()
-	return string(out), err
-}
-
 func TestSaveToCommandAuthz(t *testing.T) {
 	a := auth.TestAutherAllowAll()
 	d := newTestDispatcherWithCustomAuth(
@@ -80,8 +80,8 @@ func TestSaveToCommandAuthz(t *testing.T) {
 		false, /* not configd user, so our auther gets used! */
 		false /* not in secrets group */)
 
-	server.SetSpawnCommandAsCallerFn(testSpawnCommandAsCaller)
-	defer server.ResetSpawnCommandAsCallerFn()
+	server.SetCallerCmdSetPrivs(false)
+	defer server.SetCallerCmdSetPrivs(server.GetProductionCallerCmdSetPrivs())
 
 	server.SetTmpDir(os.TempDir())
 	defer server.SetTmpDir(server.GetProductionTmpDir())
