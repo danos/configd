@@ -4,16 +4,15 @@
 
 package server
 
+var productionCallerCmdSetPrivs = callerCmdSetPrivs
 var productionTmpDir = tmpDir
 
-type SpawnCommandAsCallerFn func(*Disp, []string) (string, error)
-
-func SetSpawnCommandAsCallerFn(fn SpawnCommandAsCallerFn) {
-	spawnCommandAsCallerFn = fn
+func SetCallerCmdSetPrivs(set bool) {
+	callerCmdSetPrivs = set
 }
 
-func ResetSpawnCommandAsCallerFn() {
-	spawnCommandAsCallerFn = spawnCommandAsCaller
+func GetProductionCallerCmdSetPrivs() bool {
+	return productionCallerCmdSetPrivs
 }
 
 func SetTmpDir(dir string) {
