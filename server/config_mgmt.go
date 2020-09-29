@@ -205,25 +205,28 @@ func handleCallerCommandError(out []byte, err error) error {
 	return err
 }
 
-func (d *Disp) spawnCommandAsCaller(cmd []string) (string, error) {
-	out, err := d.newCommandAsCaller(cmd).CombinedOutput()
-	return string(out), handleCallerCommandError(out, err)
+func (d *Disp) copyFile(from *os.File, to string) error {
+	// Don't preserve existing permissions on destination file.
+	// We pass the file descriptor as the first element in the ExtraFiles slice
+	// and it will therefore be descriptor 3 in the child.
+	cmd := d.newCommandAsCaller([]string{"cp", "-T", "/dev/fd/3", to})
+	cmd.ExtraFiles = []*os.File{from}
+
+	return handleCallerCommandError(cmd.CombinedOutput())
 }
 
-func (d *Disp) copyFile(from, to string) error {
-	// Don't preserve existing permissions on destination file
-	_, err := d.spawnCommandAsCaller([]string{"cp", "-T", from, to})
-	return err
-}
-
-func (d *Disp) uploadFile(file, dest, routingInstance string) error {
-	cmd := []string{transferUrlBin, "--infile=" + file}
+func (d *Disp) uploadFile(file *os.File, dest, routingInstance string) error {
+	// We pass the file descriptor as the first element in the ExtraFiles slice
+	// and it will therefore be descriptor 3 in the child.
+	args := []string{transferUrlBin, "--infile=/dev/fd/3"}
 	if routingInstance != "" {
-		cmd = append(cmd, "--ri="+routingInstance)
+		args = append(args, "--ri="+routingInstance)
 	}
 
-	_, err := d.spawnCommandAsCaller(append(cmd, dest))
-	return err
+	cmd := d.newCommandAsCaller(append(args, dest))
+	cmd.ExtraFiles = []*os.File{file}
+
+	return handleCallerCommandError(cmd.CombinedOutput())
 }
 
 func (d *Disp) cfgMgmtCommandArgs(cmd, uri, routingInstance string) *commandArgs {
@@ -300,9 +303,9 @@ func (d *Disp) saveToInternal(dest, routingInstance string, local bool) (bool, e
 	}
 
 	if local {
-		err = d.copyFile(tmpFile.Name(), dest)
+		err = d.copyFile(tmpFile, dest)
 	} else {
-		err = d.uploadFile(tmpFile.Name(), dest, routingInstance)
+		err = d.uploadFile(tmpFile, dest, routingInstance)
 	}
 
 	return err == nil, err
