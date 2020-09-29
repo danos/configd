@@ -215,45 +215,6 @@ func (d *Disp) copyFile(from, to string) error {
 	return err
 }
 
-func (d *Disp) downloadFile(source, file, routingInstance string) error {
-	cmd := []string{transferUrlBin, "--outfile=" + file}
-	if routingInstance != "" {
-		cmd = append(cmd, "--ri="+routingInstance)
-	}
-
-	_, err := d.spawnCommandAsCaller(append(cmd, source))
-	return err
-}
-
-func (d *Disp) downloadTempFile(source, dir, prefix, routingInstance string) (string, error) {
-	var file string
-
-	// Create a temporary file which we can overwrite
-	t, err := ioutil.TempFile(dir, prefix)
-	if err != nil {
-		return "", err
-	}
-	file = t.Name()
-
-	// Set owner of the temp file to the requesting user
-	// This is necessary since the download operation happens as the
-	// requesting user, and we need to overwrite the existing temporary file.
-	if !d.ctx.Configd {
-		err = os.Chown(file, int(d.ctx.Uid), -1)
-		if err != nil {
-			os.Remove(file)
-			return "", err
-		}
-	}
-
-	err = d.downloadFile(source, file, routingInstance)
-	if err != nil {
-		os.Remove(file)
-		return "", err
-	}
-	return file, nil
-}
-
 func (d *Disp) uploadFile(file, dest, routingInstance string) error {
 	cmd := []string{transferUrlBin, "--infile=" + file}
 	if routingInstance != "" {
@@ -278,21 +239,18 @@ func (d *Disp) cfgMgmtCommandArgs(cmd, uri, routingInstance string) *commandArgs
 func (d *Disp) loadFromInternal(
 	sid, source, routingInstance string, local bool,
 ) (bool, error) {
-	var cfgFile string
+
 	if local {
-		cfgFile = d.parseLocalPath(source)
+		cfgFile := d.parseLocalPath(source)
 		if err := d.validLocalConfigPath(cfgFile); err != nil {
 			return false, err
 		}
+		return d.loadReportWarningsReader(sid, cfgFile, nil)
 	} else {
-		cfgFile, err := d.downloadTempFile(source, tmpDir, ".load.", routingInstance)
-		if err != nil {
-			return false, err
-		}
-		defer os.Remove(cfgFile)
+		reader := d.newUserRemoteFileReader(source, routingInstance)
+		defer reader.Close()
+		return d.loadReportWarningsReader(sid, "", reader)
 	}
-
-	return d.loadReportWarningsReader(sid, cfgFile, nil)
 }
 
 func (d *Disp) LoadFrom(sid, source, routingInstance string) (bool, error) {
