@@ -9,7 +9,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"os"
 	"strings"
 
 	"github.com/danos/configd/rpc"
@@ -145,21 +144,16 @@ func (d *Disp) loadKeysInternal(
 		return "", err
 	}
 
-	var file string
+	var reader io.ReadCloser
 	if local {
-		file = d.parseLocalPath(source)
-		if err := d.validLocalConfigPath(file); err != nil {
+		source = d.parseLocalPath(source)
+		if err := d.validLocalConfigPath(source); err != nil {
 			return "", err
 		}
+		reader = d.newUserFileReader(source)
 	} else {
-		file, err := d.downloadTempFile(source, tmpDir, ".loadkeys.", routingInstance)
-		if err != nil {
-			return "", err
-		}
-		defer os.Remove(file)
+		reader = d.newUserRemoteFileReader(source, routingInstance)
 	}
-
-	reader := d.newUserFileReader(file)
 	defer reader.Close()
 
 	keySetFn := func(key *sshPublicKey) error {
