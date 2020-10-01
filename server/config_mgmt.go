@@ -162,8 +162,7 @@ func (d *Disp) writeRunningConfigToFile(file *os.File) error {
 	if err != nil {
 		return err
 	}
-	file.Sync()
-	return nil
+	return file.Sync()
 }
 
 func (d *Disp) writeTempRunningConfigFile() (*os.File, error) {
