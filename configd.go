@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2018-2020, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2014-2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -34,18 +34,19 @@ func (l LockId) String() string {
 }
 
 type Context struct {
-	Configd  bool
-	Auth     auth.Auther
-	Pid      int32
-	Uid      uint32
-	User     string
-	UserHome string
-	Groups   []string
-	Config   *Config
-	Dlog     *log.Logger
-	Elog     *log.Logger
-	Wlog     *log.Logger
-	Noexec   bool
+	Configd   bool
+	Auth      auth.Auther
+	Pid       int32
+	Uid       uint32
+	User      string
+	UserHome  string
+	Groups    []string
+	Superuser bool
+	Config    *Config
+	Dlog      *log.Logger
+	Elog      *log.Logger
+	Wlog      *log.Logger
+	Noexec    bool
 }
 
 // Raising privileges should be done sparingly as it bypasses things like
@@ -66,6 +67,7 @@ type Config struct {
 	Yangdir      string
 	Socket       string
 	SecretsGroup string
+	SuperGroup   string
 	Capabilities string
 }
 
