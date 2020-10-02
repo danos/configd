@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2018-2020, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2014-2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -83,6 +83,7 @@ func NewSession(
 	s := &Session{
 		s: session{
 			sid:        sid,
+			owner:      nil,
 			candidate:  data.New("root"),
 			cmgr:       cmgr,
 			schema:     st,
@@ -100,6 +101,20 @@ func NewSession(
 
 	go s.s.run()
 	return s
+}
+
+func WithOwner(owner uint32) SessionOption {
+	return func(s *session) {
+		s.owner = &owner
+	}
+}
+
+func (s *Session) IsShared() bool {
+	return s.s.owner == nil
+}
+
+func (s *Session) OwnedBy(uid uint32) bool {
+	return !s.IsShared() && *s.s.owner == uid
 }
 
 func (s *Session) NewAuther(ctx *configd.Context) union.Auther {

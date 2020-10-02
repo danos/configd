@@ -34,6 +34,9 @@ import (
 const (
 	includeDefault = true
 	excludeDefault = false
+
+	Shared   = true
+	Unshared = false
 )
 
 //Implements the Auther interface from union tree
@@ -77,6 +80,7 @@ func (s *Auther) AuthReadSecrets(path []string) bool {
 
 type session struct {
 	sid   string
+	owner *uint32
 	lpid  int32
 	saved bool
 
