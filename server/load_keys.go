@@ -61,11 +61,11 @@ func (k *sshPublicKey) ConfigurationCommands(user string) []string {
 	return out
 }
 
+type keysParserCallback func(key *sshPublicKey) error
+
 // Wrapper around ssh.ParseAuthorizedKey() which parses authorized_keys data
 // See sshd(8) AUTHORIZED_KEYS FILE FORMAT
-func loadKeysParseReader(reader io.Reader) ([]*sshPublicKey, error) {
-	keys := make([]*sshPublicKey, 0)
-
+func loadKeysParse(reader io.Reader, callback keysParserCallback) error {
 	lineNum := 0
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
@@ -82,26 +82,15 @@ func loadKeysParseReader(reader io.Reader) ([]*sshPublicKey, error) {
 		pubKey := &sshPublicKey{}
 		pubKey.key, pubKey.Comment, pubKey.Options, _, err = ssh.ParseAuthorizedKey(line)
 		if err != nil {
-			return nil, fmt.Errorf("On line %v: %v", lineNum, err)
+			return fmt.Errorf("On line %v: %v", lineNum, err)
 		}
 
-		keys = append(keys, pubKey)
-	}
-	if err := scanner.Err(); err != nil {
-		return keys, err
+		if err = callback(pubKey); err != nil {
+			return err
+		}
 	}
 
-	return keys, nil
-}
-
-func (d *Disp) loadKeysParse(reader io.Reader) ([]*sshPublicKey, error) {
-	keys, err := loadKeysParseReader(reader)
-	if err != nil {
-		operr := mgmterror.NewOperationFailedApplicationError()
-		operr.Message = "Parsing key file failed\n" + err.Error()
-		return keys, operr
-	}
-	return keys, nil
+	return scanner.Err()
 }
 
 func (d *Disp) setPublicKeyForUser(sid, user string, key *sshPublicKey) error {
@@ -173,15 +162,15 @@ func (d *Disp) loadKeysInternal(
 	reader := d.newUserFileReader(file)
 	defer reader.Close()
 
-	keys, err := d.loadKeysParse(reader)
-	if err != nil {
-		return "", err
+	keySetFn := func(key *sshPublicKey) error {
+		return d.setPublicKeyForUser(sid, user, key)
 	}
 
-	for _, key := range keys {
-		if err := d.setPublicKeyForUser(sid, user, key); err != nil {
-			return "", err
-		}
+	err := loadKeysParse(reader, keySetFn)
+	if err != nil {
+		operr := mgmterror.NewOperationFailedApplicationError()
+		operr.Message = "Loading key file failed\n" + err.Error()
+		return "", operr
 	}
 
 	if changed, _ := d.SessionChanged(sid); !changed {
