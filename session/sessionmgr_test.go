@@ -14,15 +14,25 @@ import (
 )
 
 const (
-	testSessName = "1234"
+	sharedTestSessName   = "NETCONF"
+	unsharedTestSessName = "1234"
 )
 
 func newTestSession(
-	t *testing.T, srv *sessiontest.TstSrv, sid string,
+	t *testing.T, srv *sessiontest.TstSrv, sid string, shared bool,
 ) *session.Session {
 	sess, err := srv.Smgr.Create(srv.Ctx, sid, srv.Cmgr, srv.Ms, srv.MsFull)
 	if sess == nil || err != nil {
 		t.Fatalf("Unexpected nil session, err: %v", err)
+	}
+	if !shared {
+		sess.SetOwner(srv.Ctx.Uid)
+	}
+	if sess.IsShared() != shared {
+		t.Fatalf("Unexpected session share state %v != %v", sess.IsShared(), shared)
+	}
+	if !shared && !sess.OwnedBy(srv.Ctx.Uid) {
+		t.Fatalf("New un-shared session unexpectedly not owned by context user")
 	}
 	return sess
 }
@@ -30,13 +40,13 @@ func newTestSession(
 func TestSessionMgrGetNonExistent(t *testing.T) {
 	srv, _ := sessiontest.NewTestSpec(t).Init()
 
-	sess, err := srv.Smgr.Get(srv.Ctx, testSessName)
+	sess, err := srv.Smgr.Get(srv.Ctx, unsharedTestSessName)
 	if sess != nil {
 		t.Fatalf("Unexpectedly retrieved session: %v", sess)
 	}
 
 	expErr := mgmterror.NewOperationFailedApplicationError()
-	expErr.Message = "session " + testSessName + " does not exist"
+	expErr.Message = "session " + unsharedTestSessName + " does not exist"
 	if err == nil || err.Error() != expErr.Error() {
 		t.Fatalf("Unexpected error: %v", err)
 	}
@@ -124,56 +134,98 @@ func runSessionMgrPermTestCases(
 	}
 }
 
-var existingSessTcs = []sessionMgrPermTestCase{
+var existingSharedSessTcs = []sessionMgrPermTestCase{
 	{sameCtx, true, nil},
 	{configdCtx, true, nil},
 	{superuserCtx, true, nil},
 	{regularCtx, true, nil},
 }
 
-func TestSessionMgrCreateExisting(t *testing.T) {
+func TestSessionMgrCreateExistingShared(t *testing.T) {
 	srv, _ := sessiontest.NewTestSpec(t).Init()
-	expSess := newTestSession(t, srv, testSessName)
-	defer srv.Smgr.Destroy(srv.Ctx, testSessName)
+	expSess := newTestSession(t, srv, sharedTestSessName, session.Shared)
+	defer srv.Smgr.Destroy(srv.Ctx, sharedTestSessName)
 
-	runSessionMgrPermTestCases(t, srv.Ctx, existingSessTcs, expSess,
+	runSessionMgrPermTestCases(t, srv.Ctx, existingSharedSessTcs, expSess,
 		func(ctx *configd.Context) (*session.Session, error) {
-			return srv.Smgr.Create(ctx, testSessName,
+			return srv.Smgr.Create(ctx, sharedTestSessName,
 				srv.Cmgr, srv.Ms, srv.MsFull)
 		})
 }
 
-func TestSessionMgrGet(t *testing.T) {
+func TestSessionMgrGetShared(t *testing.T) {
 	srv, _ := sessiontest.NewTestSpec(t).Init()
-	expSess := newTestSession(t, srv, testSessName)
-	defer srv.Smgr.Destroy(srv.Ctx, testSessName)
+	sess := newTestSession(t, srv, sharedTestSessName, session.Shared)
+	defer srv.Smgr.Destroy(srv.Ctx, sharedTestSessName)
 
-	runSessionMgrPermTestCases(t, srv.Ctx, existingSessTcs, expSess,
+	runSessionMgrPermTestCases(t, srv.Ctx, existingSharedSessTcs, sess,
 		func(ctx *configd.Context) (*session.Session, error) {
-			return srv.Smgr.Get(ctx, testSessName)
+			return srv.Smgr.Get(ctx, sharedTestSessName)
+		})
+}
+
+var existingUnsharedSessTcs = []sessionMgrPermTestCase{
+	{sameCtx, true, nil},
+	{configdCtx, true, nil},
+	{superuserCtx, false, mgmterror.NewAccessDeniedApplicationError()},
+	{regularCtx, false, mgmterror.NewAccessDeniedApplicationError()},
+}
+
+func TestSessionMgrGetUnshared(t *testing.T) {
+	srv, _ := sessiontest.NewTestSpec(t).Init()
+	expSess := newTestSession(t, srv, unsharedTestSessName, session.Unshared)
+	defer srv.Smgr.Destroy(srv.Ctx, unsharedTestSessName)
+
+	runSessionMgrPermTestCases(t, srv.Ctx, existingUnsharedSessTcs, expSess,
+		func(ctx *configd.Context) (*session.Session, error) {
+			return srv.Smgr.Get(ctx, unsharedTestSessName)
 		})
 }
 
 // Little bit of a hack... Destroy() never returns a
 // Session reference, so no test case ever expects one.
-var destroySessTcs = []sessionMgrPermTestCase{
+var destroySharedSessTcs = []sessionMgrPermTestCase{
 	{sameCtx, false, nil},
 	{configdCtx, false, nil},
 	{superuserCtx, false, nil},
 	{regularCtx, false, nil},
 }
 
-func TestSessionMgrDestroy(t *testing.T) {
+func TestSessionMgrDestroyShared(t *testing.T) {
 	srv, _ := sessiontest.NewTestSpec(t).Init()
 
-	runSessionMgrPermTestCases(t, srv.Ctx, destroySessTcs, nil,
+	runSessionMgrPermTestCases(t, srv.Ctx, destroySharedSessTcs, nil,
 		func(ctx *configd.Context) (*session.Session, error) {
-			_ = newTestSession(t, srv, testSessName)
-			defer srv.Smgr.Destroy(srv.Ctx, testSessName) // test cleanup
+			_ = newTestSession(t, srv, sharedTestSessName, session.Shared)
+			defer srv.Smgr.Destroy(srv.Ctx, sharedTestSessName) // test cleanup
 
 			// This is the actual test. The deferred call is just
 			// cleanup in case of an (expected) failure here.
-			err := srv.Smgr.Destroy(ctx, testSessName)
+			err := srv.Smgr.Destroy(ctx, sharedTestSessName)
+			return nil, err
+		})
+}
+
+// Little bit of a hack... Destroy() never returns a
+// Session reference, so no test case ever expects one.
+var destroyUnsharedSessTcs = []sessionMgrPermTestCase{
+	{sameCtx, false, nil},
+	{configdCtx, false, nil},
+	{superuserCtx, false, mgmterror.NewAccessDeniedApplicationError()},
+	{regularCtx, false, mgmterror.NewAccessDeniedApplicationError()},
+}
+
+func TestSessionMgrDestroyUnshared(t *testing.T) {
+	srv, _ := sessiontest.NewTestSpec(t).Init()
+
+	runSessionMgrPermTestCases(t, srv.Ctx, destroyUnsharedSessTcs, nil,
+		func(ctx *configd.Context) (*session.Session, error) {
+			_ = newTestSession(t, srv, unsharedTestSessName, session.Unshared)
+			defer srv.Smgr.Destroy(srv.Ctx, unsharedTestSessName) // test cleanup
+
+			// This is the actual test. The deferred call is just
+			// cleanup in case of an (expected) failure here.
+			err := srv.Smgr.Destroy(ctx, unsharedTestSessName)
 			return nil, err
 		})
 }
