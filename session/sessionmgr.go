@@ -45,8 +45,22 @@ func NewSessionMgrCustomLog(elog *log.Logger) *SessionMgr {
 }
 
 func (mgr *SessionMgr) lookup(ctx *configd.Context, sid string) (*Session, error) {
-	sess, _ := mgr.sessions[sid]
-	return sess, nil
+	sess, ok := mgr.sessions[sid]
+	if !ok {
+		return nil, nil
+	}
+
+	/*
+	 * Access to a session is permitted iff:
+	 *   - the requesting user owns the session, or
+	 *   - the session is shared (eg. NETCONF, RUNNING), or
+	 *   - the requester is configd
+	 */
+	if sess.OwnedBy(ctx.Uid) || sess.IsShared() || ctx.Configd {
+		return sess, nil
+	}
+
+	return nil, mgmterror.NewAccessDeniedApplicationError()
 }
 
 //Internal unprotected function, reduces lock pressure
