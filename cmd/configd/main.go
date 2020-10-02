@@ -111,6 +111,10 @@ var secretsgroup *string = flag.String("secretsgroup",
 	"secrets",
 	"Group that is allowed to view nodes marked as secret")
 
+var supergroup *string = flag.String("supergroup",
+	"",
+	"Group that is permitted access to all sessions")
+
 var capabilities *string = flag.String("capabilities",
 	compile.DefaultCapsLocation,
 	"File specifying system capabilities")
@@ -275,6 +279,7 @@ func main() {
 		Yangdir:      *yangdir,
 		Socket:       *socket,
 		SecretsGroup: *secretsgroup,
+		SuperGroup:   *supergroup,
 		Capabilities: *capabilities,
 	}
 

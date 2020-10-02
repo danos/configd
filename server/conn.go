@@ -160,14 +160,15 @@ func (conn *SrvConn) Handle() {
 		ms:     conn.srv.ms,
 		msFull: conn.srv.msFull,
 		ctx: &configd.Context{
-			Configd: conn.cred.Uid == conn.srv.uid,
-			Uid:     conn.cred.Uid,
-			Pid:     conn.cred.Pid,
-			Groups:  make([]string, 0),
-			Config:  conn.srv.Config,
-			Elog:    conn.srv.Elog,
-			Dlog:    conn.srv.Dlog,
-			Wlog:    conn.srv.Wlog,
+			Configd:   conn.cred.Uid == conn.srv.uid,
+			Uid:       conn.cred.Uid,
+			Pid:       conn.cred.Pid,
+			Groups:    make([]string, 0),
+			Superuser: conn.cred.Uid == 0,
+			Config:    conn.srv.Config,
+			Elog:      conn.srv.Elog,
+			Dlog:      conn.srv.Dlog,
+			Wlog:      conn.srv.Wlog,
 		},
 	}
 
@@ -178,8 +179,12 @@ func (conn *SrvConn) Handle() {
 	if conn.cred.Uid != conn.srv.uid {
 		groups, err := group.LookupUid(strconv.Itoa(int(disp.ctx.Uid)))
 		conn.srv.LogError(err)
+		haveSuperGroup := conn.srv.Config.SuperGroup != ""
 		for _, gr := range groups {
 			disp.ctx.Groups = append(disp.ctx.Groups, gr.Name)
+			if haveSuperGroup && gr.Name == conn.srv.Config.SuperGroup {
+				disp.ctx.Superuser = true
+			}
 		}
 	}
 
