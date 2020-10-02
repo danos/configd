@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2018-2020, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2014-2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -92,10 +92,11 @@ func NewSrv(l *net.UnixListener, ms, msFull schema.ModelSet, username string, co
 		Elog:   s.Elog,
 		Wlog:   s.Wlog,
 	}
-	s.smgr.Create(ctx, "RUNNING", s.cmgr, s.ms, s.msFull)
+	s.smgr.Create(ctx, "RUNNING", s.cmgr, s.ms, s.msFull, session.Shared)
 	s.smgr.Lock(ctx, "RUNNING")
 
-	effective, _ := s.smgr.Create(ctx, "EFFECTIVE", s.cmgr, s.ms, s.msFull)
+	effective, _ := s.smgr.Create(
+		ctx, "EFFECTIVE", s.cmgr, s.ms, s.msFull, session.Shared)
 	s.smgr.Lock(ctx, "EFFECTIVE")
 	s.cmgr.SetEffective(effective)
 

@@ -111,7 +111,9 @@ func (d *Disp) SessionExists(sid string) (bool, error) {
 	return true, nil
 }
 func (d *Disp) SessionSetup(sid string) (bool, error) {
-	_, err := d.smgr.Create(d.ctx, sid, d.cmgr, d.ms, d.msFull)
+	// NETCONF is a special-case session and must be shared
+	_, err := d.smgr.Create(
+		d.ctx, sid, d.cmgr, d.ms, d.msFull, sid == "NETCONF")
 	if err != nil {
 		return false, err
 	}

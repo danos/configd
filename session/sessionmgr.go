@@ -86,12 +86,26 @@ func (mgr *SessionMgr) Get(ctx *configd.Context, sid string) (*Session, error) {
 	return mgr.get(ctx, sid)
 }
 
-func (mgr *SessionMgr) create(ctx *configd.Context, sid string, cmgr *CommitMgr, st, stFull schema.ModelSet) (*Session, error) {
+func (mgr *SessionMgr) create(
+	ctx *configd.Context, sid string, cmgr *CommitMgr, st, stFull schema.ModelSet, shared bool,
+) (*Session, error) {
+
 	sess, err := mgr.lookup(ctx, sid)
 	if err != nil {
 		return nil, err
 	}
 	if sess != nil {
+		if shared != sess.IsShared() {
+			err := mgmterror.NewOperationFailedApplicationError()
+			err.Message = sid + " already exists as "
+			if !sess.IsShared() {
+				err.Message += "an un-shared session"
+			} else {
+				err.Message += "a shared session"
+			}
+			return nil, err
+		}
+
 		lpid, _ := sess.Locked(ctx)
 		if lpid != 0 && lpid != ctx.Pid {
 			return nil, lockDenied(strconv.Itoa(int(lpid)))
@@ -99,18 +113,26 @@ func (mgr *SessionMgr) create(ctx *configd.Context, sid string, cmgr *CommitMgr,
 		return sess, nil
 	}
 
-	sess = NewSession(sid, cmgr, st, stFull)
+	opts := []SessionOption{}
+	if !shared {
+		opts = append(opts, WithOwner(ctx.Uid))
+	}
+
+	sess = NewSession(sid, cmgr, st, stFull, opts...)
 	mgr.sessions[sid] = sess
 	return sess, nil
 }
 
-func (mgr *SessionMgr) Create(ctx *configd.Context, sid string, cmgr *CommitMgr, st, stFull schema.ModelSet) (*Session, error) {
+func (mgr *SessionMgr) Create(
+	ctx *configd.Context, sid string, cmgr *CommitMgr, st, stFull schema.ModelSet, shared bool,
+) (*Session, error) {
+
 	if mgr == nil {
 		return nil, nilSessionMgrError()
 	}
 	mgr.mu.Lock()
 	defer mgr.mu.Unlock()
-	return mgr.create(ctx, sid, cmgr, st, stFull)
+	return mgr.create(ctx, sid, cmgr, st, stFull, shared)
 }
 
 func (mgr *SessionMgr) destroy(ctx *configd.Context, sid string) error {
