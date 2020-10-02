@@ -59,14 +59,14 @@ func (d *Disp) getROSession(db rpc.DB, sid string) *session.Session {
 	var err error
 	switch db {
 	case rpc.RUNNING:
-		sess, err = d.smgr.Get("RUNNING")
+		sess, err = d.smgr.Get(d.ctx, "RUNNING")
 	case rpc.EFFECTIVE:
-		sess, err = d.smgr.Get("EFFECTIVE")
+		sess, err = d.smgr.Get(d.ctx, "EFFECTIVE")
 	case rpc.AUTO, rpc.CANDIDATE:
-		sess, err = d.smgr.Get(sid)
+		sess, err = d.smgr.Get(d.ctx, sid)
 	}
 	if err != nil {
-		sess, err = d.smgr.Get("RUNNING")
+		sess, err = d.smgr.Get(d.ctx, "RUNNING")
 	}
 	return sess
 }
@@ -101,7 +101,7 @@ func (d *Disp) GetConfigSystemFeatures() (map[string]struct{}, error) {
 }
 
 func (d *Disp) SessionExists(sid string) (bool, error) {
-	sess, err := d.smgr.Get(sid)
+	sess, err := d.smgr.Get(d.ctx, sid)
 	if err != nil {
 		return false, nil
 	}
@@ -125,7 +125,7 @@ func (d *Disp) SessionTeardown(sid string) (bool, error) {
 	return true, nil
 }
 func (d *Disp) SessionChanged(sid string) (bool, error) {
-	sess, err := d.smgr.Get(sid)
+	sess, err := d.smgr.Get(d.ctx, sid)
 	if err != nil {
 		return false, err
 	}
@@ -133,7 +133,7 @@ func (d *Disp) SessionChanged(sid string) (bool, error) {
 	return changed, nil
 }
 func (d *Disp) SessionSaved(sid string) (bool, error) {
-	sess, err := d.smgr.Get(sid)
+	sess, err := d.smgr.Get(d.ctx, sid)
 	if err != nil {
 		return false, err
 	}
@@ -141,7 +141,7 @@ func (d *Disp) SessionSaved(sid string) (bool, error) {
 	return saved, nil
 }
 func (d *Disp) SessionMarkSaved(sid string) (bool, error) {
-	sess, err := d.smgr.Get(sid)
+	sess, err := d.smgr.Get(d.ctx, sid)
 	if err != nil {
 		return false, err
 	}
@@ -149,7 +149,7 @@ func (d *Disp) SessionMarkSaved(sid string) (bool, error) {
 	return true, nil
 }
 func (d *Disp) SessionMarkUnsaved(sid string) (bool, error) {
-	sess, err := d.smgr.Get(sid)
+	sess, err := d.smgr.Get(d.ctx, sid)
 	if err != nil {
 		return false, err
 	}
@@ -161,7 +161,7 @@ func (d *Disp) SessionGetEnv(sid string) (map[string]string, error) {
 }
 
 func (d *Disp) SessionLock(sid string) (int32, error) {
-	sess, err := d.smgr.Get(sid)
+	sess, err := d.smgr.Get(d.ctx, sid)
 	if err != nil {
 		return -1, err
 	}
@@ -169,7 +169,7 @@ func (d *Disp) SessionLock(sid string) (int32, error) {
 }
 
 func (d *Disp) SessionUnlock(sid string) (int32, error) {
-	sess, err := d.smgr.Get(sid)
+	sess, err := d.smgr.Get(d.ctx, sid)
 	if err != nil {
 		return -1, err
 	}
@@ -177,7 +177,7 @@ func (d *Disp) SessionUnlock(sid string) (int32, error) {
 }
 
 func (d *Disp) SessionLocked(sid string) (int32, error) {
-	sess, err := d.smgr.Get(sid)
+	sess, err := d.smgr.Get(d.ctx, sid)
 	if err != nil {
 		return -1, err
 	}
@@ -637,7 +637,7 @@ func (d *Disp) NodeGetComment(sid string, path string) (map[string]int, error) {
 
 // NOTE: ps must already have been normalized
 func (d *Disp) setInternal(sid string, ps []string) (string, error) {
-	sess, err := d.smgr.Get(sid)
+	sess, err := d.smgr.Get(d.ctx, sid)
 	if err != nil {
 		return "", err
 	}
@@ -673,7 +673,7 @@ func (d *Disp) deleteInternal(sid string, ps []string) (bool, error) {
 		return false, mgmterror.NewAccessDeniedApplicationError()
 	}
 
-	sess, err := d.smgr.Get(sid)
+	sess, err := d.smgr.Get(d.ctx, sid)
 	if err != nil {
 		return false, err
 	}
@@ -707,7 +707,7 @@ func (d *Disp) Copy(sid string, fpath string, tpath string) (bool, error) {
 
 	//Copy authorization is done in session_internal
 
-	sess, err := srv.smgr.Get(sid)
+	sess, err := srv.smgr.Get(d.ctx, sid)
 	if err != nil {
 		return "", err
 	}
@@ -1089,7 +1089,7 @@ func (d *Disp) confirmedCommitInternal(
 
 	var rpcout bytes.Buffer
 
-	sess, err := d.smgr.Get(sid)
+	sess, err := d.smgr.Get(d.ctx, sid)
 	if err != nil {
 		return "", err
 	}
@@ -1271,7 +1271,7 @@ func (d *Disp) CompareSessionChanges(sid string) (string, error) {
 // If conforms to interface
 
 func (d *Disp) discardInternal(sid string) (bool, error) {
-	sess, err := d.smgr.Get(sid)
+	sess, err := d.smgr.Get(d.ctx, sid)
 	if err != nil {
 		return false, err
 	}
@@ -1338,7 +1338,7 @@ func (d *Disp) LoadReportWarnings(sid string, file string) (bool, error) {
 }
 
 func (d *Disp) loadReportWarningsReader(sid string, file string, r io.Reader) (bool, error) {
-	sess, err := d.smgr.Get(sid)
+	sess, err := d.smgr.Get(d.ctx, sid)
 	if err != nil {
 		return false, err
 	}
@@ -1361,7 +1361,7 @@ func (d *Disp) Merge(sid string, file string) (bool, error) {
 }
 
 func (d *Disp) mergeReportWarningsInternal(sid string, file string) (bool, error) {
-	sess, err := d.smgr.Get(sid)
+	sess, err := d.smgr.Get(d.ctx, sid)
 	if err != nil {
 		return false, err
 	}
@@ -1387,7 +1387,7 @@ func (d *Disp) MergeReportWarnings(sid string, file string) (bool, error) {
 
 func (d *Disp) validateInternal(sid string) (string, error) {
 	var rpcout bytes.Buffer
-	sess, err := d.smgr.Get(sid)
+	sess, err := d.smgr.Get(d.ctx, sid)
 	if err != nil {
 		return "", err
 	}
@@ -2206,7 +2206,7 @@ func (d *Disp) expandPath(path []string, prefix string, pos int,
 }
 
 func (d *Disp) EditConfigXML(sid, config_target, default_operation, test_option, error_option, config string) (string, error) {
-	sess, err := d.smgr.Get(sid)
+	sess, err := d.smgr.Get(d.ctx, sid)
 	if err != nil {
 		return "", err
 	}

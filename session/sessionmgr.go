@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2018-2020, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2014-2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -55,7 +55,7 @@ func (mgr *SessionMgr) get(sid string) (*Session, error) {
 	return sess, nil
 }
 
-func (mgr *SessionMgr) Get(sid string) (*Session, error) {
+func (mgr *SessionMgr) Get(_ *configd.Context, sid string) (*Session, error) {
 	if mgr == nil {
 		return nil, nilSessionMgrError()
 	}
