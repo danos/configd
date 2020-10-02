@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2017-2020, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2014-2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -299,10 +299,11 @@ func tstInit(
 	if a != nil {
 		s.Ctx.Auth = a
 	}
-	s.Smgr.Create(s.Ctx, "RUNNING", s.Cmgr, s.Ms, s.MsFull)
+	s.Smgr.Create(s.Ctx, "RUNNING", s.Cmgr, s.Ms, s.MsFull, Shared)
 	s.Smgr.Lock(s.Ctx, "RUNNING")
 
-	effective, _ := s.Smgr.Create(s.Ctx, "EFFECTIVE", s.Cmgr, s.Ms, s.MsFull)
+	effective, _ := s.Smgr.Create(
+		s.Ctx, "EFFECTIVE", s.Cmgr, s.Ms, s.MsFull, Shared)
 	s.Smgr.Lock(s.Ctx, "EFFECTIVE")
 	s.Cmgr.SetEffective(effective)
 	return s, nil

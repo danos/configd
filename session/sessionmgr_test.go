@@ -21,12 +21,9 @@ const (
 func newTestSession(
 	t *testing.T, srv *sessiontest.TstSrv, sid string, shared bool,
 ) *session.Session {
-	sess, err := srv.Smgr.Create(srv.Ctx, sid, srv.Cmgr, srv.Ms, srv.MsFull)
+	sess, err := srv.Smgr.Create(srv.Ctx, sid, srv.Cmgr, srv.Ms, srv.MsFull, shared)
 	if sess == nil || err != nil {
 		t.Fatalf("Unexpected nil session, err: %v", err)
-	}
-	if !shared {
-		sess.SetOwner(srv.Ctx.Uid)
 	}
 	if sess.IsShared() != shared {
 		t.Fatalf("Unexpected session share state %v != %v", sess.IsShared(), shared)
@@ -49,6 +46,40 @@ func TestSessionMgrGetNonExistent(t *testing.T) {
 	expErr.Message = "session " + unsharedTestSessName + " does not exist"
 	if err == nil || err.Error() != expErr.Error() {
 		t.Fatalf("Unexpected error: %v", err)
+	}
+}
+
+func TestSessionMgrCreateExistingSharedToUnshared(t *testing.T) {
+	srv, _ := sessiontest.NewTestSpec(t).Init()
+	_ = newTestSession(t, srv, sharedTestSessName, session.Shared)
+	defer srv.Smgr.Destroy(srv.Ctx, sharedTestSessName)
+
+	// An existing shared session cannot become un-shared
+	expErr := mgmterror.NewOperationFailedApplicationError()
+	expErr.Message = sharedTestSessName + " already exists as a shared session"
+
+	createSess, err :=
+		srv.Smgr.Create(srv.Ctx, sharedTestSessName,
+			srv.Cmgr, srv.Ms, srv.MsFull, session.Unshared)
+	if createSess != nil || err == nil || err.Error() != expErr.Error() {
+		t.Errorf("Unexpectedly retrieved session %v, err: %v", createSess, err)
+	}
+}
+
+func TestSessionMgrCreateExistingUnsharedToShared(t *testing.T) {
+	srv, _ := sessiontest.NewTestSpec(t).Init()
+	_ = newTestSession(t, srv, unsharedTestSessName, session.Unshared)
+	defer srv.Smgr.Destroy(srv.Ctx, unsharedTestSessName)
+
+	// An existing un-shared session cannot become shared
+	expErr := mgmterror.NewOperationFailedApplicationError()
+	expErr.Message = unsharedTestSessName + " already exists as an un-shared session"
+
+	createSess, err :=
+		srv.Smgr.Create(srv.Ctx, unsharedTestSessName,
+			srv.Cmgr, srv.Ms, srv.MsFull, session.Shared)
+	if createSess != nil || err == nil || err.Error() != expErr.Error() {
+		t.Errorf("Unexpectedly retrieved session %v, err: %v", createSess, err)
 	}
 }
 
@@ -149,7 +180,7 @@ func TestSessionMgrCreateExistingShared(t *testing.T) {
 	runSessionMgrPermTestCases(t, srv.Ctx, existingSharedSessTcs, expSess,
 		func(ctx *configd.Context) (*session.Session, error) {
 			return srv.Smgr.Create(ctx, sharedTestSessName,
-				srv.Cmgr, srv.Ms, srv.MsFull)
+				srv.Cmgr, srv.Ms, srv.MsFull, session.Shared)
 		})
 }
 
@@ -169,6 +200,18 @@ var existingUnsharedSessTcs = []sessionMgrPermTestCase{
 	{configdCtx, true, nil},
 	{superuserCtx, false, mgmterror.NewAccessDeniedApplicationError()},
 	{regularCtx, false, mgmterror.NewAccessDeniedApplicationError()},
+}
+
+func TestSessionMgrCreateExistingUnshared(t *testing.T) {
+	srv, _ := sessiontest.NewTestSpec(t).Init()
+	sess := newTestSession(t, srv, unsharedTestSessName, session.Unshared)
+	defer srv.Smgr.Destroy(srv.Ctx, unsharedTestSessName)
+
+	runSessionMgrPermTestCases(t, srv.Ctx, existingUnsharedSessTcs, sess,
+		func(ctx *configd.Context) (*session.Session, error) {
+			return srv.Smgr.Create(ctx, unsharedTestSessName,
+				srv.Cmgr, srv.Ms, srv.MsFull, session.Unshared)
+		})
 }
 
 func TestSessionMgrGetUnshared(t *testing.T) {
