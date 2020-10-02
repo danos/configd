@@ -44,10 +44,18 @@ func NewSessionMgrCustomLog(elog *log.Logger) *SessionMgr {
 	}
 }
 
+func (mgr *SessionMgr) lookup(ctx *configd.Context, sid string) (*Session, error) {
+	sess, _ := mgr.sessions[sid]
+	return sess, nil
+}
+
 //Internal unprotected function, reduces lock pressure
-func (mgr *SessionMgr) get(sid string) (*Session, error) {
-	sess, ok := mgr.sessions[sid]
-	if !ok {
+func (mgr *SessionMgr) get(ctx *configd.Context, sid string) (*Session, error) {
+	sess, err := mgr.lookup(ctx, sid)
+	if err != nil {
+		return nil, err
+	}
+	if sess == nil {
 		err := mgmterror.NewOperationFailedApplicationError()
 		err.Message = "session " + sid + " does not exist"
 		return nil, err
@@ -55,18 +63,21 @@ func (mgr *SessionMgr) get(sid string) (*Session, error) {
 	return sess, nil
 }
 
-func (mgr *SessionMgr) Get(_ *configd.Context, sid string) (*Session, error) {
+func (mgr *SessionMgr) Get(ctx *configd.Context, sid string) (*Session, error) {
 	if mgr == nil {
 		return nil, nilSessionMgrError()
 	}
 	mgr.mu.RLock()
 	defer mgr.mu.RUnlock()
-	return mgr.get(sid)
+	return mgr.get(ctx, sid)
 }
 
 func (mgr *SessionMgr) create(ctx *configd.Context, sid string, cmgr *CommitMgr, st, stFull schema.ModelSet) (*Session, error) {
-	sess, ok := mgr.sessions[sid]
-	if ok {
+	sess, err := mgr.lookup(ctx, sid)
+	if err != nil {
+		return nil, err
+	}
+	if sess != nil {
 		lpid, _ := sess.Locked(ctx)
 		if lpid != 0 && lpid != ctx.Pid {
 			return nil, lockDenied(strconv.Itoa(int(lpid)))
@@ -89,15 +100,18 @@ func (mgr *SessionMgr) Create(ctx *configd.Context, sid string, cmgr *CommitMgr,
 }
 
 func (mgr *SessionMgr) destroy(ctx *configd.Context, sid string) error {
-	sess, ok := mgr.sessions[sid]
-	if ok {
-		lpid, _ := sess.Locked(ctx)
-		if lpid != 0 && lpid != ctx.Pid {
-			return lockDenied(strconv.Itoa(int(lpid)))
-		}
-		delete(mgr.sessions, sid)
-		go sess.Kill()
+	sess, err := mgr.lookup(ctx, sid)
+	if sess == nil || err != nil {
+		return err
 	}
+
+	lpid, _ := sess.Locked(ctx)
+	if lpid != 0 && lpid != ctx.Pid {
+		return lockDenied(strconv.Itoa(int(lpid)))
+	}
+	delete(mgr.sessions, sid)
+	go sess.Kill()
+
 	return nil
 }
 
@@ -116,7 +130,7 @@ func (mgr *SessionMgr) Lock(ctx *configd.Context, sid string) (int32, error) {
 	}
 	mgr.mu.RLock()
 	defer mgr.mu.RUnlock()
-	sess, err := mgr.get(sid)
+	sess, err := mgr.get(ctx, sid)
 	if err != nil {
 		return -1, err
 	}
@@ -129,7 +143,7 @@ func (mgr *SessionMgr) Unlock(ctx *configd.Context, sid string) (int32, error) {
 	}
 	mgr.mu.RLock()
 	defer mgr.mu.RUnlock()
-	sess, err := mgr.get(sid)
+	sess, err := mgr.get(ctx, sid)
 	if err != nil {
 		return -1, err
 	}
