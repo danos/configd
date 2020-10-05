@@ -198,7 +198,7 @@ func TestSessionMgrGetShared(t *testing.T) {
 var existingUnsharedSessTcs = []sessionMgrPermTestCase{
 	{sameCtx, true, nil},
 	{configdCtx, true, nil},
-	{superuserCtx, false, mgmterror.NewAccessDeniedApplicationError()},
+	{superuserCtx, true, nil},
 	{regularCtx, false, mgmterror.NewAccessDeniedApplicationError()},
 }
 
@@ -254,7 +254,7 @@ func TestSessionMgrDestroyShared(t *testing.T) {
 var destroyUnsharedSessTcs = []sessionMgrPermTestCase{
 	{sameCtx, false, nil},
 	{configdCtx, false, nil},
-	{superuserCtx, false, mgmterror.NewAccessDeniedApplicationError()},
+	{superuserCtx, false, nil},
 	{regularCtx, false, mgmterror.NewAccessDeniedApplicationError()},
 }
 

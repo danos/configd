@@ -54,9 +54,10 @@ func (mgr *SessionMgr) lookup(ctx *configd.Context, sid string) (*Session, error
 	 * Access to a session is permitted iff:
 	 *   - the requesting user owns the session, or
 	 *   - the session is shared (eg. NETCONF, RUNNING), or
-	 *   - the requester is configd
+	 *   - the requester is configd, or
+	 *   - the requester is a superuser (for debugging)
 	 */
-	if sess.OwnedBy(ctx.Uid) || sess.IsShared() || ctx.Configd {
+	if sess.OwnedBy(ctx.Uid) || sess.IsShared() || ctx.Configd || ctx.Superuser {
 		return sess, nil
 	}
 
