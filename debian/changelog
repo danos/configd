@@ -1,3 +1,28 @@
+configd (2.11) UNRELEASED; urgency=medium
+
+  * configd.tmpfile: Make /var/tmp/configd dir
+  * server: use temporary directory for load/save ops
+  * config_mgmt: remove spawnCommandAsCallerFn
+  * config_mgmt: split spawnCommandAsCaller()
+  * server: Add userProcessReader
+  * load_keys: don't load complete file into memory
+  * load_keys: update session as keys are parsed
+  * server: Switch load/loadkey to userProcessReader
+  * config_mgmt: os.Chown() --> File.Chown()
+  * config_mgmt: copyFile & uploadFile take *os.File
+  * config_mgmt.go: Check for os.File.Sync() error
+  * session: Add concept of session "owner"
+  * server: mark "superuser" connections in Context
+  * session: SessionMgr.Get() accepts Context param
+  * session: Add initial session manager UTs
+  * session: Add SessionMgr.lookup()
+  * session: Restrict access to non-shared sessions
+  * session: Allow sessions to be shared or un-shared
+  * session: Allow superuser to get any session
+  * configd: Add SetupSessionShared RPC
+
+ -- Duncan Eastoe <duncan.eastoe@att.com>  Thu, 08 Oct 2020 10:35:13 +0100
+
 configd (2.10) unstable; urgency=medium
 
   [ Nicholas Brown ]

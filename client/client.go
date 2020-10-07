@@ -270,6 +270,9 @@ func (c *Client) SessionExists() (bool, error) {
 func (c *Client) SessionSetup() error {
 	return c.callBoolIgnore(GetFuncName(), c.sid)
 }
+func (c *Client) SessionSetupShared() error {
+	return c.callBoolIgnore(GetFuncName(), c.sid)
+}
 func (c *Client) SessionTeardown() error {
 	return c.callBoolIgnore(GetFuncName(), c.sid)
 }
