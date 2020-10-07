@@ -1,3 +1,20 @@
+configd (2.10.1) unstable; urgency=medium
+
+  [ Duncan Eastoe ]
+  * configd.tmpfile: Make /var/tmp/configd dir
+  * server: use temporary directory for load/save ops
+  * config_mgmt: remove spawnCommandAsCallerFn
+  * config_mgmt: split spawnCommandAsCaller()
+  * server: Add userProcessReader
+  * load_keys: don't load complete file into memory
+  * load_keys: update session as keys are parsed
+  * server: Switch load/loadkey to userProcessReader
+  * config_mgmt: os.Chown() --> File.Chown()
+  * config_mgmt: copyFile & uploadFile take *os.File
+  * config_mgmt.go: Check for os.File.Sync() error
+
+ -- William Ivory <william.ivory@intl.att.com>  Wed, 07 Oct 2020 12:36:36 +0100
+
 configd (2.10) unstable; urgency=medium
 
   [ Nicholas Brown ]
