@@ -71,7 +71,15 @@ type Session struct {
 	s session
 }
 
-func NewSession(sid string, cmgr *CommitMgr, st, stFull schema.ModelSet) *Session {
+type SessionOption func(*session)
+
+func NewSession(
+	sid string,
+	cmgr *CommitMgr,
+	st,
+	stFull schema.ModelSet,
+	options ...SessionOption,
+) *Session {
 	s := &Session{
 		s: session{
 			sid:        sid,
@@ -85,6 +93,11 @@ func NewSession(sid string, cmgr *CommitMgr, st, stFull schema.ModelSet) *Sessio
 			term:       make(chan struct{}),
 		},
 	}
+
+	for _, option := range options {
+		option(&s.s)
+	}
+
 	go s.s.run()
 	return s
 }
