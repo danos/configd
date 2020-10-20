@@ -1,5 +1,6 @@
-configd (2.10.2) UNRELEASED; urgency=medium
+configd (2.10.2) unstable; urgency=medium
 
+  [ Duncan Eastoe ]
   * session: Add functional options for NewSession()
   * session: Add concept of session "owner"
   * server: mark "superuser" connections in Context
@@ -10,7 +11,7 @@ configd (2.10.2) UNRELEASED; urgency=medium
   * session: Allow sessions to be shared or un-shared
   * session: Allow superuser to get any session
 
- -- Duncan Eastoe <duncan.eastoe@att.com>  Fri, 16 Oct 2020 17:15:50 +0100
+ -- William Ivory <william.ivory@intl.att.com>  Tue, 20 Oct 2020 16:12:51 +0100
 
 configd (2.10.1) unstable; urgency=medium
 
