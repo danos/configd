@@ -19,6 +19,7 @@ import (
 	"github.com/danos/config/testutils"
 	"github.com/danos/configd/rpc"
 	"github.com/danos/configd/session/sessiontest"
+	"github.com/danos/mgmterror"
 	"github.com/danos/mgmterror/errtest"
 )
 
@@ -125,11 +126,12 @@ const (
 	failedToProcessReturnedData = "Failed to process returned data"
 	failedToRunStateFn          = "Failed to run state fn."
 	invalidlyFormattedData      = "Invalidly formatted data returned"
-	noInfo                      = ""
 	emptyXMLState               = "<data></data>"
 	jsonEncoding                = "json"
 	xmlEncoding                 = "xml"
 )
+
+var noInfo = []*mgmterror.MgmtErrorInfoTag{}
 
 func genIntfTestSchema(input string) []sessiontest.TestSchema {
 	return genTestSchema(intfSchemaTemplate, input)

@@ -11,7 +11,7 @@ Build-Depends:
  golang-dbus-dev,
  golang-github-danos-config-dev (>= 1.7),
  golang-github-danos-encoding-rfc7951-dev (>= 0.5),
- golang-github-danos-mgmterror-dev,
+ golang-github-danos-mgmterror-dev (>= 1:1.6),
  golang-github-danos-utils-args-dev,
  golang-github-danos-utils-audit-dev,
  golang-github-danos-utils-exec-dev,
