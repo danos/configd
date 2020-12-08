@@ -564,3 +564,29 @@ func (s *Session) EditConfigXML(ctx *configd.Context, config_target, default_ope
 	}
 	return sessTermError()
 }
+
+func (s *Session) CopyConfig(
+	ctx *configd.Context,
+	sourceDatastore,
+	sourceConfig,
+	sourceURL,
+	targetDatastore,
+	targetURL string,
+) error {
+	respch := make(chan error)
+	req := &copyconfigreq{
+		ctx:             ctx,
+		sourceDatastore: sourceDatastore,
+		sourceConfig:    sourceConfig,
+		sourceURL:       sourceURL,
+		targetDatastore: targetDatastore,
+		targetURL:       targetURL,
+		resp:            respch,
+	}
+	select {
+	case s.s.reqch <- req:
+		return <-respch
+	case <-s.s.term:
+	}
+	return sessTermError()
+}

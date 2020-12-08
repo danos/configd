@@ -282,3 +282,15 @@ type editconfigreq struct {
 }
 
 func (*editconfigreq) reqty() {}
+
+type copyconfigreq struct {
+	ctx     *configd.Context
+	sourceDatastore string
+	sourceConfig string
+	sourceURL string
+	targetDatastore  string
+	targetURL string
+	resp    chan error
+}
+
+func (*copyconfigreq) reqty() {}
