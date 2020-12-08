@@ -134,11 +134,11 @@ func (s *session) validateSetPath(
 	path []string,
 	allowIncompletePaths, useFullSchema bool) error {
 	vctx := schema.ValidateCtx{
-		CurPath: path,
-		Path:    pathutil.Pathstr(path),
-		Sid:     s.sid,
-		Noexec:  ctx.Noexec,
-		St:      s.schema,
+		CurPath:               path,
+		Path:                  pathutil.Pathstr(path),
+		Sid:                   s.sid,
+		Noexec:                ctx.Noexec,
+		St:                    s.schema,
 		IncompletePathIsValid: allowIncompletePaths,
 	}
 	errch := make(chan error)
@@ -882,6 +882,9 @@ func (s *session) processreq(req request, diffCache *diff.Node) {
 		v.resp <- s.gethelp(v.ctx, v.schema, v.path)
 	case *editconfigreq:
 		v.resp <- s.editConfigXML(v.ctx, v.target, v.defop, v.testopt, v.erropt, v.config)
+	case *copyconfigreq:
+		v.resp <- s.copyConfig(v.ctx, v.sourceDatastore, v.sourceConfig,
+			v.sourceURL, v.targetDatastore, v.targetURL)
 	}
 }
 

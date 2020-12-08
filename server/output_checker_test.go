@@ -182,6 +182,21 @@ func (oc *outputChecker) delete(testPath string) *outputChecker {
 	return oc
 }
 
+func (oc *outputChecker) copyConfig(
+	sourceDatastore,
+	sourceConfig,
+	sourceURL,
+	targetDatastore,
+	targetURL string,
+) *outputChecker {
+	oc.init()
+	_, oc.actErr = oc.d.CopyConfig(
+		testSID, sourceDatastore, sourceConfig, sourceURL,
+		targetDatastore, targetURL)
+
+	return oc
+}
+
 func (oc *outputChecker) loadConfig(
 	testConfig string,
 ) *outputChecker {
@@ -432,6 +447,15 @@ func (oc *outputChecker) verifyMgmtErrors(
 	expErrs *errtest.ExpMgmtErrors,
 ) *outputChecker {
 	expErrs.Matches(oc.actErr)
+	return oc
+}
+
+// Check single MgmtError fields.
+func (oc *outputChecker) verifyMgmtError(
+	expErr *errtest.ExpMgmtError,
+) *outputChecker {
+	errtest.CheckMgmtErrors(
+		oc.t, []*errtest.ExpMgmtError{expErr}, []error{oc.actErr})
 	return oc
 }
 

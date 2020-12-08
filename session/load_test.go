@@ -17,6 +17,25 @@ import (
 	. "github.com/danos/configd/session/sessiontest"
 )
 
+const loadTestSchema = `
+leaf testhidden {
+	type boolean;
+}
+leaf testavailable {
+	type boolean;
+}`
+
+const loadTestConfig = `
+testhidden true
+testavailable true
+`
+
+var limitedAuth = auth.NewTestAuther(
+	auth.NewTestRule(auth.Deny, auth.AllOps, "/testhidden"),
+	auth.NewTestRule(auth.Allow, auth.AllOps, "*"))
+
+var fullAuth = auth.TestAutherAllowAll()
+
 func assertValue(t *testing.T, sess *session.Session, ctx *configd.Context, pstr, value string) {
 	path := strings.Split(pstr, "/")
 
@@ -35,26 +54,8 @@ func assertValue(t *testing.T, sess *session.Session, ctx *configd.Context, pstr
 
 func TestLoadWithAuth(t *testing.T) {
 
-	const schema = `
-		leaf testhidden {
-			type boolean;
-		}
-		leaf testavailable {
-			type boolean;
-		}`
-
-	const config = `
-		testhidden true
-		testavailable true
-	`
-
-	limitedAuth := auth.NewTestAuther(
-		auth.NewTestRule(auth.Deny, auth.AllOps, "/testhidden"),
-		auth.NewTestRule(auth.Allow, auth.AllOps, "*"))
-	fullAuth := auth.TestAutherAllowAll()
-
 	srv, sess := TstStartupWithCustomAuth(
-		t, schema, config, limitedAuth, false, true)
+		t, loadTestSchema, loadTestConfig, limitedAuth, false, true)
 
 	// Set up partial and full authorisation. Nil gives full access
 	limitedCtx := *srv.Ctx
@@ -66,6 +67,43 @@ func TestLoadWithAuth(t *testing.T) {
 	assertValue(t, sess, &fullCtx, "testavailable", "true")
 
 	sess.Load(&limitedCtx, "testdata/load_test/TestLoadWithAuth.config", nil)
+
+	// Check missing hidden value is retained
+	assertValue(t, sess, &fullCtx, "testhidden", "true")
+
+	// Check loaded value has changed
+	assertValue(t, sess, &fullCtx, "testavailable", "false")
+}
+
+func TestCopyConfigWithAuth(t *testing.T) {
+
+	srv, sess := TstStartupWithCustomAuth(
+		t, loadTestSchema, loadTestConfig, limitedAuth, false, true)
+
+	// Set up partial and full authorisation. Nil gives full access
+	limitedCtx := *srv.Ctx
+	fullCtx := *srv.Ctx
+	fullCtx.Auth = fullAuth
+
+	// Check both values are as expected before loading the partial config
+	assertValue(t, sess, &fullCtx, "testhidden", "true")
+	assertValue(t, sess, &fullCtx, "testavailable", "true")
+
+	newConfig := `
+	<config>
+		<testavailable>false</testavailable>
+	</config>`
+
+	err := sess.CopyConfig(
+		&limitedCtx,
+		"",          // sourceDatastore
+		newConfig,   // sourceConfig
+		"",          // sourceURL
+		"candidate", // targetDatastore
+		"")          // targetURL
+	if err != nil {
+		t.Fatalf("Error copying config: %s", err)
+	}
 
 	// Check missing hidden value is retained
 	assertValue(t, sess, &fullCtx, "testhidden", "true")

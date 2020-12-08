@@ -18,6 +18,7 @@ import (
 	"github.com/danos/configd"
 	"github.com/danos/mgmterror"
 	"github.com/danos/utils/pathutil"
+	"github.com/danos/yang/data/encoding"
 )
 
 type lderrs []error
@@ -62,11 +63,72 @@ func (s *session) load(ctx *configd.Context, file string, r io.Reader) (error, [
 		return err, invalidPaths
 	}
 
+	return s.delete_then_merge_tree(ctx, ltree), invalidPaths
+}
+
+func (s *session) loadFromStringUsingEncoding(
+	input string,
+	encType encoding.EncType,
+) (union.Node, error) {
+	um := union.NewUnmarshaller(encType)
+
+	return um.Unmarshal(s.schema, []byte(input))
+}
+
+func (s *session) copyConfig(
+	ctx *configd.Context,
+	sourceDatastore,
+	sourceConfig,
+	sourceURL,
+	targetDatastore,
+	targetURL string,
+) error {
+
+	// Don't support URL capability.
+	if sourceURL != "" || targetURL != "" {
+		// TODO - details
+		err := mgmterror.NewOperationNotSupportedApplicationError()
+		err.Message = "URL capability is not supported"
+		return err
+	}
+
+	// As we only support candidate datastore, targetDatastore must be set to
+	// this, sourceDatastore must not be set, and sourceConfig must be set.
+	if sourceDatastore != "" {
+		err := mgmterror.NewInvalidValueApplicationError()
+		err.Message = "Source must be specified in <config> tags."
+		return err
+	}
+	if sourceConfig == "" {
+		// error-info <bad-element>
+		return mgmterror.NewMissingElementApplicationError("<source>")
+	}
+	if targetDatastore != "candidate" {
+		// TODO details!
+		err := mgmterror.NewInvalidValueApplicationError()
+		err.Message = fmt.Sprintf(
+			"Target datastore only supports candidate, not %s",
+			targetDatastore)
+		return err
+	}
+
+	ltree, err := s.loadFromStringUsingEncoding(sourceConfig, encoding.XML)
+	if err != nil {
+		return err
+	}
+
+	return s.delete_then_merge_tree(ctx, ltree)
+}
+
+func (s *session) delete_then_merge_tree(
+	ctx *configd.Context,
+	ltree union.Node,
+) error {
 	stree := s.getUnion()
 
 	stree.Delete(s.newAuther(ctx), []string{} /* unused */, union.CheckAuth)
 
-	return s.merge_tree(ctx, ltree), invalidPaths
+	return s.merge_tree(ctx, ltree)
 }
 
 func (s *session) merge_tree(ctx *configd.Context, ltree union.Node) error {

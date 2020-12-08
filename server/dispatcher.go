@@ -2215,6 +2215,23 @@ func (d *Disp) EditConfigXML(sid, config_target, default_operation, test_option,
 	return "", sess.EditConfigXML(d.ctx, config_target, default_operation, test_option, error_option, config)
 }
 
+func (d *Disp) CopyConfig(
+	sid,
+	sourceDatastore,
+	sourceConfig,
+	sourceURL,
+	targetDatastore,
+	targetURL string,
+) (string, error) {
+	sess, err := d.smgr.Get(d.ctx, sid)
+	if err != nil {
+		return "", err
+	}
+
+	return "", sess.CopyConfig(d.ctx, sourceDatastore, sourceConfig, sourceURL,
+		targetDatastore, targetURL)
+}
+
 func (d *Disp) SetConfigDebug(sid, logName, level string) (string, error) {
 	return common.SetConfigDebug(logName, level)
 }
