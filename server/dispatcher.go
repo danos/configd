@@ -1376,7 +1376,7 @@ func (d *Disp) mergeReportWarningsInternal(sid string, file string) (bool, error
 }
 
 func (d *Disp) MergeReportWarnings(sid string, file string) (bool, error) {
-	args := d.cfgMgmtCommandArgs("merge", file, "")
+	args := d.cfgMgmtCommandArgs("merge", file, "", "")
 	if !d.authCommand(args) {
 		return false, mgmterror.NewAccessDeniedApplicationError()
 	}
@@ -2224,7 +2224,7 @@ func (d *Disp) EditConfigXML(sid, config_target, default_operation, test_option,
 	return "", sess.EditConfigXML(d.ctx, config_target, default_operation, test_option, error_option, config)
 }
 
-func (d *Disp) CopyConfig(
+func (d *Disp) copyConfigInternal(
 	sid,
 	sourceDatastore,
 	sourceConfig,
@@ -2241,6 +2241,33 @@ func (d *Disp) CopyConfig(
 		targetDatastore, targetURL)
 }
 
+func (d *Disp) CopyConfig(
+	sid,
+	sourceDatastore,
+	sourceConfig,
+	sourceURL,
+	targetDatastore,
+	targetURL string,
+) (string, error) {
+	redactedSource := "copy-config"
+	noRoutingInstance := ""
+	args := d.cfgMgmtCommandArgs(
+		"load", redactedSource, noRoutingInstance, "xml")
+	if !d.authCommand(args) {
+		return "", mgmterror.NewAccessDeniedApplicationError()
+	}
+
+	if !d.ctx.Configd {
+		d.ctx.Wlog.Println("copy-config by " + d.ctx.User)
+	}
+
+	return d.accountCmdWrapStrErr(args, func() (interface{}, error) {
+		return d.copyConfigInternal(
+			sid, sourceDatastore, sourceConfig,
+			sourceURL, targetDatastore, targetURL)
+	})
+
+}
 func (d *Disp) SetConfigDebug(sid, logName, level string) (string, error) {
 	return common.SetConfigDebug(logName, level)
 }

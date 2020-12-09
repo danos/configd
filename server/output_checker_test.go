@@ -454,6 +454,9 @@ func (oc *outputChecker) verifyMgmtErrors(
 func (oc *outputChecker) verifyMgmtError(
 	expErr *errtest.ExpMgmtError,
 ) *outputChecker {
+	if oc.actErr == nil {
+		oc.t.Fatalf("Expected error but none occurred.")
+	}
 	errtest.CheckMgmtErrors(
 		oc.t, []*errtest.ExpMgmtError{expErr}, []error{oc.actErr})
 	return oc

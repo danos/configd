@@ -228,13 +228,24 @@ func (d *Disp) uploadFile(file *os.File, dest, routingInstance string) error {
 	return handleCallerCommandError(cmd.CombinedOutput())
 }
 
-func (d *Disp) cfgMgmtCommandArgs(cmd, uri, routingInstance string) *commandArgs {
+func (d *Disp) cfgMgmtCommandArgs(
+	cmd,
+	uri,
+	routingInstance,
+	encoding string,
+) *commandArgs {
+
 	var args []string
+
 	if routingInstance != "" {
-		args = []string{"routing-instance", routingInstance, uri}
-	} else {
-		args = []string{uri}
+		args = append(args, "routing-instance", routingInstance)
 	}
+
+	if encoding != "" {
+		args = append(args, "encoding", encoding)
+	}
+
+	args = append(args, uri)
 
 	return d.newCommandArgsForAaa(cmd, args, nil)
 }
@@ -262,7 +273,7 @@ func (d *Disp) LoadFrom(sid, source, routingInstance string) (bool, error) {
 		return false, err
 	}
 
-	args := d.cfgMgmtCommandArgs("load", redactedSource, routingInstance)
+	args := d.cfgMgmtCommandArgs("load", redactedSource, routingInstance, "")
 	if !d.authCommand(args) {
 		return false, mgmterror.NewAccessDeniedApplicationError()
 	}
@@ -316,7 +327,7 @@ func (d *Disp) SaveTo(dest, routingInstance string) (bool, error) {
 		return false, err
 	}
 
-	args := d.cfgMgmtCommandArgs("save", redactedDest, routingInstance)
+	args := d.cfgMgmtCommandArgs("save", redactedDest, routingInstance, "")
 	if !d.authCommand(args) {
 		return false, mgmterror.NewAccessDeniedApplicationError()
 	}
