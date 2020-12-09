@@ -33,6 +33,8 @@ const (
 	noURL       = ""
 )
 
+var copyConfigCommand = []string{"load", "encoding", "xml", "copy-config"}
+
 type copyConfigErrTest struct {
 	name,
 	sourceDatastore,
@@ -44,7 +46,8 @@ type copyConfigErrTest struct {
 	errType,
 	errTag,
 	errMsg string
-	errInfoTags []*mgmterror.MgmtErrorInfoTag
+	errInfoTags  []*mgmterror.MgmtErrorInfoTag
+	blockCommand bool
 }
 
 func wrapInConfigTags(input string) string {
@@ -110,14 +113,28 @@ func TestCopyConfigErrorHandling(t *testing.T) {
 			errMsg: "Access to the requested protocol operation or " +
 				"data model is denied",
 		},
+		{
+			name: "Invalid permissions for user",
+			sourceConfig: wrapInConfigTags(
+				"<testavailable>false</testavailable>"),
+			targetDatastore: "candidate",
+			errType:         "application",
+			errTag:          "access-denied",
+			errMsg: "Access to the requested protocol operation or " +
+				"data model is denied",
+			blockCommand: true,
+		},
 	}
-
-	limitedAuth := auth.NewTestAuther(
-		auth.NewTestRule(auth.Deny, auth.AllOps, "/testhidden"),
-		auth.NewTestRule(auth.Allow, auth.AllOps, "*"))
 
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
+
+			limitedAuth := auth.NewTestAuther(
+				auth.NewTestRule(auth.Deny, auth.AllOps, "/testhidden"),
+				auth.NewTestRule(auth.Allow, auth.AllOps, "*"))
+			if test.blockCommand {
+				limitedAuth.AddBlockedCommand(copyConfigCommand)
+			}
 
 			oc := newOutputChecker(t).
 				setSchema(copyConfigTestSchema).
@@ -139,6 +156,14 @@ func TestCopyConfigErrorHandling(t *testing.T) {
 				SetTag(test.errTag)
 
 			oc.verifyMgmtError(expErr)
+
+			// 'secrets' here relates to arguments being secret, not that we
+			// are in the secrets group.
+			if !test.blockCommand {
+				assertCommandAaaNoSecrets(
+					t, limitedAuth, copyConfigCommand)
+			}
+			clearAllCmdRequestsAndUserAuditLogs(limitedAuth)
 		})
 	}
 }
