@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2018-2020, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2014-2015,2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -132,7 +132,7 @@ func (s *session) delete_then_merge_tree(
 }
 
 func (s *session) merge_tree(ctx *configd.Context, ltree union.Node) error {
-	errors := make(lderrs, 0)
+	var errors []error
 	ut := s.getUnion()
 	setFn := func(n union.Node, path []string) {
 		if !n.GetSchema().HasPresence() {
@@ -147,7 +147,7 @@ func (s *session) merge_tree(ctx *configd.Context, ltree union.Node) error {
 		}
 		err := s.set(ctx, path)
 		if err != nil {
-			errors = append(errors, fmt.Errorf("%s\n%s", path, err))
+			errors = append(errors, err)
 		}
 	}
 	//create the nodes that are in the loaded configuration tree
@@ -178,7 +178,8 @@ func (s *session) merge_tree(ctx *configd.Context, ltree union.Node) error {
 	if len(errors) == 0 {
 		return nil
 	}
-	err := mgmterror.NewOperationFailedApplicationError()
-	err.Message = errors.Error()
-	return err
+
+	var merr mgmterror.MgmtErrorList
+	merr.MgmtErrorListAppend(errors...)
+	return merr
 }

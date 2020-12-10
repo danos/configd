@@ -109,7 +109,7 @@ func TestCopyConfigErrorHandling(t *testing.T) {
 				"<testhidden>false</testhidden>"),
 			targetDatastore: "candidate",
 			errType:         "application",
-			errTag:          "operation-failed",
+			errTag:          "access-denied",
 			errMsg: "Access to the requested protocol operation or " +
 				"data model is denied",
 		},

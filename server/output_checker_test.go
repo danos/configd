@@ -457,8 +457,13 @@ func (oc *outputChecker) verifyMgmtError(
 	if oc.actErr == nil {
 		oc.t.Fatalf("Expected error but none occurred.")
 	}
-	errtest.CheckMgmtErrors(
-		oc.t, []*errtest.ExpMgmtError{expErr}, []error{oc.actErr})
+	switch oc.actErr.(type) {
+	case mgmterror.MgmtErrorList:
+		oc.verifyMgmtErrorList([]*errtest.ExpMgmtError{expErr})
+	default:
+		errtest.CheckMgmtErrors(
+			oc.t, []*errtest.ExpMgmtError{expErr}, []error{oc.actErr})
+	}
 	return oc
 }
 
