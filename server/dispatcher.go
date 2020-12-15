@@ -2080,6 +2080,8 @@ type processNodeFn func(
 func (d *Disp) expandPath(path []string, prefix string, pos int,
 ) ([]string, error) {
 	cpath := make([]string, 0, len(path))
+	origPath := path
+
 	var ( //predeclare recursive functions
 		processnode         processNodeFn
 		processleaf         processNodeFn
@@ -2189,6 +2191,13 @@ func (d *Disp) expandPath(path []string, prefix string, pos int,
 		case 1:
 			nameToAppend := matches[0].Name()
 			if prefixMatch {
+				if len(prefix) >= len(val) {
+					err := mgmterror.NewInvalidValueApplicationError()
+					err.Message = fmt.Sprintf(
+						"%v has invalid prefix '%s'",
+						mgmterror.ErrPath(origPath), prefix)
+					return nil, err
+				}
 				nameToAppend += val[len(prefix):]
 			}
 			return processnode(
