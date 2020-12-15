@@ -207,6 +207,14 @@ func TestExpandCompletionFailure(t *testing.T) {
 			pos:    server.InvalidPos,
 			expErr: errtest.NewInvalidNodeError(t, "testContainer/testInvalid"),
 		},
+		{
+			name:   "Bad CLI args (prefix incorrect and longer than path arg)",
+			path:   "test/testLiX/foo",
+			prefix: "testList",
+			pos:    1,
+			expErr: errtest.NewInvalidPrefixError(
+				t, "test/testLiX/foo", "testList"),
+		},
 	}
 
 	for _, test := range tests {
