@@ -1,3 +1,9 @@
+configd (2.9.5) unstable; urgency=medium
+
+  * Fix crash in expandPath()
+
+ -- William Ivory <william.ivory@intl.att.com>  Wed, 16 Dec 2020 12:30:50 +0000
+
 configd (2.9.4) unstable; urgency=medium
 
   * Configure top level defaults after boot
