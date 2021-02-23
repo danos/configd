@@ -1,5 +1,6 @@
-configd (2.11) UNRELEASED; urgency=medium
+configd (2.11) unstable; urgency=medium
 
+  [ Duncan Eastoe ]
   * configd.tmpfile: Make /var/tmp/configd dir
   * server: use temporary directory for load/save ops
   * config_mgmt: remove spawnCommandAsCallerFn
@@ -21,7 +22,14 @@ configd (2.11) UNRELEASED; urgency=medium
   * session: Allow superuser to get any session
   * configd: Add SetupSessionShared RPC
 
- -- Duncan Eastoe <duncan.eastoe@att.com>  Thu, 08 Oct 2020 10:35:13 +0100
+  [ William Ivory ]
+  * Updated InfoTags handling for test mgmt errors
+  * Add CopyConfig API
+  * Add AAA authorization wrapper to CopyConfig.
+  * Return error list from load.go merge_tree()
+  * Fix crash in expandPath()
+
+ -- William Ivory <william.ivory@intl.att.com>  Tue, 23 Feb 2021 13:43:39 +0000
 
 configd (2.10) unstable; urgency=medium
 
