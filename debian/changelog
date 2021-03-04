@@ -1,3 +1,12 @@
+configd (2.10.4) unstable; urgency=medium
+
+  * Updated InfoTags handling for test mgmt errors
+  * Add CopyConfig API
+  * Add AAA authorization wrapper to CopyConfig.
+  * Return error list from load.go merge_tree()
+
+ -- William Ivory <william.ivory@intl.att.com>  Thu, 04 Mar 2021 17:39:53 +0000
+
 configd (2.10.3) unstable; urgency=medium
 
   * Fix crash in expandPath()
