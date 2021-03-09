@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2020, AT&T Intellectual Property Inc. All rights reserved.
+// Copyright (c) 2017-2021, AT&T Intellectual Property Inc. All rights reserved.
 //
 // SPDX-License-Identifier: LGPL-2.1-only
 
@@ -246,6 +246,16 @@ func (oc *outputChecker) loadOrMergeConfig(
 		return nil
 	}
 	oc.actErr = err
+	return oc
+}
+
+func (oc *outputChecker) validateConfig(
+	encoding,
+	sourceConfig string,
+) *outputChecker {
+	oc.init()
+	_, oc.actErr = oc.d.ValidateConfig(testSID, encoding, sourceConfig)
+
 	return oc
 }
 
