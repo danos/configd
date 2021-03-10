@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2020, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2017-2021, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2014-2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -1419,6 +1419,33 @@ func (d *Disp) Validate(sid string) (string, error) {
 
 	return d.accountCmdWrapStrErr(args, func() (interface{}, error) {
 		return d.validateInternal(sid)
+	})
+}
+
+func (d *Disp) validateConfigInternal(sid, encoding, config string) (string, error) {
+	sn := "VALIDATE" + strconv.Itoa(int(d.ctx.Pid))
+	_, err := d.SessionSetup(sn)
+	if err != nil {
+		return "", err
+	}
+	defer d.SessionTeardown(sn)
+	sess := d.getROSession(rpc.CANDIDATE, sn)
+	if err != nil {
+		return "", err
+	}
+
+	err = sess.CopyConfig(d.ctx, "", encoding, config, "", "candidate", "")
+	if err != nil {
+		return "", err
+	}
+	return d.Validate(sn)
+}
+
+func (d *Disp) ValidateConfig(sid, encoding, config string) (string, error) {
+	args := d.newCommandArgsForAaa("validate", nil, nil)
+
+	return d.accountCmdWrapStrErr(args, func() (interface{}, error) {
+		return d.validateConfigInternal(sid, encoding, config)
 	})
 }
 
