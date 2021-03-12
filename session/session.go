@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2018-2021, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2014-2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -568,6 +568,7 @@ func (s *Session) EditConfigXML(ctx *configd.Context, config_target, default_ope
 func (s *Session) CopyConfig(
 	ctx *configd.Context,
 	sourceDatastore,
+	sourceEncoding,
 	sourceConfig,
 	sourceURL,
 	targetDatastore,
@@ -577,6 +578,7 @@ func (s *Session) CopyConfig(
 	req := &copyconfigreq{
 		ctx:             ctx,
 		sourceDatastore: sourceDatastore,
+		sourceEncoding:  sourceEncoding,
 		sourceConfig:    sourceConfig,
 		sourceURL:       sourceURL,
 		targetDatastore: targetDatastore,

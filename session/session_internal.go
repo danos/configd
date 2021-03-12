@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2020, AT&T Intellectual Property.
+// Copyright (c) 2017-2021, AT&T Intellectual Property.
 // All rights reserved.
 // Copyright (c) 2014-2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -883,7 +883,8 @@ func (s *session) processreq(req request, diffCache *diff.Node) {
 	case *editconfigreq:
 		v.resp <- s.editConfigXML(v.ctx, v.target, v.defop, v.testopt, v.erropt, v.config)
 	case *copyconfigreq:
-		v.resp <- s.copyConfig(v.ctx, v.sourceDatastore, v.sourceConfig,
+		v.resp <- s.copyConfig(v.ctx, v.sourceDatastore,
+			v.sourceEncoding, v.sourceConfig,
 			v.sourceURL, v.targetDatastore, v.targetURL)
 	}
 }

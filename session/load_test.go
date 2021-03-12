@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2018-2021, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2015-17 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -97,6 +97,7 @@ func TestCopyConfigWithAuth(t *testing.T) {
 	err := sess.CopyConfig(
 		&limitedCtx,
 		"",          // sourceDatastore
+		"xml",       // sourceEncoding
 		newConfig,   // sourceConfig
 		"",          // sourceURL
 		"candidate", // targetDatastore
