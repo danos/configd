@@ -201,16 +201,8 @@ func getIds(username, groupname string) (uid, gid int) {
 	return uid, gid
 }
 
-func init() {
+func initialiseLogging() {
 	var err error
-
-	debug.SetGCPercent(25)
-
-	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
-		flag.PrintDefaults()
-	}
-	flag.Parse()
 
 	openLogfile()
 
@@ -263,6 +255,16 @@ func getListeners() net.Listener {
 }
 
 func main() {
+	debug.SetGCPercent(25)
+
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
+		flag.PrintDefaults()
+	}
+	flag.Parse()
+
+	initialiseLogging()
+
 	fatal(os.MkdirAll(basepath, 0755))
 
 	go sigstartprof()
