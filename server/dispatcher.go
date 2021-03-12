@@ -2227,6 +2227,7 @@ func (d *Disp) EditConfigXML(sid, config_target, default_operation, test_option,
 func (d *Disp) copyConfigInternal(
 	sid,
 	sourceDatastore,
+	sourceEncoding,
 	sourceConfig,
 	sourceURL,
 	targetDatastore,
@@ -2237,13 +2238,14 @@ func (d *Disp) copyConfigInternal(
 		return "", err
 	}
 
-	return "", sess.CopyConfig(d.ctx, sourceDatastore, sourceConfig, sourceURL,
-		targetDatastore, targetURL)
+	return "", sess.CopyConfig(d.ctx, sourceDatastore, sourceEncoding,
+		sourceConfig, sourceURL, targetDatastore, targetURL)
 }
 
 func (d *Disp) CopyConfig(
 	sid,
 	sourceDatastore,
+	sourceEncoding,
 	sourceConfig,
 	sourceURL,
 	targetDatastore,
@@ -2252,7 +2254,7 @@ func (d *Disp) CopyConfig(
 	redactedSource := "copy-config"
 	noRoutingInstance := ""
 	args := d.cfgMgmtCommandArgs(
-		"load", redactedSource, noRoutingInstance, "xml")
+		"load", redactedSource, noRoutingInstance, sourceEncoding)
 	if !d.authCommand(args) {
 		return "", mgmterror.NewAccessDeniedApplicationError()
 	}
@@ -2263,7 +2265,7 @@ func (d *Disp) CopyConfig(
 
 	return d.accountCmdWrapStrErr(args, func() (interface{}, error) {
 		return d.copyConfigInternal(
-			sid, sourceDatastore, sourceConfig,
+			sid, sourceDatastore, sourceEncoding, sourceConfig,
 			sourceURL, targetDatastore, targetURL)
 	})
 
