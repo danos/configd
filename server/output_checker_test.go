@@ -184,6 +184,7 @@ func (oc *outputChecker) delete(testPath string) *outputChecker {
 
 func (oc *outputChecker) copyConfig(
 	sourceDatastore,
+	sourceEncoding,
 	sourceConfig,
 	sourceURL,
 	targetDatastore,
@@ -191,8 +192,8 @@ func (oc *outputChecker) copyConfig(
 ) *outputChecker {
 	oc.init()
 	_, oc.actErr = oc.d.CopyConfig(
-		testSID, sourceDatastore, sourceConfig, sourceURL,
-		targetDatastore, targetURL)
+		testSID, sourceDatastore, sourceEncoding, sourceConfig,
+		sourceURL, targetDatastore, targetURL)
 
 	return oc
 }

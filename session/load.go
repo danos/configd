@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2018-2021, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2014-2015,2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -75,9 +75,25 @@ func (s *session) loadFromStringUsingEncoding(
 	return um.Unmarshal(s.schema, []byte(input))
 }
 
+func encType(encode string) (encoding.EncType, error) {
+	switch encode {
+	case "json":
+		return encoding.JSON, nil
+	case "rfc7951":
+		return encoding.RFC7951, nil
+	case "xml":
+		return encoding.XML, nil
+	default:
+		cerr := mgmterror.NewOperationFailedApplicationError()
+		cerr.Message = fmt.Sprintf("Unknown encoding '%s'", encode)
+		return encoding.XML, cerr
+	}
+}
+
 func (s *session) copyConfig(
 	ctx *configd.Context,
 	sourceDatastore,
+	sourceEncoding,
 	sourceConfig,
 	sourceURL,
 	targetDatastore,
@@ -112,7 +128,12 @@ func (s *session) copyConfig(
 		return err
 	}
 
-	ltree, err := s.loadFromStringUsingEncoding(sourceConfig, encoding.XML)
+	enc, err := encType(sourceEncoding)
+	if err != nil {
+		return err
+	}
+
+	ltree, err := s.loadFromStringUsingEncoding(sourceConfig, enc)
 	if err != nil {
 		return err
 	}

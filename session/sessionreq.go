@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2018-2021, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2014-2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -284,13 +284,14 @@ type editconfigreq struct {
 func (*editconfigreq) reqty() {}
 
 type copyconfigreq struct {
-	ctx     *configd.Context
+	ctx             *configd.Context
 	sourceDatastore string
-	sourceConfig string
-	sourceURL string
-	targetDatastore  string
-	targetURL string
-	resp    chan error
+	sourceEncoding  string
+	sourceConfig    string
+	sourceURL       string
+	targetDatastore string
+	targetURL       string
+	resp            chan error
 }
 
 func (*copyconfigreq) reqty() {}

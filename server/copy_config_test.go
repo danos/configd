@@ -1,4 +1,4 @@
-// Copyright (c) 2020, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2020-2021, AT&T Intellectual Property. All rights reserved.
 //
 // SPDX-License-Identifier: LGPL-2.1-only
 
@@ -34,10 +34,14 @@ const (
 )
 
 var copyConfigCommand = []string{"load", "encoding", "xml", "copy-config"}
+var copyConfigCommandJSON = []string{"load", "encoding", "json", "copy-config"}
+var copyConfigCommandRFC7951 = []string{"load", "encoding", "rfc7951", "copy-config"}
+var copyConfigCommandNilEnc = []string{"load", "copy-config"}
 
 type copyConfigErrTest struct {
 	name,
 	sourceDatastore,
+	sourceEncoding,
 	sourceConfig,
 	sourceURL,
 	targetDatastore,
@@ -48,6 +52,7 @@ type copyConfigErrTest struct {
 	errMsg string
 	errInfoTags  []*mgmterror.MgmtErrorInfoTag
 	blockCommand bool
+	authCmd      []string
 }
 
 func wrapInConfigTags(input string) string {
@@ -57,36 +62,46 @@ func wrapInConfigTags(input string) string {
 func TestCopyConfigErrorHandling(t *testing.T) {
 	testCases := []copyConfigErrTest{
 		{
-			name:      "Source URL provided",
-			sourceURL: "sourceURL",
-			errType:   "application",
-			errTag:    "operation-not-supported",
-			errMsg:    "URL capability is not supported",
+			name:           "Source URL provided",
+			sourceEncoding: "xml",
+			authCmd:        copyConfigCommand,
+			sourceURL:      "sourceURL",
+			errType:        "application",
+			errTag:         "operation-not-supported",
+			errMsg:         "URL capability is not supported",
 		},
 		{
-			name:      "Target URL provided",
-			targetURL: "targetURL",
-			errType:   "application",
-			errTag:    "operation-not-supported",
-			errMsg:    "URL capability is not supported",
+			name:           "Target URL provided",
+			sourceEncoding: "xml",
+			authCmd:        copyConfigCommand,
+			targetURL:      "targetURL",
+			errType:        "application",
+			errTag:         "operation-not-supported",
+			errMsg:         "URL capability is not supported",
 		},
 		{
 			name:            "Source datastore provided",
+			sourceEncoding:  "xml",
+			authCmd:         copyConfigCommand,
 			sourceDatastore: "candidate",
 			errType:         "application",
 			errTag:          "invalid-value",
 			errMsg:          "Source must be specified in <config> tags.",
 		},
 		{
-			name:    "Source config not provided",
-			errType: "application",
-			errTag:  "missing-element",
-			errMsg:  "An expected element is missing",
+			name:           "Source config not provided",
+			sourceEncoding: "xml",
+			authCmd:        copyConfigCommand,
+			errType:        "application",
+			errTag:         "missing-element",
+			errMsg:         "An expected element is missing",
 			errInfoTags: []*mgmterror.MgmtErrorInfoTag{
 				mgmterror.NewMgmtErrorInfoTag("", "bad-element", "<source>")},
 		},
 		{
 			name:            "Target datastore not candidate",
+			authCmd:         copyConfigCommand,
+			sourceEncoding:  "xml",
 			sourceConfig:    "not empty",
 			targetDatastore: "running",
 			errType:         "application",
@@ -94,7 +109,19 @@ func TestCopyConfigErrorHandling(t *testing.T) {
 			errMsg:          "Target datastore only supports candidate, not running",
 		},
 		{
-			name: "Invalid value for node",
+			name:    "Invalid value for node - Unknown encoding",
+			authCmd: copyConfigCommandNilEnc,
+			sourceConfig: wrapInConfigTags(
+				"<testavailable>neither-true-nor-false</testavailable>"),
+			targetDatastore: "candidate",
+			errType:         "application",
+			errTag:          "operation-failed",
+			errMsg:          "Unknown encoding",
+		},
+		{
+			name:           "Invalid value for node",
+			authCmd:        copyConfigCommand,
+			sourceEncoding: "xml",
 			sourceConfig: wrapInConfigTags(
 				"<testavailable>neither-true-nor-false</testavailable>"),
 			targetDatastore: "candidate",
@@ -104,17 +131,31 @@ func TestCopyConfigErrorHandling(t *testing.T) {
 			errMsg:          "Must have one of the following values: true, false",
 		},
 		{
-			name: "Invalid permissions for node",
-			sourceConfig: wrapInConfigTags(
-				"<testhidden>false</testhidden>"),
+			name:            "Invalid value for node - JSON",
+			authCmd:         copyConfigCommandJSON,
+			sourceEncoding:  "json",
+			sourceConfig:    "{\"testavailable\":\"neither-true-nor-false\"}",
 			targetDatastore: "candidate",
+			errPath:         "/testavailable/neither-true-nor-false",
 			errType:         "application",
-			errTag:          "access-denied",
-			errMsg: "Access to the requested protocol operation or " +
-				"data model is denied",
+			errTag:          "invalid-value",
+			errMsg:          "Must have one of the following values: true, false",
 		},
 		{
-			name: "Invalid permissions for user",
+			name:            "Invalid value for node - RFC7951",
+			authCmd:         copyConfigCommandRFC7951,
+			sourceEncoding:  "rfc7951",
+			sourceConfig:    "{\"vyatta-test-validation-v1:testavailable\":\"neither-true-nor-false\"}",
+			targetDatastore: "candidate",
+			errPath:         "/testavailable/neither-true-nor-false",
+			errType:         "application",
+			errTag:          "invalid-value",
+			errMsg:          "Must have one of the following values: true, false",
+		},
+		{
+			name:           "Invalid permissions for user",
+			authCmd:        copyConfigCommand,
+			sourceEncoding: "xml",
 			sourceConfig: wrapInConfigTags(
 				"<testavailable>false</testavailable>"),
 			targetDatastore: "candidate",
@@ -133,7 +174,7 @@ func TestCopyConfigErrorHandling(t *testing.T) {
 				auth.NewTestRule(auth.Deny, auth.AllOps, "/testhidden"),
 				auth.NewTestRule(auth.Allow, auth.AllOps, "*"))
 			if test.blockCommand {
-				limitedAuth.AddBlockedCommand(copyConfigCommand)
+				limitedAuth.AddBlockedCommand(test.authCmd)
 			}
 
 			oc := newOutputChecker(t).
@@ -143,6 +184,7 @@ func TestCopyConfigErrorHandling(t *testing.T) {
 
 			oc.copyConfig(
 				test.sourceDatastore,
+				test.sourceEncoding,
 				test.sourceConfig,
 				test.sourceURL,
 				test.targetDatastore,
@@ -161,7 +203,7 @@ func TestCopyConfigErrorHandling(t *testing.T) {
 			// are in the secrets group.
 			if !test.blockCommand {
 				assertCommandAaaNoSecrets(
-					t, limitedAuth, copyConfigCommand)
+					t, limitedAuth, test.authCmd)
 			}
 			clearAllCmdRequestsAndUserAuditLogs(limitedAuth)
 		})
