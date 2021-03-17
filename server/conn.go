@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2018-2021, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2014-2015,2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -145,10 +145,10 @@ func (conn *SrvConn) Handle() {
 
 	conn.cred, err = conn.getCreds()
 	if err != nil {
-		if !os.IsNotExist(err) {
-			conn.srv.LogError(err)
-		}
 		if !IsLoginPidError(err) {
+			if !os.IsNotExist(err) {
+				conn.srv.LogError(err)
+			}
 			conn.Close()
 			return
 		}
