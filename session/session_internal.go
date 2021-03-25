@@ -20,13 +20,11 @@ import (
 	"github.com/danos/configd"
 	"github.com/danos/configd/common"
 	"github.com/danos/configd/rpc"
-	rfc7951utils "github.com/danos/configd/session/internal/rfc7951"
 	"github.com/danos/encoding/rfc7951"
 	rfc7951data "github.com/danos/encoding/rfc7951/data"
 	"github.com/danos/mgmterror"
 	"github.com/danos/utils/exec"
 	"github.com/danos/utils/pathutil"
-	"github.com/danos/vci"
 	"github.com/danos/yang/data/encoding"
 	yang "github.com/danos/yang/schema"
 )
@@ -548,40 +546,13 @@ Loop:
 	logStateTime(errLogger, "Convert to RFC7951 data tree", convertToRFCStart)
 
 	// 3. Merge in component state
-	// This should be one Client for the whole sessiond daemon (whenever that
-	// is built)
 	vciStart := time.Now()
 	logStateEvent(errLogger, "Start VCI scripts")
-	mrgr := rfc7951utils.NewRFC7951Merger(s.schemaFull, ft)
-	client, vciErr := vci.Dial()
-	if vciErr == nil {
-		defer client.Close()
-		// Only do model access when VCI is available. In some testing
-		// scenarios VCI is not available. We can rework this after the
-		// provisiond split, which will move the test cases
-		// for legacy operational state to provisiond.
-		modelNames := s.schemaFull.ListActiveModels(ut)
-		for _, model := range modelNames {
-			compStartTime := time.Now()
-			state := rfc7951data.TreeNew()
-			err := client.StoreStateByModelInto(model, state)
-			if err != nil {
-				// No error if component doesn't implement state.
-				_, ok :=
-					err.(*mgmterror.OperationNotSupportedApplicationError)
-				if ok {
-					continue
-				}
-				ctx.Elog.Printf("%s state retrieval failed: %s\n",
-					model, err)
-				continue
-			}
-			mrgr.Merge(state)
-			logStateTime(errLogger, fmt.Sprintf("  %s", model),
-				compStartTime)
-		}
+	ft, err = s.schemaFull.ServiceGetState(
+		ut, ft, errLogger)
+	if err != nil {
+		return nil, err, nil
 	}
-	ft = mrgr.Tree()
 	logStateTime(errLogger, "End VCI scripts", vciStart)
 
 	// 4. Convert back to a union tree.
