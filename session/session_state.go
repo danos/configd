@@ -8,11 +8,12 @@
 package session
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"reflect"
 	"time"
+
+	"strings"
 
 	"github.com/danos/config/data"
 	"github.com/danos/config/schema"
@@ -20,7 +21,6 @@ import (
 	"github.com/danos/mgmterror"
 	"github.com/danos/utils/pathutil"
 	"github.com/danos/yang/data/encoding"
-	"strings"
 )
 
 func isEmptyJson(jsonState []byte) bool {
@@ -218,23 +218,4 @@ func addStateToTree(
 		errAndWarns.warns = append(errAndWarns.warns, warns...)
 	}
 	return errAndWarns
-}
-
-func validateFullTree(ut union.Node) error {
-
-	_, errs, ok := schema.ValidateSchema(ut.GetSchema(), ut, false)
-	if !ok {
-		var out bytes.Buffer
-		for _, err := range errs {
-			if err == nil {
-				continue
-			}
-			out.WriteString(err.Error())
-			out.WriteString("\n")
-		}
-
-		return fmt.Errorf("%s", out.String())
-	}
-
-	return nil
 }

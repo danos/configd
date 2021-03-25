@@ -20,6 +20,7 @@ import (
 	"syscall"
 
 	"github.com/danos/config/auth"
+	"github.com/danos/config/schema"
 	"github.com/danos/configd"
 	"github.com/danos/configd/rpc"
 	"github.com/danos/mgmterror"
@@ -139,7 +140,7 @@ func (conn *SrvConn) getCreds() (*syscall.Ucred, error) {
 
 // Handle is the main loop for a connection. It receives the requests,  authorizes
 // the request, calls the request method and returns the response to the client.
-func (conn *SrvConn) Handle() {
+func (conn *SrvConn) Handle(compMgr schema.ComponentManager) {
 
 	var err error
 
@@ -169,6 +170,7 @@ func (conn *SrvConn) Handle() {
 			Elog:      conn.srv.Elog,
 			Dlog:      conn.srv.Dlog,
 			Wlog:      conn.srv.Wlog,
+			CompMgr:   compMgr,
 		},
 	}
 

@@ -10,10 +10,13 @@ package session_test
 import (
 	"testing"
 
+	"github.com/danos/config/compmgrtest"
 	"github.com/danos/configd/session/sessiontest"
 	"github.com/danos/vci/conf"
 	"github.com/danos/yang/testutils"
 )
+
+const submoduleHasNoPrefix = ""
 
 var parentTestComp = conf.CreateTestDotComponentFile("parent").
 	AddBaseModel()
@@ -79,18 +82,15 @@ const (
 func TestConfigSetToSubmodules(t *testing.T) {
 	// Parent, child, grandchild each with own config and, in grandchild
 	// case, augmented into child config too.
-	srv, sess := sessiontest.NewTestSpec(t).
+	ts := sessiontest.NewTestSpec(t).
 		SetSchemaDefsByRef(submoduleSchemas).
 		SetComponents([]string{
 			parentTestComp.String(),
 			childTestComp.String(),
-			grandchildTestComp.String()}).
-		SetDispatcher(&cfgTestDispatcher{}).
-		Init()
+			grandchildTestComp.String()})
+	srv, sess := ts.Init()
 
 	srv.LoadConfig(t, submoduleConfig, sess)
-
-	clearTestLog()
 
 	_, errs, ok := sess.Commit(srv.Ctx, "message", false /* No debug */)
 	if !ok {
@@ -98,15 +98,15 @@ func TestConfigSetToSubmodules(t *testing.T) {
 		return
 	}
 
-	checkLogEntries(t,
-		newLogEntry("SetRunning", "net.vyatta.test.parent",
+	ts.CheckCompLogEntries(
+		"Config Set to Submodules",
+		compmgrtest.SetRunning,
+		compmgrtest.NewLogEntry("SetRunning", "net.vyatta.test.parent",
 			parentCfgJson),
-		newLogEntry("SetRunning", "net.vyatta.test.child",
+		compmgrtest.NewLogEntry("SetRunning", "net.vyatta.test.child",
 			childCfgJson),
-		newLogEntry("SetRunning", "net.vyatta.test.grandchild",
+		compmgrtest.NewLogEntry("SetRunning", "net.vyatta.test.grandchild",
 			gcCfgJson))
-
-	clearTestLog()
 }
 
 // submodules not assigned to provisiond

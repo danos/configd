@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/danos/config/auth"
+	"github.com/danos/config/compmgrtest"
 	"github.com/danos/config/data"
 	"github.com/danos/config/load"
 	"github.com/danos/config/schema"
@@ -26,7 +27,6 @@ import (
 	"github.com/danos/configd"
 	. "github.com/danos/configd/session"
 	"github.com/danos/vci/conf"
-	"github.com/danos/yangd"
 )
 
 // For some operations, 'false' indicates pass, whereas in others, 'true'
@@ -221,11 +221,13 @@ type TstSrv struct {
 
 // Setup enough infrastructure to enable test cases to operate
 func tstInit(
+	t *testing.T,
 	ms, msFull schema.ModelSet,
 	config, capDir string,
 	a auth.Auther,
 	isConfigdUser, inSecretsGroup bool,
 	smgrLog *bytes.Buffer,
+	compMgr schema.ComponentManager,
 ) (*TstSrv, error) {
 
 	var rt *data.Node
@@ -280,6 +282,7 @@ func tstInit(
 		Dlog:     s.Dlog,
 		Elog:     s.Elog,
 		Wlog:     s.Wlog,
+		CompMgr:  compMgr,
 		Configd:  isConfigdUser,
 		Config: &configd.Config{
 			Runfile:      "session_test.runfile",
@@ -413,7 +416,7 @@ type TestSpec struct {
 	config         string
 	capabilities   string
 	components     []string
-	dispatcher     yangd.Dispatcher
+	compMgr        schema.ComponentManager
 	auther         auth.Auther
 	isConfigdUser  bool
 	inSecretsGroup bool
@@ -426,13 +429,19 @@ type TestSpec struct {
 }
 
 func NewTestSpec(t *testing.T) *TestSpec {
-	return &TestSpec{
+
+	ts := &TestSpec{
 		t:              t,
 		config:         "\n", // Tests hang with no trailing newline
-		dispatcher:     &testDispatcher{},
 		isConfigdUser:  ConfigdUser,
 		inSecretsGroup: NotInSecretsGroup}
+
+	ts.compMgr = compmgrtest.NewTestCompMgr(t)
+
+	return ts
 }
+
+func (ts *TestSpec) GetCompMgr() schema.ComponentManager { return ts.compMgr }
 
 func (ts *TestSpec) SetConfig(config string) *TestSpec {
 	// Ensure we have trailing '\n' or test will hang.  Extra blank lines
@@ -453,11 +462,6 @@ func (ts *TestSpec) SetComponents(comps []string) *TestSpec {
 
 func (ts *TestSpec) SetSessionMgrLog(smgrLog *bytes.Buffer) *TestSpec {
 	ts.smgrLog = smgrLog
-	return ts
-}
-
-func (ts *TestSpec) SetDispatcher(disp yangd.Dispatcher) *TestSpec {
-	ts.dispatcher = disp
 	return ts
 }
 
@@ -531,34 +535,6 @@ func (ts *TestSpec) checkAndProcessSchemas() {
 	// schemaDir processed directly into ModelSets later.
 }
 
-// START COPY from modelset_Test.go
-type testDispatcher struct{}
-
-type testService struct{}
-
-func (d *testDispatcher) NewService(name string) (yangd.Service, error) {
-	return &testService{}, nil
-}
-
-func (s *testService) GetRunning(path string) ([]byte, error) {
-	return nil, nil
-}
-
-func (s *testService) GetState(path string) ([]byte, error) {
-	return nil, nil
-}
-
-func (s *testService) ValidateCandidate(candidate []byte) error {
-	return nil
-}
-
-func (s *testService) SetRunning(candidate []byte) error {
-	fmt.Printf("testService setRunning\n")
-	return nil
-}
-
-// END COPY from modelset_Test.go
-
 func (ts *TestSpec) processComponents() {
 	if ts.components == nil {
 		return
@@ -576,7 +552,6 @@ func (ts *TestSpec) processComponents() {
 	}
 
 	ts.extensions = &schema.CompilationExtensions{
-		Dispatcher:      ts.dispatcher,
 		ComponentConfig: parsedComps,
 	}
 }
@@ -601,8 +576,9 @@ func (ts *TestSpec) Init() (*TstSrv, *Session) {
 		return nil, nil
 	}
 
-	srv, err := tstInit(ms, msFull, ts.config, ts.capsDir,
-		ts.auther, ts.isConfigdUser, ts.inSecretsGroup, ts.smgrLog)
+	srv, err := tstInit(ts.t, ms, msFull, ts.config, ts.capsDir,
+		ts.auther, ts.isConfigdUser, ts.inSecretsGroup, ts.smgrLog,
+		ts.compMgr)
 
 	if err != nil {
 		ts.t.Fatalf("Unable to initialize testspec; %s", err)
@@ -614,4 +590,23 @@ func (ts *TestSpec) Init() (*TstSrv, *Session) {
 	}
 
 	return srv, sess
+}
+
+func (ts *TestSpec) ClearCompLogEntries() {
+	ts.compMgr.(*compmgrtest.TestCompMgr).ClearLogEntries()
+}
+
+// Checks exact match for number and order of entries, after filtering for
+// given specific type of log entry (eg SetRunning)
+func (ts *TestSpec) CheckCompLogEntries(
+	name, filter string,
+	entries ...compmgrtest.TestLogEntry,
+) {
+	ts.compMgr.(*compmgrtest.TestCompMgr).CheckLogEntries(
+		ts.t, name, entries, filter)
+}
+
+func (ts *TestSpec) SetCurrentState(model, stateJson string) {
+	ts.compMgr.(*compmgrtest.TestCompMgr).SetCurrentState(
+		model, stateJson)
 }

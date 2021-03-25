@@ -59,6 +59,8 @@ import (
 	"github.com/danos/configd"
 	"github.com/danos/configd/server"
 	"github.com/danos/utils/os/group"
+	"github.com/danos/vci"
+	"github.com/danos/vci/services"
 	"github.com/danos/yang/compile"
 )
 
@@ -254,6 +256,78 @@ func getListeners() net.Listener {
 	return listeners[0]
 }
 
+type configdCompMgr struct {
+	comp   vci.Component
+	client *vci.Client
+	svcMgr *services.Manager
+}
+
+func newConfigdCompMgr(comp vci.Component) *configdCompMgr {
+	return &configdCompMgr{
+		comp:   comp,
+		svcMgr: services.NewManager(),
+	}
+}
+
+func (ccm *configdCompMgr) Dial() error {
+	ccm.client = ccm.comp.Client()
+	return nil
+}
+
+func (ccm *configdCompMgr) SetConfigForModel(
+	modelName string,
+	object interface{},
+) error {
+	if ccm.client == nil {
+		return fmt.Errorf(
+			"Must dial client for %s before calling SetConfigForModel.",
+			modelName)
+	}
+	return ccm.client.SetConfigForModel(modelName, object)
+}
+
+func (ccm *configdCompMgr) CheckConfigForModel(
+	modelName string,
+	object interface{},
+) error {
+	if ccm.client == nil {
+		return fmt.Errorf(
+			"Must dial client for %s before calling CheckConfigForModel.",
+			modelName)
+	}
+	return ccm.client.CheckConfigForModel(modelName, object)
+}
+
+func (ccm *configdCompMgr) StoreConfigByModelInto(
+	modelName string,
+	object interface{},
+) error {
+	if ccm.client == nil {
+		return fmt.Errorf(
+			"Must dial client for %s before calling StoreConfigByModelInto.",
+			modelName)
+	}
+	return ccm.client.StoreConfigByModelInto(modelName, object)
+}
+
+func (ccm *configdCompMgr) StoreStateByModelInto(
+	modelName string,
+	object interface{},
+) error {
+	if ccm.client == nil {
+		return fmt.Errorf(
+			"Must dial client for %s before calling StoreStateByModelInto.",
+			modelName)
+	}
+	return ccm.client.StoreStateByModelInto(modelName, object)
+}
+
+func (ccm *configdCompMgr) CloseSvcMgr() { ccm.svcMgr.Close() }
+
+func (ccm *configdCompMgr) IsActive(name string) (bool, error) {
+	return ccm.svcMgr.IsActive(name)
+}
+
 func main() {
 	debug.SetGCPercent(25)
 
@@ -268,6 +342,9 @@ func main() {
 	fatal(os.MkdirAll(basepath, 0755))
 
 	go sigstartprof()
+
+	comp := vci.NewComponent("net.vyatta.configd")
+	comp.Run()
 
 	st, stFull := startYangd()
 
@@ -286,7 +363,7 @@ func main() {
 	}
 
 	srv := server.NewSrv(l.(*net.UnixListener), st, stFull, *username,
-		config, elog)
+		config, elog, newConfigdCompMgr(comp))
 
 	writePid()
 

@@ -13,6 +13,8 @@ import (
 	"strconv"
 	"time"
 
+	spawn "os/exec"
+
 	"github.com/danos/config/commit"
 	"github.com/danos/config/data"
 	"github.com/danos/config/schema"
@@ -20,7 +22,6 @@ import (
 	"github.com/danos/configd/common"
 	"github.com/danos/mgmterror"
 	"github.com/danos/utils/exec"
-	spawn "os/exec"
 )
 
 type commitctx struct {
@@ -62,6 +63,7 @@ func newctx(
 			Auth:    sctx.Auth,
 			Dlog:    sctx.Dlog,
 			Elog:    sctx.Elog,
+			CompMgr: sctx.CompMgr,
 			Noexec:  true,
 		},
 		message: message,
@@ -137,6 +139,10 @@ func (c *commitctx) Sid() string {
 
 func (c *commitctx) Uid() uint32 {
 	return c.sctx.Uid
+}
+
+func (c *commitctx) CompMgr() schema.ComponentManager {
+	return c.ctx.CompMgr
 }
 
 func (c *commitctx) Running() *data.Node {

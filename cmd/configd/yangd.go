@@ -13,6 +13,7 @@ import (
 
 	"bytes"
 	"fmt"
+
 	"github.com/danos/config/schema"
 	"github.com/danos/config/yangconfig"
 	"github.com/danos/encoding/rfc7951"
@@ -23,7 +24,6 @@ import (
 	"github.com/danos/yang/data/datanode"
 	yangenc "github.com/danos/yang/data/encoding"
 	yangschema "github.com/danos/yang/schema"
-	"github.com/danos/yangd/dbus"
 )
 
 // Defines yangd VCI-accessible methods
@@ -597,13 +597,6 @@ func startYangd() (st, stFull schema.ModelSet) {
 		log.Println(err)
 	}
 
-	compDispatch, err := dbus.NewDispatcherWithName(nil, "net.vyatta.configd")
-	if err != nil {
-		// For now, failing to create the component dispatcher
-		// isn't fatal, so just log the error
-		log.Println(err)
-	}
-
 	ycfg := yangconfig.NewConfig().IncludeYangDirs(*yangdir).
 		IncludeFeatures(*capabilities).SystemConfig()
 
@@ -613,7 +606,6 @@ func startYangd() (st, stFull schema.ModelSet) {
 			Features:      ycfg.FeaturesChecker(),
 			Filter:        compile.IsConfig},
 		&schema.CompilationExtensions{
-			Dispatcher:      compDispatch,
 			ComponentConfig: compConfig,
 		})
 	fatal(err)
@@ -624,7 +616,6 @@ func startYangd() (st, stFull schema.ModelSet) {
 			Features:      ycfg.FeaturesChecker(),
 			Filter:        compile.IsConfigOrState()},
 		&schema.CompilationExtensions{
-			Dispatcher:      compDispatch,
 			ComponentConfig: compConfig,
 		})
 	fatal(err)

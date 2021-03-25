@@ -41,6 +41,7 @@ type Srv struct {
 	Elog       *log.Logger
 	Wlog       *log.Logger
 	Config     *configd.Config
+	CompMgr    schema.ComponentManager
 }
 
 func loadRunning(config *configd.Config, ms schema.ModelSet) *data.Node {
@@ -48,7 +49,14 @@ func loadRunning(config *configd.Config, ms schema.ModelSet) *data.Node {
 	return t
 }
 
-func NewSrv(l *net.UnixListener, ms, msFull schema.ModelSet, username string, config *configd.Config, elog *log.Logger) *Srv {
+func NewSrv(
+	l *net.UnixListener,
+	ms, msFull schema.ModelSet,
+	username string,
+	config *configd.Config,
+	elog *log.Logger,
+	compMgr schema.ComponentManager,
+) *Srv {
 	rt := loadRunning(config, ms)
 
 	dlog, err := configd.NewLogger(syslog.LOG_DEBUG|syslog.LOG_DAEMON, 0)
@@ -78,6 +86,7 @@ func NewSrv(l *net.UnixListener, ms, msFull schema.ModelSet, username string, co
 		Elog:         elog,
 		Wlog:         wlog,
 		Config:       config,
+		CompMgr:      compMgr,
 	}
 
 	s.authGlobal = auth.NewAuthGlobal(username, s.Dlog, s.Elog)
@@ -137,7 +146,7 @@ func (s *Srv) Serve() error {
 		}
 		sconn := s.NewConn(conn)
 
-		go sconn.Handle()
+		go sconn.Handle(s.CompMgr)
 	}
 	return err
 }

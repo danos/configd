@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 
 	"github.com/danos/config/auth"
+	"github.com/danos/config/schema"
 )
 
 type LockId int32
@@ -46,6 +47,7 @@ type Context struct {
 	Dlog      *log.Logger
 	Elog      *log.Logger
 	Wlog      *log.Logger
+	CompMgr   schema.ComponentManager
 	Noexec    bool
 }
 

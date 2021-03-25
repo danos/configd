@@ -549,7 +549,7 @@ Loop:
 	vciStart := time.Now()
 	logStateEvent(errLogger, "Start VCI scripts")
 	ft, err = s.schemaFull.ServiceGetState(
-		ut, ft, errLogger)
+		ctx.CompMgr, ut, ft, errLogger)
 	if err != nil {
 		return nil, err, nil
 	}
