@@ -1,4 +1,4 @@
-// Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2019,2021, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2015-2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -281,7 +281,8 @@ func checkChildren(
 	// Unprefixed filter is fine here.
 	children := parent.XChildren(
 		xutils.NewXFilter(xml.Name{Space: "", Local: filter},
-			xutils.FullTree))
+			xutils.FullTree),
+		xutils.Sorted)
 	if len(children) != len(expResult) {
 		t.Fatalf("Expected %d child(ren) for '%s/%s'.  Got %d.",
 			len(expResult), parent.XName(), filter, len(children))
@@ -323,7 +324,8 @@ func TestDiffContainer(t *testing.T) {
 
 	interfaceNodes := diffTree.XChildren(
 		xutils.NewXFilter(xml.Name{Space: "", Local: "interfaces"},
-			xutils.FullTree))
+			xutils.FullTree),
+		xutils.Sorted)
 	if len(interfaceNodes) != 1 {
 		t.Fatalf("Expected single interface child.")
 	}
@@ -374,13 +376,15 @@ func TestDiffList(t *testing.T) {
 	xutils.ValidateTree(diffTree)
 	interfaceNodes := diffTree.XChildren(
 		xutils.NewXFilter(xml.Name{Space: "", Local: "interfaces"},
-			xutils.FullTree))
+			xutils.FullTree),
+		xutils.Sorted)
 	if len(interfaceNodes) != 1 {
 		t.Fatalf("Expected single interface child.")
 	}
 
 	// Get dp0s1 list entry.  We know it will be first ...
-	intfChildNodes := interfaceNodes[0].XChildren(xutils.AllChildren)
+	intfChildNodes := interfaceNodes[0].XChildren(
+		xutils.AllChildren, xutils.Sorted)
 	if len(intfChildNodes) == 0 {
 		t.Fatalf("Cannot find any nodes.")
 	}
@@ -457,8 +461,9 @@ func TestDiffList(t *testing.T) {
 	// 'debug' node (empty leaf)
 	protocolsNodes := diffTree.XChildren(
 		xutils.NewXFilter(xml.Name{Space: "", Local: "protocols"},
-			xutils.FullTree))
-	mplsNodes := protocolsNodes[0].XChildren(xutils.AllChildren)
+			xutils.FullTree),
+		xutils.Sorted)
+	mplsNodes := protocolsNodes[0].XChildren(xutils.AllChildren, xutils.Sorted)
 	checkChildren(t, diffTree, mplsNodes[0],
 		"debug",
 		expNodeSet{
@@ -472,11 +477,14 @@ func TestDiffKeyLeaf(t *testing.T) {
 
 	interfaceNodes := diffTree.XChildren(
 		xutils.NewXFilter(xml.Name{Space: "", Local: "interfaces"},
-			xutils.FullTree))
-	dataplaneNodes := interfaceNodes[0].XChildren(xutils.AllChildren)
+			xutils.FullTree),
+		xutils.Sorted)
+	dataplaneNodes := interfaceNodes[0].XChildren(
+		xutils.AllChildren, xutils.Sorted)
 	nameNodes := dataplaneNodes[0].XChildren(
 		xutils.NewXFilter(xml.Name{Space: "", Local: "name"},
-			xutils.FullTree))
+			xutils.FullTree),
+		xutils.Sorted)
 
 	checkChildren(t, diffTree, nameNodes[0],
 		"*",
@@ -488,11 +496,14 @@ func TestDiffNonKeyLeaf(t *testing.T) {
 
 	protocolsNodes := diffTree.XChildren(
 		xutils.NewXFilter(xml.Name{Space: "", Local: "protocols"},
-			xutils.FullTree))
-	mplsNodes := protocolsNodes[0].XChildren(xutils.AllChildren)
+			xutils.FullTree),
+		xutils.Sorted)
+	mplsNodes := protocolsNodes[0].XChildren(
+		xutils.AllChildren, xutils.Sorted)
 	minLabelNodes := mplsNodes[0].XChildren(
 		xutils.NewXFilter(xml.Name{Space: "", Local: "min-label"},
-			xutils.FullTree))
+			xutils.FullTree),
+		xutils.Sorted)
 
 	checkChildren(t, diffTree, minLabelNodes[0],
 		"*",
@@ -504,11 +515,14 @@ func TestDiffEmptyLeaf(t *testing.T) {
 
 	protocolsNodes := diffTree.XChildren(
 		xutils.NewXFilter(xml.Name{Space: "", Local: "protocols"},
-			xutils.FullTree))
-	mplsNodes := protocolsNodes[0].XChildren(xutils.AllChildren)
+			xutils.FullTree),
+		xutils.Sorted)
+	mplsNodes := protocolsNodes[0].XChildren(
+		xutils.AllChildren, xutils.Sorted)
 	debugNodes := mplsNodes[0].XChildren(
 		xutils.NewXFilter(xml.Name{Space: "", Local: "debug"},
-			xutils.FullTree))
+			xutils.FullTree),
+		xutils.Sorted)
 
 	checkChildren(t, diffTree, debugNodes[0],
 		"*",
@@ -520,11 +534,14 @@ func TestDiffLeafList(t *testing.T) {
 
 	interfaceNodes := diffTree.XChildren(
 		xutils.NewXFilter(xml.Name{Space: "", Local: "interfaces"},
-			xutils.FullTree))
-	dataplaneNodes := interfaceNodes[0].XChildren(xutils.AllChildren)
+			xutils.FullTree),
+		xutils.Sorted)
+	dataplaneNodes := interfaceNodes[0].XChildren(
+		xutils.AllChildren, xutils.Sorted)
 	addressNodes := dataplaneNodes[0].XChildren(
 		xutils.NewXFilter(xml.Name{Space: "", Local: "address"},
-			xutils.FullTree))
+			xutils.FullTree),
+		xutils.Sorted)
 
 	checkChildren(t, diffTree, addressNodes[0],
 		"*",
