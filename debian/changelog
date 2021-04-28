@@ -1,3 +1,11 @@
+configd (2.10.5) unstable; urgency=medium
+
+  * CopyConfig: Support selectable config encoding
+  * Support ValidateConfig
+  * Unit tests to verify validate config (Closes: VRVDR-52942)
+
+ -- Paul Carson <paul.carson@intl.att.com>  Wed, 28 Apr 2021 14:17:31 +0100
+
 configd (2.10.4) unstable; urgency=medium
 
   * Updated InfoTags handling for test mgmt errors
