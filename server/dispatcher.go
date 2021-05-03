@@ -18,6 +18,8 @@ import (
 	"strconv"
 	"strings"
 
+	spawn "os/exec"
+
 	"github.com/danos/config/auth"
 	"github.com/danos/config/data"
 	"github.com/danos/config/diff"
@@ -36,7 +38,6 @@ import (
 	yangenc "github.com/danos/yang/data/encoding"
 	yang "github.com/danos/yang/schema"
 	"github.com/danos/yang/xpath/xutils"
-	spawn "os/exec"
 )
 
 func init() {
@@ -1966,24 +1967,34 @@ func convertEncoding(rpc schema.Rpc, inputTree, fromEncoding, toEncoding string)
 
 // Allows us to test without needing VCI DBUS infrastructure.
 type VciRpcCaller interface {
-	CallRpc(moduleName, rpcName, inputTreeJson string) (string, error)
+	CallRpc(ctx *configd.Context, moduleName, rpcName, inputTreeJson string) (string, error)
 }
 
 type vciRpcCaller struct{}
 
-func (vrc *vciRpcCaller) CallRpc(moduleName, rpcName, inputTreeJson string,
+func (vrc *vciRpcCaller) CallRpc(
+	ctx *configd.Context,
+	moduleName, rpcName, inputTreeJson string,
 ) (string, error) {
+	metadata := vci.RPCMetadata{
+		Pid:    ctx.Pid,
+		Uid:    ctx.Uid,
+		User:   ctx.User,
+		Groups: ctx.Groups,
+	}
 	client, err := vci.Dial()
 	if err != nil {
 		return "", err
 	}
 	var out string
-	err = client.Call(moduleName, rpcName, inputTreeJson).StoreOutputInto(&out)
+	err = client.CallWithMetadata(moduleName, rpcName, metadata, inputTreeJson).
+		StoreOutputInto(&out)
 	client.Close()
 	return out, err
 }
 
 func (d *Disp) handleVciRpc(
+	ctx *configd.Context,
 	moduleName string,
 	encoding string,
 	rpc schema.Rpc,
@@ -1999,7 +2010,7 @@ func (d *Disp) handleVciRpc(
 		return "", err
 	}
 
-	output, err := vrc.CallRpc(moduleName, rpcName, inputTreeJson)
+	output, err := vrc.CallRpc(ctx, moduleName, rpcName, inputTreeJson)
 	if err != nil {
 		return "", err
 	}
@@ -2052,7 +2063,7 @@ func (d *Disp) callRpcInternal(
 		if !d.ctx.Auth.AuthorizeRPC(d.ctx.Uid, d.ctx.Groups, moduleId, rpcName) {
 			return "", mgmterror.NewAccessDeniedApplicationError()
 		}
-		output, err := d.handleVciRpc(
+		output, err := d.handleVciRpc(d.ctx,
 			moduleId, encoding, rpc, rpcName, args, vrc)
 		return output, common.FormatRpcPathError(err)
 	}

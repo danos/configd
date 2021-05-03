@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2019, AT&T Intellectual Property Inc. All rights reserved.
+// Copyright (c) 2017-2021, AT&T Intellectual Property Inc. All rights reserved.
 //
 // Copyright (c) 2016-2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -12,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/danos/configd"
 	"github.com/danos/configd/server"
 	"github.com/danos/configd/session/sessiontest"
 	"github.com/danos/mgmterror/errtest"
@@ -25,7 +26,7 @@ type testRpcCaller struct {
 	outputStatus bool // Currently ignored in real code.
 }
 
-func (trc *testRpcCaller) CallRpc(modelName, rpcName, inputTreeJson string,
+func (trc *testRpcCaller) CallRpc(ctx *configd.Context, modelName, rpcName, inputTreeJson string,
 ) (string, error) {
 	if inputTreeJson != trc.expInputJson {
 		trc.t.Fatalf(
