@@ -561,7 +561,7 @@ Loop:
 	if err != nil {
 		return nil, err, nil
 	}
-	logStateTime(dbgLogger, "Marshal RFC7951 data", marshalStart)
+	logStateTime(errLogger, "Marshal RFC7951 data", marshalStart)
 
 	// Unmarshal will perform validation of the merged tree.  This involves
 	// putting the rfc7951 data (d) into a data tree, and then 'set'ting
