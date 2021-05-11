@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2018-2021, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2015-2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -20,6 +20,7 @@ import (
 	"github.com/danos/configd/server"
 	"github.com/danos/configd/session/sessiontest"
 	"github.com/danos/mgmterror"
+	"github.com/danos/mgmterror/errtest"
 )
 
 const (
@@ -917,4 +918,95 @@ func TestLeafrefListValidateRelOkListFailNoRefList(t *testing.T) {
 	checkLeafrefValidationFail(t, listLeafrefSchema, emptyConfig,
 		"top/source/relOkListEntry/rel-ok/listEntry/value/99",
 		"[top reference none]")
+}
+
+const leafrefCacheSchema = `
+container intfCont {
+    list interface {
+		key "name";
+		leaf name {
+			type string;
+		}
+		leaf address {
+			type string;
+		}
+	}
+
+	list mgmt-interfaces {
+		key name;
+		leaf name {
+			type leafref {
+				path "../../interface/name";
+			}
+		}
+	}
+
+    list mgmt-interfaces-pred {
+		key name;
+		leaf name {
+			type string;
+		}
+		leaf address {
+			type leafref {
+				path "../../interface[name=current()/../name]/address";
+			}
+		}
+	}
+}`
+
+var baseLeafrefConfig = testutils.Root(
+	testutils.Cont("intfCont",
+		testutils.List("interface",
+			testutils.ListEntry("if0",
+				testutils.Leaf("address", "1.2.3.4")),
+			testutils.ListEntry("if1",
+				testutils.Leaf("address", "4.3.2.1")),
+			testutils.ListEntry("if2",
+				testutils.Leaf("address", "1.2.3.4")))))
+
+// Check multiple leafrefs, different values, are validated ok at same time.
+// Shows cacheing isn't breaking anything.
+func TestLeafrefCached(t *testing.T) {
+	oc := newOutputChecker(t).
+		setSchema(leafrefCacheSchema).
+		setInitConfig(baseLeafrefConfig)
+
+	oc.set("intfCont/mgmt-interfaces/if0/address/1.2.3.4")
+	oc.set("intfCont/mgmt-interfaces/if1/address/4.3.2.1")
+
+	oc.validate()
+	oc.verifyNoError()
+}
+
+// Check leafref that shouldn't be cached works for multiple leafrefs using
+// same leafref path.
+func TestLeafRefNotCachedPass(t *testing.T) {
+	oc := newOutputChecker(t).
+		setSchema(leafrefCacheSchema).
+		setInitConfig(baseLeafrefConfig)
+
+	oc.set("intfCont/mgmt-interfaces-pred/if0/address/1.2.3.4")
+	oc.set("intfCont/mgmt-interfaces-pred/if1/address/4.3.2.1")
+
+	oc.validate()
+	oc.verifyNoError()
+}
+
+// Now check that we're not wrongly using the first leafref's cached value
+// for a leafref with predicate.
+func TestLeafRefNotCachedFail(t *testing.T) {
+	oc := newOutputChecker(t).
+		setSchema(leafrefCacheSchema).
+		setInitConfig(baseLeafrefConfig)
+
+	oc.set("intfCont/mgmt-interfaces-pred/if0/address/1.2.3.4")
+	oc.set("intfCont/mgmt-interfaces-pred/if1/address/1.2.3.4")
+
+	oc.validate()
+
+	expErr := errtest.LeafrefMgmtErr(
+		"intfCont mgmt-interfaces-pred interface address 1.2.3.4",
+		"/intfCont/mgmt-interfaces-pred/if1/address/1.2.3.4")
+
+	oc.verifyMgmtError(expErr)
 }

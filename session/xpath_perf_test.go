@@ -1,4 +1,4 @@
-// Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2019-2021, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2015-2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -474,4 +474,242 @@ func createIPAddr(seed, base int) string {
 	remD := int(math.Mod(float64((seed+base)&0xFF), 256))
 
 	return fmt.Sprintf("%d.%d.%d.%d", remA, remB, remC, remD)
+}
+
+// Test looking at leafref cost during validation. Uses actual example, but the
+// scenario is simply 2 leafrefs on 1000 nodes each for which the allowed
+// options are 1000 nodes, so we have O(1000)squared code.
+const leafrefSchema = `
+grouping marking-action {
+	container mark {
+		leaf designation {
+			type uint32 {
+				range 0..7;
+			}
+		}
+	}
+}
+
+grouping res-actions {
+	list result {
+		key "result";
+		min-elements 1;
+		leaf result {
+			type leafref {
+				path "/resources/packet-classifier/classifier/results/result";
+			}
+		}
+		container action {
+			presence "Actions applied to packet";
+			uses marking-action;
+		}
+	}
+}
+
+grouping filter-classification-list {
+	list group {
+		key "group-name";
+		min-elements 1;
+		leaf group-name {
+			type string {
+				length 1..16;
+			}
+		}
+		container map {
+			uses res-actions;
+		}
+	}
+}
+
+container policy {
+	container filter-classification {
+		presence "Map generic filter results to actions";
+		uses filter-classification-list;
+	}
+}
+
+grouping ippf-match {
+	container source {
+		description  "Source parameters";
+		configd:help "Source parameters";
+		uses ippf-address-group;
+	}
+}
+
+grouping ippf-address-group {
+	container ipv4 {
+		presence "IPv4 match criteria; mandatory child nodes when configured";
+		must "count( prefix | host ) = 1" {
+			error-message "Configure either 'prefix' or 'host'";
+		}
+		leaf prefix {
+			type string;
+		}
+		leaf host {
+			type string;
+		}
+	}
+}
+
+grouping gpc-rules {
+	list rule {
+		min-elements 1;
+		must "result or disable";
+		key "number";
+		leaf number {
+			type int32;
+		}
+		leaf disable {
+			type empty;
+		}
+		leaf description {
+			type string;
+		}
+		container match {
+			uses ippf-match;
+		}
+		leaf result {
+			type leafref {
+				path "../../results/result";
+			}
+		}
+	}
+}
+
+grouping gpc-results {
+	description "Definition of generic packet classifier results";
+	list results {
+		key "result";
+		min-elements 1;
+		leaf result {
+			type string {
+				length 1..16;
+			}
+		}
+	}
+}
+
+grouping gpc-local-classifiers {
+	list classifier {
+		key "classifier-name";
+		min-elements 1;
+		leaf classifier-name {
+			type string {
+				length 1..16;
+			}
+		}
+		uses gpc-results;
+		uses gpc-rules;
+	}
+}
+
+container resources {
+	container packet-classifier {
+		presence "Generic packet classifier; mandatory child nodes when configured";
+		uses gpc-local-classifiers;
+	}
+}
+
+`
+
+const IPAddrBaseLR = 0x3D010100 // 10.10.10.0
+const NumLeafRefEntries = 1000
+
+func TestLeafRefPerformance(t *testing.T) {
+	if testing.Short() {
+		t.Skipf("Skip LeafRef Performance test for 'short' tests")
+	}
+
+	// Problematic config we're testing has following:
+	//
+	// resources packet-classifier classifier pcg-1 results res-1
+	// ...
+	// resources packet-classifier classifier pcg-1 results res-1000
+	//
+	// resources packet-classifier classifier pcg-1 rule 1 match source ipv4 prefix 10.10.10.0/24
+	// resources packet-classifier classifier pcg-1 rule 1 result res-1
+	// resources packet-classifier classifier pcg-1 rule 2 match source ipv4 prefix 10.10.11.0/24
+	// resources packet-classifier classifier pcg-1 rule 2 result res-2
+	// ...
+	// resources packet-classifier classifier pcg-1 rule 1000 match source ipv4 prefix 10.13.247.0/24
+	// resources packet-classifier classifier pcg-1 rule 1000 result res-1000
+	//
+	// policy filter-classification group fcg-1 map result res-1 action mark designation 1
+	// policy filter-classification group fcg-1 map result res-2 action mark designation 2
+	// ... cycle through designations 0 to 7.
+	// policy filter-classification group fcg-1 map result res-1000 action mark designation 0
+
+	test_setTbl := []ValidateOpTbl{}
+
+	for i := 1; i <= NumLeafRefEntries; i++ {
+		test_setTbl = append(test_setTbl, createPktClassifierEntries(i)...)
+	}
+
+	for i := 1; i < NumLeafRefEntries; i++ {
+		test_setTbl = append(
+			test_setTbl, createFilterClassificationEntries(i)...)
+	}
+
+	srv, sess := TstStartup(t, leafrefSchema, emptyconfig)
+
+	ValidateOperationTable(t, sess, srv.Ctx, test_setTbl, SET)
+
+	_, err, result := sess.Validate(srv.Ctx)
+	if !result {
+		t.Fatalf("Validation failed: %s", err)
+	}
+}
+
+func createPktClassifierEntries(i int) []ValidateOpTbl {
+
+	var retTbl []ValidateOpTbl
+
+	ipAddrWithMask := createIPAddrWithMask(i, IPAddrBaseLR, 24)
+
+	retTbl = append(retTbl,
+		createValOpTbl(fmt.Sprintf("Pkt-classifier results res-%d", i),
+			fmt.Sprintf(
+				"resources/packet-classifier/classifier/pcg-1/results/res-%d",
+				i),
+			SetPass))
+	retTbl = append(retTbl,
+		createValOpTbl(fmt.Sprintf("Pkt-classifier rule %d match", i),
+			fmt.Sprintf(
+				"resources/packet-classifier/classifier/pcg-1/rule/%d/match/"+
+					"source/ipv4/prefix/%s",
+				i, ipAddrWithMask),
+			SetPass))
+	retTbl = append(retTbl,
+		createValOpTbl(fmt.Sprintf("Pkt-classifier rule %d result", i),
+			fmt.Sprintf(
+				"resources/packet-classifier/classifier/pcg-1/rule/%d/"+
+					"result/res-%d",
+				i, i),
+			SetPass))
+
+	return retTbl
+}
+
+func createIPAddrWithMask(seed, base, mask int) string {
+	//remA := int(math.Mod(float64((seed+base)>>24), 256))
+	remA := int(math.Mod(float64(((seed+base)>>16)&0xFF), 256))
+	remB := int(math.Mod(float64(((seed+base)>>8)&0xFF), 256))
+	remC := int(math.Mod(float64((seed+base)&0xFF), 256))
+
+	return fmt.Sprintf("%d.%d.%d.0-%d", remA, remB, remC, mask)
+}
+
+func createFilterClassificationEntries(i int) []ValidateOpTbl {
+
+	var retTbl []ValidateOpTbl
+
+	retTbl = append(retTbl,
+		createValOpTbl(fmt.Sprintf("Filter classification map result res-%d", i),
+			fmt.Sprintf(
+				"policy/filter-classification/group/fcg-1/map/result/res-%d/"+
+					"action/mark/designation/%d",
+				i, i%8),
+			SetPass))
+
+	return retTbl
 }
