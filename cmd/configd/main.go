@@ -56,10 +56,12 @@ import (
 	"time"
 
 	"github.com/coreos/go-systemd/activation"
+	"github.com/danos/config/schema"
 	"github.com/danos/configd"
 	"github.com/danos/configd/server"
 	"github.com/danos/utils/os/group"
 	"github.com/danos/vci"
+	"github.com/danos/vci/conf"
 	"github.com/danos/vci/services"
 	"github.com/danos/yang/compile"
 )
@@ -256,76 +258,66 @@ func getListeners() net.Listener {
 	return listeners[0]
 }
 
-type configdCompMgr struct {
+type configdOpsMgr struct {
 	comp   vci.Component
 	client *vci.Client
-	svcMgr *services.Manager
 }
 
-func newConfigdCompMgr(comp vci.Component) *configdCompMgr {
-	return &configdCompMgr{
-		comp:   comp,
-		svcMgr: services.NewManager(),
-	}
+func newConfigdOpsMgr(comp vci.Component) *configdOpsMgr {
+	return &configdOpsMgr{comp: comp}
 }
 
-func (ccm *configdCompMgr) Dial() error {
-	ccm.client = ccm.comp.Client()
+func (com *configdOpsMgr) Dial() error {
+	com.client = com.comp.Client()
 	return nil
 }
 
-func (ccm *configdCompMgr) SetConfigForModel(
+func (com *configdOpsMgr) SetConfigForModel(
 	modelName string,
 	object interface{},
 ) error {
-	if ccm.client == nil {
+	if com.client == nil {
 		return fmt.Errorf(
 			"Must dial client for %s before calling SetConfigForModel.",
 			modelName)
 	}
-	return ccm.client.SetConfigForModel(modelName, object)
+	return com.client.SetConfigForModel(modelName, object)
 }
 
-func (ccm *configdCompMgr) CheckConfigForModel(
+func (com *configdOpsMgr) CheckConfigForModel(
 	modelName string,
 	object interface{},
 ) error {
-	if ccm.client == nil {
+	if com.client == nil {
 		return fmt.Errorf(
 			"Must dial client for %s before calling CheckConfigForModel.",
 			modelName)
 	}
-	return ccm.client.CheckConfigForModel(modelName, object)
+	return com.client.CheckConfigForModel(modelName, object)
 }
 
-func (ccm *configdCompMgr) StoreConfigByModelInto(
+func (com *configdOpsMgr) StoreConfigByModelInto(
 	modelName string,
 	object interface{},
 ) error {
-	if ccm.client == nil {
+	if com.client == nil {
 		return fmt.Errorf(
 			"Must dial client for %s before calling StoreConfigByModelInto.",
 			modelName)
 	}
-	return ccm.client.StoreConfigByModelInto(modelName, object)
+	return com.client.StoreConfigByModelInto(modelName, object)
 }
 
-func (ccm *configdCompMgr) StoreStateByModelInto(
+func (com *configdOpsMgr) StoreStateByModelInto(
 	modelName string,
 	object interface{},
 ) error {
-	if ccm.client == nil {
+	if com.client == nil {
 		return fmt.Errorf(
 			"Must dial client for %s before calling StoreStateByModelInto.",
 			modelName)
 	}
-	return ccm.client.StoreStateByModelInto(modelName, object)
-}
-
-func (ccm *configdCompMgr) CloseSvcMgr() { ccm.svcMgr.Close() }
-
-func (ccm *configdCompMgr) IsActive(name string) (bool, error) {
-	return ccm.svcMgr.IsActive(name)
+	return com.client.StoreStateByModelInto(modelName, object)
 }
 
 func main() {
@@ -362,8 +354,18 @@ func main() {
 		Capabilities: *capabilities,
 	}
 
+	compConfig, err := conf.LoadComponentConfigDir(*compdir)
+	fatal(err)
+
+	compMgr := schema.NewCompMgr(
+		newConfigdOpsMgr(comp),
+		services.NewManager(),
+		stFull,
+		schema.VyattaV1ModelSet,
+		compConfig)
+
 	srv := server.NewSrv(l.(*net.UnixListener), st, stFull, *username,
-		config, elog, newConfigdCompMgr(comp))
+		config, elog, compMgr)
 
 	writePid()
 

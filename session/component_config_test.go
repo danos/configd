@@ -16,7 +16,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/danos/config/compmgrtest"
 	"github.com/danos/config/data"
 	"github.com/danos/config/schema"
 	"github.com/danos/config/union"
@@ -120,7 +119,7 @@ const (
 type compConfigTest struct {
 	name       string
 	config     []string
-	logEntries []compmgrtest.TestLogEntry
+	logEntries []schema.TestLogEntry
 }
 
 func serialiseCfg(cfgTree *data.Node, ms schema.ModelSet) string {
@@ -136,10 +135,12 @@ func TestConfigSetOrder(t *testing.T) {
 
 	ts := sessiontest.NewTestSpec(t).
 		SetSchemaDefsByRef(schemas).
-		SetComponents([]string{
-			firstTestComp.String(),
-			secondTestComp.String(),
-			thirdTestComp.String()})
+		SetComponents(
+			conf.BaseModelSet,
+			[]string{
+				firstTestComp.String(),
+				secondTestComp.String(),
+				thirdTestComp.String()})
 	srv, sess := ts.Init()
 
 	srv.LoadConfig(t, config, sess)
@@ -152,12 +153,12 @@ func TestConfigSetOrder(t *testing.T) {
 
 	ts.CheckCompLogEntries(
 		"Config Set Order",
-		compmgrtest.SetRunning,
-		compmgrtest.NewLogEntry(compmgrtest.SetRunning,
+		schema.SetRunning,
+		schema.NewTestLogEntry(schema.SetRunning,
 			"net.vyatta.test.second", secondCompCfgJson),
-		compmgrtest.NewLogEntry(compmgrtest.SetRunning,
+		schema.NewTestLogEntry(schema.SetRunning,
 			"net.vyatta.test.third", thirdCompCfgJson),
-		compmgrtest.NewLogEntry(compmgrtest.SetRunning,
+		schema.NewTestLogEntry(schema.SetRunning,
 			"net.vyatta.test.first", firstCompCfgJson))
 }
 
@@ -165,10 +166,12 @@ func TestConfigSubsequentDeleteOrder(t *testing.T) {
 
 	ts := sessiontest.NewTestSpec(t).
 		SetSchemaDefsByRef(schemas).
-		SetComponents([]string{
-			firstTestComp.String(),
-			secondTestComp.String(),
-			thirdTestComp.String()}).
+		SetComponents(
+			conf.BaseModelSet,
+			[]string{
+				firstTestComp.String(),
+				secondTestComp.String(),
+				thirdTestComp.String()}).
 		SetConfig(config)
 	srv, sess := ts.Init()
 
@@ -182,12 +185,12 @@ func TestConfigSubsequentDeleteOrder(t *testing.T) {
 
 	ts.CheckCompLogEntries(
 		"Config Subsequent Delete Order",
-		compmgrtest.SetRunning,
-		compmgrtest.NewLogEntry(compmgrtest.SetRunning,
+		schema.SetRunning,
+		schema.NewTestLogEntry(schema.SetRunning,
 			"net.vyatta.test.second", emptyCfgJson),
-		compmgrtest.NewLogEntry(compmgrtest.SetRunning,
+		schema.NewTestLogEntry(schema.SetRunning,
 			"net.vyatta.test.third", emptyCfgJson),
-		compmgrtest.NewLogEntry(compmgrtest.SetRunning,
+		schema.NewTestLogEntry(schema.SetRunning,
 			"net.vyatta.test.first", emptyCfgJson))
 }
 
@@ -203,10 +206,12 @@ func TestConfigGetRecombinedCorrectly(t *testing.T) {
 
 	ts := sessiontest.NewTestSpec(t).
 		SetSchemaDefsByRef(schemas).
-		SetComponents([]string{
-			firstTestComp.String(),
-			secondTestComp.String(),
-			thirdTestComp.String()}).
+		SetComponents(
+			conf.BaseModelSet,
+			[]string{
+				firstTestComp.String(),
+				secondTestComp.String(),
+				thirdTestComp.String()}).
 		SetConfig(emptyConfig)
 	srv, sess := ts.Init()
 
@@ -250,7 +255,7 @@ var firstCompOrderedListCfg = testutils.Root(
 func TestConfigForOrderedListsRetrievedCorrectly(t *testing.T) {
 	ts := sessiontest.NewTestSpec(t).
 		SetSchemaDefsByRef(schemas).
-		SetComponents([]string{firstTestComp.String()}).
+		SetComponents(conf.BaseModelSet, []string{firstTestComp.String()}).
 		SetConfig(emptyConfig)
 	srv, sess := ts.Init()
 
@@ -366,10 +371,12 @@ func TestConfigCreateOnlyWrittenToConfiguredComponents(t *testing.T) {
 	// 2 components, one configured
 	ts := sessiontest.NewTestSpec(t).
 		SetSchemaDefsByRef(cfgTestSchemas).
-		SetComponents([]string{
-			defaultCfgTestComp.String(),
-			mainCfgTestComp.String(),
-			augmentCfgTestComp.String()})
+		SetComponents(
+			conf.BaseModelSet,
+			[]string{
+				defaultCfgTestComp.String(),
+				mainCfgTestComp.String(),
+				augmentCfgTestComp.String()})
 	srv, sess := ts.Init()
 
 	srv.LoadConfig(t, mainOnlyCfg, sess)
@@ -382,26 +389,26 @@ func TestConfigCreateOnlyWrittenToConfiguredComponents(t *testing.T) {
 
 	ts.CheckCompLogEntries(
 		"Config Create Only Written To Configured Components",
-		compmgrtest.SetRunning,
-		compmgrtest.NewLogEntry(compmgrtest.SetRunning,
+		schema.SetRunning,
+		schema.NewTestLogEntry(schema.SetRunning,
 			"net.vyatta.test.default", defaultTestCompCfgJson),
-		compmgrtest.NewLogEntry(compmgrtest.SetRunning,
+		schema.NewTestLogEntry(schema.SetRunning,
 			"net.vyatta.test.main", mainOnlyCompCfgJson))
 }
 
-var defaultCompLogEntry = compmgrtest.NewLogEntry(
-	compmgrtest.SetRunning, "net.vyatta.test.default",
+var defaultCompLogEntry = schema.NewTestLogEntry(
+	schema.SetRunning, "net.vyatta.test.default",
 	defaultTestCompCfgJson)
-var mainPContLogEntry = compmgrtest.NewLogEntry(
-	compmgrtest.SetRunning, "net.vyatta.test.main",
+var mainPContLogEntry = schema.NewTestLogEntry(
+	schema.SetRunning, "net.vyatta.test.main",
 	"{\"vyatta-test-main-v1:mainPCont\":{}}")
-var mainPContEmptyLogEntry = compmgrtest.NewLogEntry(
-	compmgrtest.SetRunning, "net.vyatta.test.main", "{}")
-var mainNPContLogEntry = compmgrtest.NewLogEntry(
-	compmgrtest.SetRunning, "net.vyatta.test.main",
+var mainPContEmptyLogEntry = schema.NewTestLogEntry(
+	schema.SetRunning, "net.vyatta.test.main", "{}")
+var mainNPContLogEntry = schema.NewTestLogEntry(
+	schema.SetRunning, "net.vyatta.test.main",
 	"{\"vyatta-test-main-v1:mainNPCont\":{}}")
-var augCompEmptyLogEntry = compmgrtest.NewLogEntry(
-	compmgrtest.SetRunning, "net.vyatta.test.augment", "{}")
+var augCompEmptyLogEntry = schema.NewTestLogEntry(
+	schema.SetRunning, "net.vyatta.test.augment", "{}")
 
 // This table allows us to efficiently work through a set of changes to a
 // presence container with augmented child nodes in a different component and
@@ -411,7 +418,7 @@ var presenceContTests = []compConfigTest{
 		name: "Create main P container",
 		config: []string{
 			"set mainPCont"},
-		logEntries: []compmgrtest.TestLogEntry{
+		logEntries: []schema.TestLogEntry{
 			defaultCompLogEntry,
 			mainPContLogEntry,
 		},
@@ -420,9 +427,9 @@ var presenceContTests = []compConfigTest{
 		name: "Create child of P container (P and child diff comps)",
 		config: []string{
 			"set mainPCont/augPLeaf/augPLeafValue"},
-		logEntries: []compmgrtest.TestLogEntry{
+		logEntries: []schema.TestLogEntry{
 			defaultCompLogEntry,
-			compmgrtest.NewLogEntry(compmgrtest.SetRunning,
+			schema.NewTestLogEntry(schema.SetRunning,
 				"net.vyatta.test.augment",
 				"{\"vyatta-test-main-v1:mainPCont\":{\"vyatta-test-augment-v1:augPLeaf\":\"augPLeafValue\"}}"),
 		},
@@ -431,9 +438,9 @@ var presenceContTests = []compConfigTest{
 		name: "Update child of P container (P and child diff comps)",
 		config: []string{
 			"set mainPCont/augPLeaf/augPLeafNewValue"},
-		logEntries: []compmgrtest.TestLogEntry{
+		logEntries: []schema.TestLogEntry{
 			defaultCompLogEntry,
-			compmgrtest.NewLogEntry(compmgrtest.SetRunning,
+			schema.NewTestLogEntry(schema.SetRunning,
 				"net.vyatta.test.augment",
 				"{\"vyatta-test-main-v1:mainPCont\":{\"vyatta-test-augment-v1:augPLeaf\":\"augPLeafNewValue\"}}"),
 		},
@@ -442,9 +449,9 @@ var presenceContTests = []compConfigTest{
 		name: "Create 2nd child of P container (P and child diff comps)",
 		config: []string{
 			"set mainPCont/augPLeafList/augPLeafListValue"},
-		logEntries: []compmgrtest.TestLogEntry{
+		logEntries: []schema.TestLogEntry{
 			defaultCompLogEntry,
-			compmgrtest.NewLogEntry(compmgrtest.SetRunning,
+			schema.NewTestLogEntry(schema.SetRunning,
 				"net.vyatta.test.augment",
 				"{\"vyatta-test-main-v1:mainPCont\":{"+
 					"\"vyatta-test-augment-v1:augPLeaf\":\"augPLeafNewValue\","+
@@ -456,9 +463,9 @@ var presenceContTests = []compConfigTest{
 		name: "Delete 2nd child of P container (P and child diff comps)",
 		config: []string{
 			"delete mainPCont/augPLeafList/augPLeafListValue"},
-		logEntries: []compmgrtest.TestLogEntry{
+		logEntries: []schema.TestLogEntry{
 			defaultCompLogEntry,
-			compmgrtest.NewLogEntry(compmgrtest.SetRunning,
+			schema.NewTestLogEntry(schema.SetRunning,
 				"net.vyatta.test.augment",
 				"{\"vyatta-test-main-v1:mainPCont\":{\"vyatta-test-augment-v1:augPLeaf\":\"augPLeafNewValue\"}}"),
 		},
@@ -467,7 +474,7 @@ var presenceContTests = []compConfigTest{
 		name: "Delete 1st child of P container (P and child diff comps)",
 		config: []string{
 			"delete mainPCont/augPLeaf/augPLeafNewValue"},
-		logEntries: []compmgrtest.TestLogEntry{
+		logEntries: []schema.TestLogEntry{
 			defaultCompLogEntry,
 			augCompEmptyLogEntry,
 		},
@@ -476,7 +483,7 @@ var presenceContTests = []compConfigTest{
 		name: "Delete P container",
 		config: []string{
 			"delete mainPCont"},
-		logEntries: []compmgrtest.TestLogEntry{
+		logEntries: []schema.TestLogEntry{
 			defaultCompLogEntry,
 			mainPContEmptyLogEntry,
 		},
@@ -485,10 +492,10 @@ var presenceContTests = []compConfigTest{
 		name: "Create child of P container (diff comps)",
 		config: []string{
 			"set mainPCont/augPLeaf/augPLeafValue"},
-		logEntries: []compmgrtest.TestLogEntry{
+		logEntries: []schema.TestLogEntry{
 			defaultCompLogEntry,
 			mainPContLogEntry,
-			compmgrtest.NewLogEntry(compmgrtest.SetRunning,
+			schema.NewTestLogEntry(schema.SetRunning,
 				"net.vyatta.test.augment",
 				"{\"vyatta-test-main-v1:mainPCont\":{\"vyatta-test-augment-v1:augPLeaf\":\"augPLeafValue\"}}"),
 		},
@@ -497,7 +504,7 @@ var presenceContTests = []compConfigTest{
 		name: "Delete P container",
 		config: []string{
 			"delete mainPCont"},
-		logEntries: []compmgrtest.TestLogEntry{
+		logEntries: []schema.TestLogEntry{
 			defaultCompLogEntry,
 			mainPContEmptyLogEntry,
 			augCompEmptyLogEntry,
@@ -517,12 +524,12 @@ var nonpresenceContTests = []compConfigTest{
 		name: "Create child of NP container (NP and child diff comps)",
 		config: []string{
 			"set mainNPCont/augNPLeaf/augNPLeafValue"},
-		logEntries: []compmgrtest.TestLogEntry{
+		logEntries: []schema.TestLogEntry{
 			// NB: as the only config in 'main' is a non-presence
 			//     container, there is no actual config to write to
 			//     the component.
 			defaultCompLogEntry,
-			compmgrtest.NewLogEntry(compmgrtest.SetRunning,
+			schema.NewTestLogEntry(schema.SetRunning,
 				"net.vyatta.test.augment",
 				"{\"vyatta-test-main-v1:mainNPCont\":{\"vyatta-test-augment-v1:augNPLeaf\":\"augNPLeafValue\"}}"),
 		},
@@ -531,9 +538,9 @@ var nonpresenceContTests = []compConfigTest{
 		name: "Update child of NP container (NP and child diff comps)",
 		config: []string{
 			"set mainNPCont/augNPLeaf/augNPLeafNewValue"},
-		logEntries: []compmgrtest.TestLogEntry{
+		logEntries: []schema.TestLogEntry{
 			defaultCompLogEntry,
-			compmgrtest.NewLogEntry(compmgrtest.SetRunning,
+			schema.NewTestLogEntry(schema.SetRunning,
 				"net.vyatta.test.augment",
 				"{\"vyatta-test-main-v1:mainNPCont\":{\"vyatta-test-augment-v1:augNPLeaf\":\"augNPLeafNewValue\"}}"),
 		},
@@ -542,9 +549,9 @@ var nonpresenceContTests = []compConfigTest{
 		name: "Create 2nd child of NP container (NP and child diff comps)",
 		config: []string{
 			"set mainNPCont/augNPLeafList/augNPLeafListValue"},
-		logEntries: []compmgrtest.TestLogEntry{
+		logEntries: []schema.TestLogEntry{
 			defaultCompLogEntry,
-			compmgrtest.NewLogEntry(compmgrtest.SetRunning,
+			schema.NewTestLogEntry(schema.SetRunning,
 				"net.vyatta.test.augment",
 				"{\"vyatta-test-main-v1:mainNPCont\":{\"vyatta-test-augment-v1:augNPLeaf\":\"augNPLeafNewValue\","+
 					"\"vyatta-test-augment-v1:augNPLeafList\":[\"augNPLeafListValue\"]}}"),
@@ -554,9 +561,9 @@ var nonpresenceContTests = []compConfigTest{
 		name: "Delete 2nd child of NP container (NP and child diff comps)",
 		config: []string{
 			"delete mainNPCont/augNPLeaf/augNPLeafNewValue"},
-		logEntries: []compmgrtest.TestLogEntry{
+		logEntries: []schema.TestLogEntry{
 			defaultCompLogEntry,
-			compmgrtest.NewLogEntry(compmgrtest.SetRunning,
+			schema.NewTestLogEntry(schema.SetRunning,
 				"net.vyatta.test.augment",
 				"{\"vyatta-test-main-v1:mainNPCont\":"+
 					"{\"vyatta-test-augment-v1:augNPLeafList\":[\"augNPLeafListValue\"]}}"),
@@ -566,7 +573,7 @@ var nonpresenceContTests = []compConfigTest{
 		name: "Delete 1st child of NP container",
 		config: []string{
 			"delete mainNPCont/augNPLeafList"},
-		logEntries: []compmgrtest.TestLogEntry{
+		logEntries: []schema.TestLogEntry{
 			defaultCompLogEntry,
 			augCompEmptyLogEntry,
 		},
@@ -582,9 +589,9 @@ var listTests = []compConfigTest{
 		name: "Create first list entry",
 		config: []string{
 			"set mainPCont/mainList/firstEntry"},
-		logEntries: []compmgrtest.TestLogEntry{
+		logEntries: []schema.TestLogEntry{
 			defaultCompLogEntry,
-			compmgrtest.NewLogEntry(compmgrtest.SetRunning,
+			schema.NewTestLogEntry(schema.SetRunning,
 				"net.vyatta.test.main",
 				"{\"vyatta-test-main-v1:mainPCont\":{\"mainList\":[{\"name\":\"firstEntry\"}]}}"),
 		},
@@ -593,9 +600,9 @@ var listTests = []compConfigTest{
 		name: "Augment first list entry",
 		config: []string{
 			"set mainPCont/mainList/firstEntry/augListLeaf/true"},
-		logEntries: []compmgrtest.TestLogEntry{
+		logEntries: []schema.TestLogEntry{
 			defaultCompLogEntry,
-			compmgrtest.NewLogEntry(compmgrtest.SetRunning,
+			schema.NewTestLogEntry(schema.SetRunning,
 				"net.vyatta.test.augment",
 				"{\"vyatta-test-main-v1:mainPCont\":{\"mainList\":"+
 					"[{\"name\":\"firstEntry\","+
@@ -606,9 +613,9 @@ var listTests = []compConfigTest{
 		name: "Update first list entry",
 		config: []string{
 			"set mainPCont/mainList/firstEntry/mainListLeaf/666"},
-		logEntries: []compmgrtest.TestLogEntry{
+		logEntries: []schema.TestLogEntry{
 			defaultCompLogEntry,
-			compmgrtest.NewLogEntry(compmgrtest.SetRunning,
+			schema.NewTestLogEntry(schema.SetRunning,
 				"net.vyatta.test.main",
 				"{\"vyatta-test-main-v1:mainPCont\":{\"mainList\":"+
 					"[{\"name\":\"firstEntry\","+
@@ -619,9 +626,9 @@ var listTests = []compConfigTest{
 		name: "Add second list entry",
 		config: []string{
 			"set mainPCont/mainList/secondEntry"},
-		logEntries: []compmgrtest.TestLogEntry{
+		logEntries: []schema.TestLogEntry{
 			defaultCompLogEntry,
-			compmgrtest.NewLogEntry(compmgrtest.SetRunning,
+			schema.NewTestLogEntry(schema.SetRunning,
 				"net.vyatta.test.main",
 				"{\"vyatta-test-main-v1:mainPCont\":{\"mainList\":"+
 					"[{\"name\":\"firstEntry\","+
@@ -633,16 +640,16 @@ var listTests = []compConfigTest{
 		name: "Add third list entry by adding augmented leaf directly",
 		config: []string{
 			"set mainPCont/mainList/thirdEntry/augListLeaf/false"},
-		logEntries: []compmgrtest.TestLogEntry{
+		logEntries: []schema.TestLogEntry{
 			defaultCompLogEntry,
-			compmgrtest.NewLogEntry(compmgrtest.SetRunning,
+			schema.NewTestLogEntry(schema.SetRunning,
 				"net.vyatta.test.main",
 				"{\"vyatta-test-main-v1:mainPCont\":{\"mainList\":"+
 					"[{\"name\":\"firstEntry\","+
 					"\"mainListLeaf\":666},"+
 					"{\"name\":\"secondEntry\"},"+
 					"{\"name\":\"thirdEntry\"}]}}"),
-			compmgrtest.NewLogEntry(compmgrtest.SetRunning,
+			schema.NewTestLogEntry(schema.SetRunning,
 				"net.vyatta.test.augment",
 				"{\"vyatta-test-main-v1:mainPCont\":{\"mainList\":"+
 					"[{\"name\":\"firstEntry\","+
@@ -655,9 +662,9 @@ var listTests = []compConfigTest{
 		name: "Remove augment on first list entry",
 		config: []string{
 			"delete mainPCont/mainList/firstEntry/augListLeaf/true"},
-		logEntries: []compmgrtest.TestLogEntry{
+		logEntries: []schema.TestLogEntry{
 			defaultCompLogEntry,
-			compmgrtest.NewLogEntry(compmgrtest.SetRunning,
+			schema.NewTestLogEntry(schema.SetRunning,
 				"net.vyatta.test.augment",
 				"{\"vyatta-test-main-v1:mainPCont\":{\"mainList\":"+
 					"[{\"name\":\"thirdEntry\","+
@@ -668,15 +675,15 @@ var listTests = []compConfigTest{
 		name: "Delete third list entry (includes augmented leaf)",
 		config: []string{
 			"delete mainPCont/mainList/thirdEntry"},
-		logEntries: []compmgrtest.TestLogEntry{
+		logEntries: []schema.TestLogEntry{
 			defaultCompLogEntry,
-			compmgrtest.NewLogEntry(compmgrtest.SetRunning,
+			schema.NewTestLogEntry(schema.SetRunning,
 				"net.vyatta.test.main",
 				"{\"vyatta-test-main-v1:mainPCont\":{\"mainList\":"+
 					"[{\"name\":\"firstEntry\","+
 					"\"mainListLeaf\":666},"+
 					"{\"name\":\"secondEntry\"}]}}"),
-			compmgrtest.NewLogEntry(compmgrtest.SetRunning,
+			schema.NewTestLogEntry(schema.SetRunning,
 				"net.vyatta.test.augment",
 				"{}"),
 		},
@@ -685,9 +692,9 @@ var listTests = []compConfigTest{
 		name: "Delete second list entry",
 		config: []string{
 			"delete mainPCont/mainList/secondEntry"},
-		logEntries: []compmgrtest.TestLogEntry{
+		logEntries: []schema.TestLogEntry{
 			defaultCompLogEntry,
-			compmgrtest.NewLogEntry(compmgrtest.SetRunning,
+			schema.NewTestLogEntry(schema.SetRunning,
 				"net.vyatta.test.main",
 				"{\"vyatta-test-main-v1:mainPCont\":{\"mainList\":"+
 					"[{\"name\":\"firstEntry\","+
@@ -698,9 +705,9 @@ var listTests = []compConfigTest{
 		name: "Delete first list entry",
 		config: []string{
 			"delete mainPCont/mainList/firstEntry"},
-		logEntries: []compmgrtest.TestLogEntry{
+		logEntries: []schema.TestLogEntry{
 			defaultCompLogEntry,
-			compmgrtest.NewLogEntry(compmgrtest.SetRunning,
+			schema.NewTestLogEntry(schema.SetRunning,
 				"net.vyatta.test.main",
 				"{\"vyatta-test-main-v1:mainPCont\":{}}"),
 		},
@@ -715,10 +722,12 @@ func runTests(t *testing.T, tests []compConfigTest) {
 
 	ts := sessiontest.NewTestSpec(t).
 		SetSchemaDefsByRef(cfgTestSchemas).
-		SetComponents([]string{
-			defaultCfgTestComp.String(),
-			mainCfgTestComp.String(),
-			augmentCfgTestComp.String()})
+		SetComponents(
+			conf.BaseModelSet,
+			[]string{
+				defaultCfgTestComp.String(),
+				mainCfgTestComp.String(),
+				augmentCfgTestComp.String()})
 	srv, sess := ts.Init()
 
 	for _, test := range tests {
@@ -754,7 +763,7 @@ func runTest(
 
 	// Verify expected config notified to correct components.
 	ts.CheckCompLogEntries(
-		test.name, compmgrtest.SetRunning, test.logEntries...)
+		test.name, schema.SetRunning, test.logEntries...)
 	ts.ClearCompLogEntries()
 }
 
@@ -775,10 +784,12 @@ var rfc7951config = testutils.Root(
 func TestRFC7951IsUsed(t *testing.T) {
 	ts := sessiontest.NewTestSpec(t).
 		SetSchemaDefsByRef(schemas).
-		SetComponents([]string{
-			firstTestComp.String(),
-			secondTestComp.String(),
-			thirdTestComp.String()})
+		SetComponents(
+			conf.BaseModelSet,
+			[]string{
+				firstTestComp.String(),
+				secondTestComp.String(),
+				thirdTestComp.String()})
 	srv, sess := ts.Init()
 
 	srv.LoadConfig(t, rfc7951config, sess)
@@ -790,12 +801,12 @@ func TestRFC7951IsUsed(t *testing.T) {
 	}
 
 	ts.CheckCompLogEntries(
-		"RFC7951 Is Used", compmgrtest.SetRunning,
-		compmgrtest.NewLogEntry(compmgrtest.SetRunning,
+		"RFC7951 Is Used", schema.SetRunning,
+		schema.NewTestLogEntry(schema.SetRunning,
 			"net.vyatta.test.second", secondCompCfgRfc7951),
-		compmgrtest.NewLogEntry(compmgrtest.SetRunning,
+		schema.NewTestLogEntry(schema.SetRunning,
 			"net.vyatta.test.third", thirdCompCfgRfc7951),
-		compmgrtest.NewLogEntry(compmgrtest.SetRunning,
+		schema.NewTestLogEntry(schema.SetRunning,
 			"net.vyatta.test.first", firstCompCfgRfc7951))
 }
 

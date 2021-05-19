@@ -19,7 +19,6 @@ import (
 	"testing"
 
 	"github.com/danos/config/auth"
-	"github.com/danos/config/compmgrtest"
 	"github.com/danos/config/data"
 	"github.com/danos/config/load"
 	"github.com/danos/config/schema"
@@ -421,6 +420,7 @@ type TestSpec struct {
 	isConfigdUser  bool
 	inSecretsGroup bool
 	smgrLog        *bytes.Buffer
+	modelSetName   string
 
 	// Derived internally
 	schemas    [][]byte
@@ -436,12 +436,15 @@ func NewTestSpec(t *testing.T) *TestSpec {
 		isConfigdUser:  ConfigdUser,
 		inSecretsGroup: NotInSecretsGroup}
 
-	ts.compMgr = compmgrtest.NewTestCompMgr(t)
-
 	return ts
 }
 
-func (ts *TestSpec) GetCompMgr() schema.ComponentManager { return ts.compMgr }
+func (ts *TestSpec) GetCompMgr() schema.ComponentManager {
+	if ts.compMgr == nil {
+		ts.t.Fatalf("Must set modelset name to create test Component Mgr")
+	}
+	return ts.compMgr
+}
 
 func (ts *TestSpec) SetConfig(config string) *TestSpec {
 	// Ensure we have trailing '\n' or test will hang.  Extra blank lines
@@ -455,7 +458,8 @@ func (ts *TestSpec) SetCapabilities(caps string) *TestSpec {
 	return ts
 }
 
-func (ts *TestSpec) SetComponents(comps []string) *TestSpec {
+func (ts *TestSpec) SetComponents(msName string, comps []string) *TestSpec {
+	ts.modelSetName = msName
 	ts.components = comps
 	return ts
 }
@@ -569,12 +573,45 @@ func (ts *TestSpec) generateModelSets() (
 		GenerateModelSets()
 }
 
+// Copied from schema/schema_test.go
+func getComponentConfigs(t *testing.T, dotCompFiles ...string,
+) (configs []*conf.ServiceConfig) {
+
+	for _, file := range dotCompFiles {
+		cfg, err := conf.ParseConfiguration([]byte(file))
+		if err != nil {
+			t.Fatalf("Unexpected component config parse failure:\n  %s\n\n",
+				err.Error())
+		}
+		configs = append(configs, cfg)
+	}
+
+	return configs
+}
+
 func (ts *TestSpec) Init() (*TstSrv, *Session) {
 	ms, msFull, err := ts.generateModelSets()
 	if err != nil {
 		ts.t.Fatalf("Unable to generate model sets: %s", err)
 		return nil, nil
 	}
+
+	if len(ts.components) == 0 {
+		// If no components were provided, we are not interested in them.
+		// We do still need to create a dummy component manager to avoid
+		// dereferencing a nil compMgr object. In production, we verify the
+		// component manager is not null at the top level and tests verify
+		// it is passed down correctly.
+		dummyTestComp := conf.CreateTestDotComponentFile("dummy").
+			AddBaseModel()
+		ts.SetComponents("DummyModelSetV1", []string{dummyTestComp.String()})
+	}
+
+	ts.compMgr = schema.NewTestCompMgr(
+		ts.t,
+		msFull,
+		ts.modelSetName,
+		getComponentConfigs(ts.t, ts.components...))
 
 	srv, err := tstInit(ts.t, ms, msFull, ts.config, ts.capsDir,
 		ts.auther, ts.isConfigdUser, ts.inSecretsGroup, ts.smgrLog,
@@ -593,20 +630,20 @@ func (ts *TestSpec) Init() (*TstSrv, *Session) {
 }
 
 func (ts *TestSpec) ClearCompLogEntries() {
-	ts.compMgr.(*compmgrtest.TestCompMgr).ClearLogEntries()
+	ts.compMgr.(*schema.TestCompMgr).ClearLogEntries()
 }
 
 // Checks exact match for number and order of entries, after filtering for
 // given specific type of log entry (eg SetRunning)
 func (ts *TestSpec) CheckCompLogEntries(
 	name, filter string,
-	entries ...compmgrtest.TestLogEntry,
+	entries ...schema.TestLogEntry,
 ) {
-	ts.compMgr.(*compmgrtest.TestCompMgr).CheckLogEntries(
+	ts.compMgr.(*schema.TestCompMgr).CheckLogEntries(
 		ts.t, name, entries, filter)
 }
 
 func (ts *TestSpec) SetCurrentState(model, stateJson string) {
-	ts.compMgr.(*compmgrtest.TestCompMgr).SetCurrentState(
+	ts.compMgr.(*schema.TestCompMgr).SetCurrentState(
 		model, stateJson)
 }
