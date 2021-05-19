@@ -43,6 +43,7 @@ type outputChecker struct {
 	extraErrs      []string
 	unexpErrs      []string
 	comps          []string
+	modelSetName   string
 	auther         auth.Auther
 	isConfigdUser  bool
 	inSecretsGroup bool
@@ -94,8 +95,12 @@ func (oc *outputChecker) setSchemaDefsByRef(
 	return oc
 }
 
-func (oc *outputChecker) setComponents(comps []string) *outputChecker {
+func (oc *outputChecker) setComponents(
+	modelSetName string,
+	comps []string,
+) *outputChecker {
 	oc.comps = comps
+	oc.modelSetName = modelSetName
 	return oc
 }
 
@@ -121,7 +126,7 @@ func (oc *outputChecker) init() *outputChecker {
 		sessiontest.NewTestSpec(oc.t).
 			SetSchemaDefs(oc.schemaDefs).
 			SetConfig(oc.config).
-			SetComponents(oc.comps).
+			SetComponents(oc.modelSetName, oc.comps).
 			SetAuther(oc.auther, oc.isConfigdUser, oc.inSecretsGroup))
 
 	dispTestSetupSession(oc.t, oc.d, testSID)

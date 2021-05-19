@@ -12,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/danos/config/schema"
 	"github.com/danos/configd"
 	"github.com/danos/configd/server"
 	"github.com/danos/configd/session/sessiontest"
@@ -205,7 +206,7 @@ func TestXMLRpcPass(t *testing.T) {
 	d := newTestDispatcherFromTestSpec(
 		sessiontest.NewTestSpec(t).
 			SetSchemaDefs(genRpcTestSchema(sessionCountSchemaSnippet)).
-			SetComponents([]string{rpcTestComp}))
+			SetComponents(schema.VyattaV1ModelSet, []string{rpcTestComp}))
 
 	trc := &testRpcCaller{
 		t:            t,
@@ -224,7 +225,7 @@ func TestJSONRpcPass(t *testing.T) {
 	d := newTestDispatcherFromTestSpec(
 		sessiontest.NewTestSpec(t).
 			SetSchemaDefs(genRpcTestSchema(sessionCountSchemaSnippet)).
-			SetComponents([]string{rpcTestComp}))
+			SetComponents(schema.VyattaV1ModelSet, []string{rpcTestComp}))
 
 	trc := &testRpcCaller{
 		t:            t,
@@ -257,7 +258,7 @@ func TestFindRpcUnknownEncodingFailure(t *testing.T) {
 	d := newTestDispatcherFromTestSpec(
 		sessiontest.NewTestSpec(t).
 			SetSchemaDefs(genRpcTestSchema(sessionCountSchemaSnippet)).
-			SetComponents([]string{rpcTestComp}))
+			SetComponents(schema.VyattaV1ModelSet, []string{rpcTestComp}))
 
 	expectedError := "Unknown RPC (unknownEncoding) " + testRpcModule
 
@@ -281,7 +282,7 @@ func TestFindRpcNoRpcsForNamespaceFailure(t *testing.T) {
 	d := newTestDispatcherFromTestSpec(
 		sessiontest.NewTestSpec(t).
 			SetSchemaDefs(noRpcSchema).
-			SetComponents([]string{rpcTestComp}))
+			SetComponents(schema.VyattaV1ModelSet, []string{rpcTestComp}))
 
 	expectedError := "Unknown RPC (xml) " + testRpcNamespace
 
@@ -297,7 +298,7 @@ func TestFindRpcLookupFailure(t *testing.T) {
 	d := newTestDispatcherFromTestSpec(
 		sessiontest.NewTestSpec(t).
 			SetSchemaDefs(genRpcTestSchema(sessionCountSchemaSnippet)).
-			SetComponents([]string{rpcTestComp}))
+			SetComponents(schema.VyattaV1ModelSet, []string{rpcTestComp}))
 
 	expectedError := "Unknown RPC (json) " + testRpcModule + ":" +
 		testRpcInvalidName
@@ -328,7 +329,7 @@ func TestHandleRpcConvertXMLInputDecodeFail(t *testing.T) {
 
 	oc := newOutputChecker(t).
 		setSchemaDefs(genRpcTestSchema(sessionCountSchemaSnippet)).
-		setComponents([]string{rpcTestComp}).
+		setComponents(schema.VyattaV1ModelSet, []string{rpcTestComp}).
 		init()
 
 	oc.setExpErr(errtest.NewInvalidNodeError(t, "/non-existent")).
@@ -347,7 +348,7 @@ func TestHandleRpcConvertXMLInputDecodeFailOutOfRangeValue(t *testing.T) {
 
 	oc := newOutputChecker(t).
 		setSchemaDefs(genRpcTestSchema(sessionCountSchemaSnippet)).
-		setComponents([]string{rpcTestComp}).
+		setComponents(schema.VyattaV1ModelSet, []string{rpcTestComp}).
 		init()
 
 	oc.setExpErr(errtest.NewInvalidNodeError(t, "/session-count/257")).
@@ -362,7 +363,7 @@ func TestHandleRpcCallRpcFail(t *testing.T) {
 	d := newTestDispatcherFromTestSpec(
 		sessiontest.NewTestSpec(t).
 			SetSchemaDefs(genRpcTestSchema(sessionCountSchemaSnippet)).
-			SetComponents([]string{rpcTestComp}))
+			SetComponents(schema.VyattaV1ModelSet, []string{rpcTestComp}))
 
 	expectedError := fmt.Errorf("Oops - vci.CallRPC() failed")
 
@@ -384,7 +385,7 @@ func TestHandleRpcConvertIllegalJSONOutputUnmarshalFail(t *testing.T) {
 	d := newTestDispatcherFromTestSpec(
 		sessiontest.NewTestSpec(t).
 			SetSchemaDefs(genRpcTestSchema(sessionCountSchemaSnippet)).
-			SetComponents([]string{rpcTestComp}))
+			SetComponents(schema.VyattaV1ModelSet, []string{rpcTestComp}))
 
 	trc := &testRpcCaller{
 		t:            t,
@@ -405,7 +406,7 @@ func TestHandleRpcConvertMismatchedJSONOutputUnmarshalFail(t *testing.T) {
 	d := newTestDispatcherFromTestSpec(
 		sessiontest.NewTestSpec(t).
 			SetSchemaDefs(genRpcTestSchema(sessionCountSchemaSnippet)).
-			SetComponents([]string{rpcTestComp}))
+			SetComponents(schema.VyattaV1ModelSet, []string{rpcTestComp}))
 
 	trc := &testRpcCaller{
 		t:            t,

@@ -2057,7 +2057,7 @@ func (d *Disp) callRpcInternal(
 		return "", err
 	}
 
-	_, found := d.ms.GetModelNameForNamespace(moduleNs)
+	_, found := d.ctx.CompMgr.GetModelNameForNamespace(moduleNs)
 	if found {
 		moduleId, _ := getModuleId(d.ms, moduleIdOrNamespace, encoding)
 		if !d.ctx.Auth.AuthorizeRPC(d.ctx.Uid, d.ctx.Groups, moduleId, rpcName) {

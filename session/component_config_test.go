@@ -225,9 +225,8 @@ func TestConfigGetRecombinedCorrectly(t *testing.T) {
 		t.Fatalf("Unable to commit: %s\n", errs)
 	}
 
-	cfgTree, err := srv.Ms.ServiceGetRunning(
-		ts.GetCompMgr(),
-		union.UnmarshalJSONConfigsWithoutValidation)
+	cfgTree, err := ts.GetCompMgr().ComponentGetRunning(
+		srv.Ms, union.UnmarshalJSONConfigsWithoutValidation)
 	if err != nil {
 		t.Fatalf("Unable to get running config: %s", err.Error())
 		return
@@ -266,9 +265,8 @@ func TestConfigForOrderedListsRetrievedCorrectly(t *testing.T) {
 		t.Fatalf("Unable to commit: %s\n", errs)
 	}
 
-	cfgTree, err := srv.Ms.ServiceGetRunning(
-		ts.GetCompMgr(),
-		union.UnmarshalJSONConfigsWithoutValidation)
+	cfgTree, err := ts.GetCompMgr().ComponentGetRunning(
+		srv.Ms, union.UnmarshalJSONConfigsWithoutValidation)
 	if err != nil {
 		t.Fatalf("Unable to get running config: %s", err.Error())
 		return

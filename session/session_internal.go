@@ -548,8 +548,8 @@ Loop:
 	// 3. Merge in component state
 	vciStart := time.Now()
 	logStateEvent(errLogger, "Start VCI scripts")
-	ft, err = s.schemaFull.ServiceGetState(
-		ctx.CompMgr, ut, ft, errLogger)
+	ft, err = ctx.CompMgr.ComponentGetState(
+		s.schemaFull, ut, ft, errLogger)
 	if err != nil {
 		return nil, err, nil
 	}

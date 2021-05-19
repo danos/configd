@@ -150,8 +150,8 @@ func (m *CommitMgr) commit(sid string, sctx *configd.Context, candidate *data.No
 	var couts []*exec.Output
 	var cerrs []error
 	changedNSMap := diff.CreateChangedNSMap(mcan, run, m.schema, nil)
-	couts = m.schema.ServiceSetRunningWithLog(
-		sctx.CompMgr, ucan, changedNSMap, ctx.LogCommitTime)
+	couts = sctx.CompMgr.ComponentSetRunningWithLog(
+		m.schema, ucan, changedNSMap, ctx.LogCommitTime)
 	outs = append(outs, couts...)
 
 	couts, cerrs, _ = ctx.commit(&env)
