@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2017-2021, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2016 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -12,9 +12,10 @@
 package main
 
 import (
+	"testing"
+
 	"github.com/danos/config/testutils/assert"
 	"github.com/danos/vci/conf"
-	"testing"
 )
 
 func getComponentConfigsCheckError(t *testing.T, dotCompFiles ...string,

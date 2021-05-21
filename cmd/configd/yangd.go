@@ -10,10 +10,8 @@
 package main
 
 import (
-	"log"
-
-	"bytes"
 	"fmt"
+	"log"
 
 	"github.com/danos/config/schema"
 	"github.com/danos/config/yangconfig"
@@ -36,16 +34,19 @@ type Yangd interface {
 
 // Object implementing yangd methods
 type yangd struct {
-	st         schema.ModelSet
-	stFull     schema.ModelSet
-	compConfig []*conf.ServiceConfig
+	st       schema.ModelSet
+	stFull   schema.ModelSet
+	mappings *schema.ComponentMappings
 }
 
-func NewYangd(st, stFull schema.ModelSet, cfg []*conf.ServiceConfig) Yangd {
+func NewYangd(
+	st, stFull schema.ModelSet,
+	mappings *schema.ComponentMappings,
+) Yangd {
 	return &yangd{
-		compConfig: cfg,
-		st:         st,
-		stFull:     stFull,
+		st:       st,
+		stFull:   stFull,
+		mappings: mappings,
 	}
 }
 
@@ -455,7 +456,7 @@ func (y *yangd) LookupRpcDestinationByModuleName(
 	if !ok {
 		return nil, fmt.Errorf("Unable to find model name for module '%s'", in.ModuleName)
 	}
-	modelName, ok := y.st.GetModelNameForNamespace(mod.Namespace())
+	modelName, ok := y.mappings.GetModelNameForNamespace(mod.Namespace())
 	if !ok {
 		return nil, fmt.Errorf("Unable to find model name for module '%s'", in.ModuleName)
 	}
@@ -464,151 +465,20 @@ func (y *yangd) LookupRpcDestinationByModuleName(
 	}, nil
 }
 
-func checkForDuplicateComponentNames(compConfig []*conf.ServiceConfig) error {
-	nameMap := make(map[string]bool)
-	var errs bytes.Buffer
-
-	for _, comp := range compConfig {
-		if _, ok := nameMap[comp.Name]; ok {
-			errs.WriteString(fmt.Sprintf("\t%s\n", comp.Name))
-		}
-		nameMap[comp.Name] = true
-	}
-	if errs.Len() != 0 {
-		return fmt.Errorf("These components are duplicated:\n%s\n",
-			errs.String())
-	}
-	return nil
-}
-
-func checkForDuplicateConfigFileNames(compConfig []*conf.ServiceConfig) error {
-	cfgFileMap := make(map[string]string)
-	var errs bytes.Buffer
-
-	for _, comp := range compConfig {
-		for _, cfgFile := range comp.ConfigFiles {
-			if entry, ok := cfgFileMap[cfgFile]; ok {
-				errs.WriteString(fmt.Sprintf("\t%s: %s and %s\n",
-					cfgFile, entry, comp.Name))
-			}
-			cfgFileMap[cfgFile] = comp.Name
-		}
-	}
-	if errs.Len() != 0 {
-		return fmt.Errorf(
-			"These components have duplicate config files:\n%s\n",
-			errs.String())
-	}
-	return nil
-}
-
-// Assumptions for Models:
-//
-// - Only one component may provide a given model.  Two different components
-//   may not provide the same model for different model sets (though it is
-//   possible that at some point this may be a useful mechanism for upgrading
-//   or other transitions so we may relax this in future)
-//
-// - A component may provide one model for multiple model sets, but all
-//   must be declared in the same [Model] section, and thus share the same
-//   modules.  The 'conf' package is responsible for detecting duplicate
-//   Models.
-//
-func checkForDuplicateModelNames(compConfig []*conf.ServiceConfig) error {
-	modelMap := make(map[string]string)
-	var errs bytes.Buffer
-
-	for _, comp := range compConfig {
-		for _, model := range comp.ModelByName {
-			if entry, ok := modelMap[model.Name]; ok {
-				errs.WriteString(fmt.Sprintf(
-					"Model '%s' duplicated in:\n\t'%s'\n\t'%s'\n",
-					model.Name, entry, comp.Name))
-			}
-			modelMap[model.Name] = comp.Name
-		}
-	}
-	if errs.Len() != 0 {
-		return fmt.Errorf(errs.String())
-	}
-	return nil
-}
-
-func checkForDuplicateModuleReferences(compConfig []*conf.ServiceConfig) error {
-	moduleMap := make(map[string]map[string]string)
-	var errs bytes.Buffer
-
-	for _, comp := range compConfig {
-		for modelSetName, model := range comp.ModelByModelSet {
-			if _, ok := moduleMap[modelSetName]; !ok {
-				moduleMap[modelSetName] = make(map[string]string)
-			}
-			for _, module := range model.Modules {
-				if _, ok := moduleMap[modelSetName][module]; ok {
-					errs.WriteString(fmt.Sprintf(
-						"YANG module %s is in multiple models (m/set %s)"+
-							"\n\t%s\n\t%s\n",
-						module, modelSetName,
-						moduleMap[modelSetName][module], model.Name))
-				} else {
-					moduleMap[modelSetName][module] = model.Name
-				}
-			}
-		}
-	}
-	if errs.Len() != 0 {
-		return fmt.Errorf(errs.String())
-	}
-	return nil
-}
-
-// Validations that can be done prior to parsing YANG modules.
-func validateComponents(compConfig []*conf.ServiceConfig) error {
-
-	if err := checkForDuplicateComponentNames(compConfig); err != nil {
-		return err
-	}
-
-	if err := checkForDuplicateConfigFileNames(compConfig); err != nil {
-		return err
-	}
-
-	if err := checkForDuplicateModelNames(compConfig); err != nil {
-		return err
-	}
-
-	if err := checkForDuplicateModuleReferences(compConfig); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func startYangd() (st, stFull schema.ModelSet) {
-	compConfig, err := conf.LoadComponentConfigDir(*compdir)
-	if err != nil {
-		// For now, failing to load component configuration
-		// isn't fatal, so just log the error
-		log.Println(err)
-	}
-
-	// TODO - what action should we take for any problem components?
-	err = validateComponents(compConfig)
-	if err != nil {
-		log.Println(err)
-	}
+func startYangd(
+	modelSetName string,
+	compConfig []*conf.ServiceConfig,
+) (st, stFull schema.ModelSet, mappings *schema.ComponentMappings) {
 
 	ycfg := yangconfig.NewConfig().IncludeYangDirs(*yangdir).
 		IncludeFeatures(*capabilities).SystemConfig()
 
-	st, err = schema.CompileDir(
+	st, err := schema.CompileDir(
 		&compile.Config{
 			YangLocations: ycfg.YangLocator(),
 			Features:      ycfg.FeaturesChecker(),
 			Filter:        compile.IsConfig},
-		&schema.CompilationExtensions{
-			ComponentConfig: compConfig,
-		})
+		&schema.CompilationExtensions{})
 	fatal(err)
 
 	stFull, err = schema.CompileDir(
@@ -616,17 +486,24 @@ func startYangd() (st, stFull schema.ModelSet) {
 			YangLocations: ycfg.YangLocator(),
 			Features:      ycfg.FeaturesChecker(),
 			Filter:        compile.IsConfigOrState()},
-		&schema.CompilationExtensions{
-			ComponentConfig: compConfig,
-		})
+		&schema.CompilationExtensions{})
+	fatal(err)
+
+	err = validateComponents(compConfig)
+	if err != nil {
+		log.Println(err)
+	}
+
+	mappings, err = schema.CreateComponentNSMappings(
+		stFull, modelSetName, compConfig)
 	fatal(err)
 
 	// Start up yangd
-	yangd := NewYangd(st, stFull, compConfig)
+	yangd := NewYangd(st, stFull, mappings)
 	comp := vci.NewComponent("net.vyatta.vci.config.yangd")
 	comp.Model("net.vyatta.vci.config.yangd.v1").
 		RPC("yangd-v1", yangd)
 	comp.Run()
 
-	return st, stFull
+	return st, stFull, mappings
 }

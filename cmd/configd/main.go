@@ -66,6 +66,11 @@ import (
 	"github.com/danos/yang/compile"
 )
 
+const (
+	VyattaV1ModelSet        = "vyatta-v1"
+	ConfigdVCIComponentName = "net.vyatta.configd"
+)
+
 var basepath string = "/run/configd"
 var runningprof bool
 var cpuproffile os.File
@@ -335,10 +340,13 @@ func main() {
 
 	go sigstartprof()
 
-	comp := vci.NewComponent("net.vyatta.configd")
+	comp := vci.NewComponent(ConfigdVCIComponentName)
 	comp.Run()
 
-	st, stFull := startYangd()
+	compConfig, err := conf.LoadComponentConfigDir(*compdir)
+	fatal(err)
+
+	st, stFull, mappings := startYangd(VyattaV1ModelSet, compConfig)
 
 	l := getListeners()
 
@@ -354,15 +362,11 @@ func main() {
 		Capabilities: *capabilities,
 	}
 
-	compConfig, err := conf.LoadComponentConfigDir(*compdir)
-	fatal(err)
-
 	compMgr := schema.NewCompMgr(
 		newConfigdOpsMgr(comp),
 		services.NewManager(),
 		stFull,
-		schema.VyattaV1ModelSet,
-		compConfig)
+		mappings)
 
 	srv := server.NewSrv(l.(*net.UnixListener), st, stFull, *username,
 		config, elog, compMgr)

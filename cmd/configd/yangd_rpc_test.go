@@ -42,12 +42,17 @@ func getModelSet(
 func newTestYangd(
 	t *testing.T,
 	schemaDefs []sessiontest.TestSchema,
+	comps []string,
 	initConfig string,
-	compFiles ...string,
 ) Yangd {
 	ms, msFull := getModelSet(t, schemaDefs, initConfig)
-	compCfg := getComponentConfigsCheckError(t, compFiles...)
-	return NewYangd(ms, msFull, compCfg)
+
+	compConfigs, _ := getComponentConfigs(comps...)
+
+	mappings, _ := schema.CreateComponentNSMappings(
+		msFull, "modelSetName", compConfigs)
+
+	return NewYangd(ms, msFull, mappings)
 }
 
 func escapeQuotes(input string) string {
@@ -72,8 +77,7 @@ func checkValidationFails(
 	inputJson string,
 	expErrors *assert.ExpectedMessages) {
 
-	yd := newTestYangd(t, testSchemas, initConfig,
-		testComps...)
+	yd := newTestYangd(t, testSchemas, testComps, initConfig)
 
 	_, err := yd.ValidateRpcInput([]byte(inputJson))
 
@@ -93,8 +97,7 @@ func checkValidationPasses(
 	inputJson string,
 	expMsgs *assert.ExpectedMessages) {
 
-	yd := newTestYangd(t, testSchemas, initConfig,
-		testComps...)
+	yd := newTestYangd(t, testSchemas, testComps, initConfig)
 
 	out, err := yd.ValidateRpcInput([]byte(inputJson))
 

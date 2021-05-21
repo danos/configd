@@ -440,9 +440,6 @@ func NewTestSpec(t *testing.T) *TestSpec {
 }
 
 func (ts *TestSpec) GetCompMgr() schema.ComponentManager {
-	if ts.compMgr == nil {
-		ts.t.Fatalf("Must set modelset name to create test Component Mgr")
-	}
 	return ts.compMgr
 }
 
@@ -539,30 +536,8 @@ func (ts *TestSpec) checkAndProcessSchemas() {
 	// schemaDir processed directly into ModelSets later.
 }
 
-func (ts *TestSpec) processComponents() {
-	if ts.components == nil {
-		return
-	}
-
-	var parsedComps []*conf.ServiceConfig
-
-	for _, comp := range ts.components {
-		parsedComp, err := conf.ParseConfiguration([]byte(comp))
-		if err != nil {
-			ts.t.Fatalf("Unable to parse component.")
-			return
-		}
-		parsedComps = append(parsedComps, parsedComp)
-	}
-
-	ts.extensions = &schema.CompilationExtensions{
-		ComponentConfig: parsedComps,
-	}
-}
-
 func (ts *TestSpec) generateModelSets() (
 	schema.ModelSet, schema.ModelSet, error) {
-	ts.processComponents()
 	ts.checkAndProcessSchemas()
 
 	return testutils.NewModelSetSpec(ts.t).
@@ -607,11 +582,10 @@ func (ts *TestSpec) Init() (*TstSrv, *Session) {
 		ts.SetComponents("DummyModelSetV1", []string{dummyTestComp.String()})
 	}
 
-	ts.compMgr = schema.NewTestCompMgr(
-		ts.t,
-		msFull,
-		ts.modelSetName,
-		getComponentConfigs(ts.t, ts.components...))
+	mappings, _ := schema.CreateComponentNSMappings(
+		msFull, ts.modelSetName, getComponentConfigs(ts.t, ts.components...))
+
+	ts.compMgr = schema.NewTestCompMgr(ts.t, msFull, mappings)
 
 	srv, err := tstInit(ts.t, ms, msFull, ts.config, ts.capsDir,
 		ts.auther, ts.isConfigdUser, ts.inSecretsGroup, ts.smgrLog,
