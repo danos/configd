@@ -1,3 +1,41 @@
+configd (2.12) unstable; urgency=medium
+
+  [ Nicholas Brown ]
+  * dh-systemd is part of debhelper
+
+  [ William Ivory ]
+  * Bullseye build
+  * Move configd flag.Parse() from init() to main()
+
+  [ Paul Carson ]
+  * Inhibit log message: Login user id not set for pid (Fixes: VRVDR-50782)
+  * CopyConfig: Support selectable config encoding
+  * Support ValidateConfig
+  * Unit tests to verify validate config (Closes: VRVDR-52942)
+
+  [ William Ivory ]
+  * Move logic for getting component state to modelset_extension method.
+  * Switch DBUS calls to VCI, using ComponentManager.
+  * Update copyrights
+
+  [ Paul Carson ]
+  * YANG: Support Yang choices (Closes: VRVDR-6224)
+
+  [ William Ivory ]
+  * Update tests for modified XChildren() API.
+  * Switch getfulltree log message from debug to error.
+
+  [ John Southworth ]
+  * Call all RPCs via configd
+
+  [ William Ivory ]
+  * Add tests for leafref performance.
+  * Use schema.NewCompMgr()
+  * Move Set/GetRunning and GetState from ms to compMgr
+  * Move componentMappings to component manager
+
+ -- Paul Carson <paul.carson@intl.att.com>  Thu, 01 Jul 2021 13:53:02 +0100
+
 configd (2.11) unstable; urgency=medium
 
   [ Duncan Eastoe ]
