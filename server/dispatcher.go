@@ -2024,7 +2024,7 @@ func convertJsonOutputToRpcReply(rpc schema.Rpc, output, encoding string,
 	if output == "" {
 		output = "{}"
 	}
-	outputTree, err := yangenc.UnmarshalRFC7951(rpc.Output(), []byte(output))
+	outputTree, err := yangenc.UnmarshalRFC7951WithoutValidation(rpc.Output(), []byte(output))
 	if err != nil {
 		jerr := mgmterror.NewOperationFailedApplicationError()
 		jerr.Message = fmt.Sprintf("Failed to process returned data: %s",
