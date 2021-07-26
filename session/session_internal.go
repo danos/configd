@@ -10,6 +10,7 @@ package session
 import (
 	"fmt"
 	"strconv"
+	"syscall"
 	"time"
 
 	"github.com/danos/config/commit"
@@ -732,6 +733,25 @@ func (s *session) discard(ctx *configd.Context) error {
 	return nil
 }
 
+func (s *session) preCommitChecks(ctx *configd.Context) error {
+	// Check that the disk has not entered read-only mode
+	err := syscall.Access("/", syscall.O_RDWR)
+	if err != nil && err == syscall.Errno(syscall.EROFS) {
+		r := s.cmgr.Running()
+		if r.NumChildren() != 0 {
+			// Block commit, system will get into weird state
+			err := mgmterror.NewOperationFailedProtocolError()
+			err.Message = "Commit blocked, disk is read-only"
+			ctx.Elog.Println(err.Message)
+			return err
+		} else {
+			// Allow system to attempt coming up during reboot
+			ctx.Elog.Println("Commit allowed, but disk is read-only.")
+		}
+	}
+	return nil
+}
+
 func (s *session) commit(ctx *configd.Context, message string, debug bool) *commitresp {
 	var resp *commitresp
 
@@ -742,6 +762,9 @@ func (s *session) commit(ctx *configd.Context, message string, debug bool) *comm
 	if !s.changed(ctx) {
 		err := mgmterror.NewOperationFailedProtocolError()
 		err.Message = "No configuration changes to commit"
+		return MakeCommitError(err)
+	}
+	if err := s.preCommitChecks(ctx); err != nil {
 		return MakeCommitError(err)
 	}
 
