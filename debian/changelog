@@ -1,3 +1,9 @@
+configd (2.11.3) unstable; urgency=medium
+
+  * Block commit when disk is read-only (Fixes: VRVDR-55566)
+
+ -- Paul Carson <paul.carson@intl.att.com>  Wed, 28 Jul 2021 09:48:40 +0100
+
 configd (2.11.2) unstable; urgency=medium
 
   * Update tests for modified XChildren() API.
