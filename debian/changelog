@@ -1,3 +1,9 @@
+configd (2.10.6) unstable; urgency=medium
+
+  * Block commit when disk is read-only (Fixes: VRVDR-55566)
+
+ -- Paul Carson <paul.carson@intl.att.com>  Wed, 28 Jul 2021 10:18:43 +0100
+
 configd (2.10.5) unstable; urgency=medium
 
   * CopyConfig: Support selectable config encoding
