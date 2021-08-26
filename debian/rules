@@ -30,11 +30,12 @@ override_dh_auto_configure:
 override_dh_auto_build: vet
 	dh_auto_build -- $(GORACE)
 
+# Only run go vet on files under _build dir. Otherwise it generates false
+# positives for not finding functions exported for test only.
 vet:
 	if go doc cmd/vet >/dev/null 2>&1; then \
 		GO111MODULE=off GOPATH=$(CURDIR)/$(GOBUILDDIR) go vet \
-		$$(find . -type f -name \*.go | xargs dirname | sort -u | \
-		sed 's/.\//github.com\/danos\/config\/g'); \
+		$$(find . -type f -name \*.go | xargs dirname | sort -u | grep _build); \
 	fi
 
 override_dh_auto_install:
