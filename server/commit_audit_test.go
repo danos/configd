@@ -1,4 +1,4 @@
-// Copyright (c) 2019, AT&T Intellectual Copyright. All rights reserved.
+// Copyright (c) 2019-2021, AT&T Intellectual Copyright. All rights reserved.
 //
 // SPDX-License-Identifier: LGPL-2.1-only
 
@@ -45,7 +45,10 @@ func genCommitAuditMsg(op, path string) string {
 }
 
 func genCommitAuditLog(op, path string) audit.UserLog {
-	return audit.UserLog{audit.LOG_TYPE_USER_CFG, genCommitAuditMsg(op, path), 1}
+	return audit.UserLog{
+		Type:   audit.LOG_TYPE_USER_CFG,
+		Msg:    genCommitAuditMsg(op, path),
+		Result: 1}
 }
 
 func commitAndAssertAuditLogs(t *testing.T, d *server.Disp, tAuth auth.TestAuther, expLogs ...audit.UserLog) {

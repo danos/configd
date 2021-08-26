@@ -66,16 +66,16 @@ container testcontainer {
 `
 
 	tblSetMandFalse := []ValidateOpTbl{
-		{"Verify set of non-mandatory", testleafpath, "foo", true},
-		{"", testbooleanpath, "true", true},
-		{"", testleaflistuserpath, "foo", true},
-		{"", teststringpath, "foo", true},
+		NewValOpTblEntry("Verify set of non-mandatory", testleafpath, "foo", true),
+		NewValOpTblEntry("", testbooleanpath, "true", true),
+		NewValOpTblEntry("", testleaflistuserpath, "foo", true),
+		NewValOpTblEntry("", teststringpath, "foo", true),
 	}
 	tblDeleteMandFalse := []ValidateOpTbl{
-		{"Verify delete of non-mandatory", testbooleanpath, "true", true},
-		{"", testleafpath, "foo", true},
-		{"", teststringpath, "foo", true},
-		{"", testleaflistuserpath, "foo", true},
+		NewValOpTblEntry("Verify delete of non-mandatory", testbooleanpath, "true", true),
+		NewValOpTblEntry("", testleafpath, "foo", true),
+		NewValOpTblEntry("", teststringpath, "foo", true),
+		NewValOpTblEntry("", testleaflistuserpath, "foo", true),
 	}
 
 	srv, sess := TstStartup(t, schemaMandFalse, emptyconfig)
@@ -148,12 +148,12 @@ container testcontainer {
 	// Being a top level, non-presence container (parent is root),
 	// if any mandatory nodes are missing, commit will fail.
 	tblDeleteMandTrue := []ValidateOpTbl{
-		{"Verify delete of non-mandatory node with mandatory siblings",
-			testbooleanpath, "true", true},
-		{"Delete of mandatory node is rejected", testleafpath, "foo", false},
-		{"", teststringpath, "foo", false},
-		{"", testleaflistuserpath, "foo", false},
-		{"", testlistpath, "bar", false},
+		NewValOpTblEntry("Verify delete of non-mandatory node with mandatory siblings",
+			testbooleanpath, "true", true),
+		NewValOpTblEntry("Delete of mandatory node is rejected", testleafpath, "foo", false),
+		NewValOpTblEntry("", teststringpath, "foo", false),
+		NewValOpTblEntry("", testleaflistuserpath, "foo", false),
+		NewValOpTblEntry("", testlistpath, "bar", false),
 	}
 
 	srv, sess := TstStartup(t, schemaMandTrue, mandatoryNodesConfig)
@@ -198,11 +198,11 @@ container testcontainer {
 	// Ensure that commit will fail unless all mandatory
 	// nodes are present in the config
 	tblSetMandTrue := []ValidateOpTbl{
-		{"Validate commit fails with missing mandatory nodes", testbooleanpath, "true", false},
-		{"", testleafpath, "foo", false},
-		{"", teststringpath, "foo", false},
-		{"", testleaflistuserpath, "foo", false},
-		{"All mandatory nodes now satisfied", testlistpath, "bar", true},
+		NewValOpTblEntry("Validate commit fails with missing mandatory nodes", testbooleanpath, "true", false),
+		NewValOpTblEntry("", testleafpath, "foo", false),
+		NewValOpTblEntry("", teststringpath, "foo", false),
+		NewValOpTblEntry("", testleaflistuserpath, "foo", false),
+		NewValOpTblEntry("All mandatory nodes now satisfied", testlistpath, "bar", true),
 	}
 
 	// Check that a non-mandatory node can be deleted if all mandatory
@@ -211,12 +211,12 @@ container testcontainer {
 	// mandatory leafs until ALL nodes AND the presence container
 	// are deleted.
 	tblDeleteMandTrue := []ValidateOpTbl{
-		{"Verify delete of non-mandatrory node with mandatory children", testbooleanpath, "true", true},
-		{"", testleafpath, "foo", false},
-		{"", teststringpath, "foo", false},
-		{"", testleaflistuserpath, "foo", false},
-		{"", testlistpath, "bar", false},
-		{"", testcontainerpath, "", true},
+		NewValOpTblEntry("Verify delete of non-mandatrory node with mandatory children", testbooleanpath, "true", true),
+		NewValOpTblEntry("", testleafpath, "foo", false),
+		NewValOpTblEntry("", teststringpath, "foo", false),
+		NewValOpTblEntry("", testleaflistuserpath, "foo", false),
+		NewValOpTblEntry("", testlistpath, "bar", false),
+		NewValOpTblEntry("", testcontainerpath, "", true),
 	}
 
 	srv, sess := TstStartup(t, schemaMandTrue, emptyconfig)
@@ -273,13 +273,13 @@ container testcontainer {
 	// Ensure that commit will fail unless all mandatory
 	// nodes are present in the config
 	tblSetMandTrue := []ValidateOpTbl{
-		{"Validate commit fails with missing mandatory nodes", testbooleanpath, "true", false},
-		{"", testleafpath, "foo", false},
-		{"", teststringpath, "foo", false},
-		{"", testleaflistuserpath, "foo", false},
-		{"", testlistpath, "bar", false},
-		{"All mandatory constraints satisfied", subtruepath, "true", true},
-		{"", subfalsepath, "false", true},
+		NewValOpTblEntry("Validate commit fails with missing mandatory nodes", testbooleanpath, "true", false),
+		NewValOpTblEntry("", testleafpath, "foo", false),
+		NewValOpTblEntry("", teststringpath, "foo", false),
+		NewValOpTblEntry("", testleaflistuserpath, "foo", false),
+		NewValOpTblEntry("", testlistpath, "bar", false),
+		NewValOpTblEntry("All mandatory constraints satisfied", subtruepath, "true", true),
+		NewValOpTblEntry("", subfalsepath, "false", true),
 	}
 
 	// Check that a non-mandatory node can be deleted if all mandatory
@@ -287,14 +287,14 @@ container testcontainer {
 	// Delete will fail in the absence of any mandatory leafs until
 	// the parent non-presence container is deleted
 	tblDeleteMandTrue := []ValidateOpTbl{
-		{"Verify delete of non-mandatrory node with mandatory children", testbooleanpath, "true", true},
-		{"", subfalsepath, "false", true},
-		{"Fails the mandatory constraint", testleafpath, "foo", false},
-		{"", teststringpath, "foo", false},
-		{"", testleaflistuserpath, "foo", false},
-		{"", testlistpath, "bar", false},
-		{"", subtruepath, "true", false},
-		{"Verify that presence container delete is allowed", testcontainerpath, "", true},
+		NewValOpTblEntry("Verify delete of non-mandatrory node with mandatory children", testbooleanpath, "true", true),
+		NewValOpTblEntry("", subfalsepath, "false", true),
+		NewValOpTblEntry("Fails the mandatory constraint", testleafpath, "foo", false),
+		NewValOpTblEntry("", teststringpath, "foo", false),
+		NewValOpTblEntry("", testleaflistuserpath, "foo", false),
+		NewValOpTblEntry("", testlistpath, "bar", false),
+		NewValOpTblEntry("", subtruepath, "true", false),
+		NewValOpTblEntry("Verify that presence container delete is allowed", testcontainerpath, "", true),
 	}
 
 	srv, sess := TstStartup(t, schemaMandTrue, emptyconfig)
@@ -350,13 +350,13 @@ container testcontainer {
 `
 
 	tblSetMandTrue := []ValidateOpTbl{
-		{"Validate commit fails with missing mandatory nodes", testbooleanpath, "true", false},
-		{"", testleafpath, "foo", false},
-		{"", teststringpath, "foo", false},
-		{"", testleaflistuserpath, "foo", false},
-		{"", testlistpath, "bar", true},
-		{"", subfalsepath, "false", false},
-		{"All mandatory constraints satisfied", subtruepath, "true", true},
+		NewValOpTblEntry("Validate commit fails with missing mandatory nodes", testbooleanpath, "true", false),
+		NewValOpTblEntry("", testleafpath, "foo", false),
+		NewValOpTblEntry("", teststringpath, "foo", false),
+		NewValOpTblEntry("", testleaflistuserpath, "foo", false),
+		NewValOpTblEntry("", testlistpath, "bar", true),
+		NewValOpTblEntry("", subfalsepath, "false", false),
+		NewValOpTblEntry("All mandatory constraints satisfied", subtruepath, "true", true),
 	}
 
 	// Check that a non-mandatory node can be deleted if all mandatory
@@ -364,15 +364,15 @@ container testcontainer {
 	// Delete will fail in the absence of any
 	// mandatory leafs until ALL container nodes are deleted
 	tblDeleteMandTrue := []ValidateOpTbl{
-		{"Verify delete of non-mandatrory node with mandatory children", testbooleanpath, "true", true},
-		{"", subtruepath, "true", false},
-		{"", subfalsepath, "false", false},
-		{"Verify subcontainer can be deleted", subcontainerpath, "", true},
-		{"Fails the mandatory constraint", testleafpath, "foo", false},
-		{"", teststringpath, "foo", false},
-		{"", testleaflistuserpath, "foo", false},
-		{"", testlistpath, "bar", false},
-		{"Verify that presence container delete is allowed", testcontainerpath, "", true},
+		NewValOpTblEntry("Verify delete of non-mandatrory node with mandatory children", testbooleanpath, "true", true),
+		NewValOpTblEntry("", subtruepath, "true", false),
+		NewValOpTblEntry("", subfalsepath, "false", false),
+		NewValOpTblEntry("Verify subcontainer can be deleted", subcontainerpath, "", true),
+		NewValOpTblEntry("Fails the mandatory constraint", testleafpath, "foo", false),
+		NewValOpTblEntry("", teststringpath, "foo", false),
+		NewValOpTblEntry("", testleaflistuserpath, "foo", false),
+		NewValOpTblEntry("", testlistpath, "bar", false),
+		NewValOpTblEntry("Verify that presence container delete is allowed", testcontainerpath, "", true),
 	}
 
 	srv, sess := TstStartup(t, schemaMandTrue, emptyconfig)
@@ -415,36 +415,36 @@ container testcontainer {
 	// Ensure that commit will fail unless the mandatory
 	// node, four levels down, is present
 	tblSetMandTrue := []ValidateOpTbl{
-		{"Reject commit due to mandatory contraint", testleafpath, "foo", false},
-		{"Reject commit due to mandatory constraint", subfalsepath, "false", false},
-		{"Reject commit due to mandatory constraint", level3leafpath, "level3", false},
-		{"Accept commit, mandatory constraints now ssatisfied", level4leafpath, "level4", true},
+		NewValOpTblEntry("Reject commit due to mandatory contraint", testleafpath, "foo", false),
+		NewValOpTblEntry("Reject commit due to mandatory constraint", subfalsepath, "false", false),
+		NewValOpTblEntry("Reject commit due to mandatory constraint", level3leafpath, "level3", false),
+		NewValOpTblEntry("Accept commit, mandatory constraints now ssatisfied", level4leafpath, "level4", true),
 	}
 
 	// Check that non-mandatory nodes in the hierarchy can be deleted
 	// so long as the mandatory
 	tblDeleteMandTrue := []ValidateOpTbl{
-		{"Commit allowed, mandatory still satisfied", subfalsepath, "false", true},
-		{"", level3leafpath, "level3", true},
-		{"", testleafpath, "foo", true},
-		{"Reject commit, mandatory constraint not satisfied", level4leafpath, "level4", false},
-		{"Commit allowed, presence container has been deleted", testcontainerpath, "", true},
+		NewValOpTblEntry("Commit allowed, mandatory still satisfied", subfalsepath, "false", true),
+		NewValOpTblEntry("", level3leafpath, "level3", true),
+		NewValOpTblEntry("", testleafpath, "foo", true),
+		NewValOpTblEntry("Reject commit, mandatory constraint not satisfied", level4leafpath, "level4", false),
+		NewValOpTblEntry("Commit allowed, presence container has been deleted", testcontainerpath, "", true),
 	}
 
 	// Do above tests in different order
 	tblSetMandTrueReversed := []ValidateOpTbl{
-		{"Commit success, mandatory constraint satisfied", level4leafpath, "level4", true},
-		{"", level3leafpath, "level3", true},
-		{"", subfalsepath, "false", true},
-		{"", testleafpath, "foo", true},
+		NewValOpTblEntry("Commit success, mandatory constraint satisfied", level4leafpath, "level4", true),
+		NewValOpTblEntry("", level3leafpath, "level3", true),
+		NewValOpTblEntry("", subfalsepath, "false", true),
+		NewValOpTblEntry("", testleafpath, "foo", true),
 	}
 
 	tblDeleteMandTrueReversed := []ValidateOpTbl{
-		{"Reject Commit, mandatory contraint enforced", level4leafpath, "level4", false},
-		{"", testleafpath, "foo", false},
-		{"", level3leafpath, "level3", false},
-		{"", subfalsepath, "false", false},
-		{"Commit success, parent presence container deleted", testcontainerpath, "", true},
+		NewValOpTblEntry("Reject Commit, mandatory contraint enforced", level4leafpath, "level4", false),
+		NewValOpTblEntry("", testleafpath, "foo", false),
+		NewValOpTblEntry("", level3leafpath, "level3", false),
+		NewValOpTblEntry("", subfalsepath, "false", false),
+		NewValOpTblEntry("Commit success, parent presence container deleted", testcontainerpath, "", true),
 	}
 
 	srv, sess := TstStartup(t, schemaMandTrue, emptyconfig)
@@ -517,33 +517,33 @@ testcontainer {
 `
 
 	tblSet := []ValidateOpTbl{
-		{"", testbooleanpath, "true", false},
-		{"", testleaflistuserpath, "foo", false},
-		{"", testlistpath, "foo", false},
-		{"", testlistpath, "bar", true}, // min-elements constraints now satisfied
-		{"", testleaflistuserpath, "bar", true},
-		{"", testleaflistuserpath, "foobar", true},
-		{"", testleaflistuserpath, "baz", true},
-		{"", testlistpath, "foobar", true},
-		{"", testlistunboundedpath, "foo", true},
-		{"", testlistunboundedpath, "bar", true},
-		{"", testlistunboundedpath, "foobar", true},
-		{"", testlistpath, "baz", false}, // max-elements exceeded; fail
+		NewValOpTblEntry("", testbooleanpath, "true", false),
+		NewValOpTblEntry("", testleaflistuserpath, "foo", false),
+		NewValOpTblEntry("", testlistpath, "foo", false),
+		NewValOpTblEntry("", testlistpath, "bar", true), // min-elements constraints now satisfied
+		NewValOpTblEntry("", testleaflistuserpath, "bar", true),
+		NewValOpTblEntry("", testleaflistuserpath, "foobar", true),
+		NewValOpTblEntry("", testleaflistuserpath, "baz", true),
+		NewValOpTblEntry("", testlistpath, "foobar", true),
+		NewValOpTblEntry("", testlistunboundedpath, "foo", true),
+		NewValOpTblEntry("", testlistunboundedpath, "bar", true),
+		NewValOpTblEntry("", testlistunboundedpath, "foobar", true),
+		NewValOpTblEntry("", testlistpath, "baz", false), // max-elements exceeded; fail
 	}
 
 	tblDelete := []ValidateOpTbl{
-		{"", testlistpath, "foo", true},
-		{"", testleaflistuserpath, "bar", true},
-		{"", testleaflistuserpath, "baz", true},
-		{"", testlistunboundedpath, "foo", true},
-		{"", testlistunboundedpath, "bar", true},
-		{"", testlistunboundedpath, "foobar", true},
-		{"", testlistpath, "bar", false}, // min-elements constraint now prevents commit
-		{"", testlistpath, "foobar", false},
-		{"", testleaflistuserpath, "foo", false},
-		{"", testleaflistuserpath, "foobar", false},
-		{"", testbooleanpath, "true", false},
-		{"", testcontainerpath, "", true}, // everything now gone, commit succeeds
+		NewValOpTblEntry("", testlistpath, "foo", true),
+		NewValOpTblEntry("", testleaflistuserpath, "bar", true),
+		NewValOpTblEntry("", testleaflistuserpath, "baz", true),
+		NewValOpTblEntry("", testlistunboundedpath, "foo", true),
+		NewValOpTblEntry("", testlistunboundedpath, "bar", true),
+		NewValOpTblEntry("", testlistunboundedpath, "foobar", true),
+		NewValOpTblEntry("", testlistpath, "bar", false), // min-elements constraint now prevents commit
+		NewValOpTblEntry("", testlistpath, "foobar", false),
+		NewValOpTblEntry("", testleaflistuserpath, "foo", false),
+		NewValOpTblEntry("", testleaflistuserpath, "foobar", false),
+		NewValOpTblEntry("", testbooleanpath, "true", false),
+		NewValOpTblEntry("", testcontainerpath, "", true), // everything now gone, commit succeeds
 	}
 
 	srv, sess := TstStartup(t, schema, emptyconfig)
@@ -668,19 +668,19 @@ testcontainer {
 `
 
 	tblSet := []ValidateOpTbl{
-		{"", testcontainerpath, "", false},
-		{"", testtwopath, "foo", true},
-		{"", gammapath, "foo", true},
-		{"", deltapath, "foo", true},
-		{"", notamandatorypath, "foo", false},
-		{"", isachoicemand, "foo", true},
-		{"", deeponepath, "foo", false},
-		{"", deepfourpath, "foo", true},
+		NewValOpTblEntry("", testcontainerpath, "", false),
+		NewValOpTblEntry("", testtwopath, "foo", true),
+		NewValOpTblEntry("", gammapath, "foo", true),
+		NewValOpTblEntry("", deltapath, "foo", true),
+		NewValOpTblEntry("", notamandatorypath, "foo", false),
+		NewValOpTblEntry("", isachoicemand, "foo", true),
+		NewValOpTblEntry("", deeponepath, "foo", false),
+		NewValOpTblEntry("", deepfourpath, "foo", true),
 	}
 
 	tblDelete := []ValidateOpTbl{
-		{"", testonepath, "", false},
-		{"", testcontainerpath, "", true}, // everything now gone, commit succeeds
+		NewValOpTblEntry("", testonepath, "", false),
+		NewValOpTblEntry("", testcontainerpath, "", true), // everything now gone, commit succeeds
 	}
 
 	srv, sess := TstStartup(t, schema, emptyconfig)
@@ -838,22 +838,22 @@ func TestChoiceTwo(t *testing.T) {
 	`
 
 	tblSet := []ValidateOpTbl{
-		{"", testonepath, "", false},
-		{"", choochoopath, "chewchew", true},
-		{"", notamandatorypath, "foo", false},
-		{"", isachoicemandpath, "foo", true},
-		{"", timepath, "16:44", false},
-		{"", newpath, "16:44", false},
-		{"", digitalpath, "", true},
-		{"", voltagepath, "212", false},
-		{"", batterypath, "", true},
-		{"", notamandatorypath, "foo", false},
-		{"", isachoicemandpath, "foo", true},
+		NewValOpTblEntry("", testonepath, "", false),
+		NewValOpTblEntry("", choochoopath, "chewchew", true),
+		NewValOpTblEntry("", notamandatorypath, "foo", false),
+		NewValOpTblEntry("", isachoicemandpath, "foo", true),
+		NewValOpTblEntry("", timepath, "16:44", false),
+		NewValOpTblEntry("", newpath, "16:44", false),
+		NewValOpTblEntry("", digitalpath, "", true),
+		NewValOpTblEntry("", voltagepath, "212", false),
+		NewValOpTblEntry("", batterypath, "", true),
+		NewValOpTblEntry("", notamandatorypath, "foo", false),
+		NewValOpTblEntry("", isachoicemandpath, "foo", true),
 	}
 
 	tblDelete := []ValidateOpTbl{
-		{"", isachoicemandpath, "", false},
-		{"", testonepath, "", true}, // everything now gone, commit succeeds
+		NewValOpTblEntry("", isachoicemandpath, "", false),
+		NewValOpTblEntry("", testonepath, "", true), // everything now gone, commit succeeds
 	}
 
 	srv, sess := TstStartup(t, schema, emptyconfig)

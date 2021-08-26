@@ -1,4 +1,4 @@
-// Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2019-2021, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2015-2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -67,18 +67,18 @@ var testusestestg2path = pathutil.CopyAppend(testusescontainerpath, testg2)
 // enabled
 func TestFeatureAllCapabilitiesEnabled(t *testing.T) {
 	tblFeature := []ValidateOpTbl{
-		{"", localimplicitpath, "implicit", true},
-		{"", localexplicitpath, "explicit", true},
-		{"", localdependentpath, "dependent", true},
-		{"", remotepath, "remote", true},
-		{"", remotedependentpath, "remotelydependent", true},
-		{"", dependentrefpath, "localandremotedependent", true},
-		{"", insideleafpath, "inside-leaf-data", true},
-		{"", augmentleafpath, "AugmentLeafData", true},
-		{"", secondleafpath, "SecondLeafTestData", true},
-		{"", testuses2leafpath, "Testdata", true},
-		{"", testusestestg1path, "G1TestData", true},
-		{"", testusestestg2path, "G2TestData", true},
+		NewValOpTblEntry("", localimplicitpath, "implicit", true),
+		NewValOpTblEntry("", localexplicitpath, "explicit", true),
+		NewValOpTblEntry("", localdependentpath, "dependent", true),
+		NewValOpTblEntry("", remotepath, "remote", true),
+		NewValOpTblEntry("", remotedependentpath, "remotelydependent", true),
+		NewValOpTblEntry("", dependentrefpath, "localandremotedependent", true),
+		NewValOpTblEntry("", insideleafpath, "inside-leaf-data", true),
+		NewValOpTblEntry("", augmentleafpath, "AugmentLeafData", true),
+		NewValOpTblEntry("", secondleafpath, "SecondLeafTestData", true),
+		NewValOpTblEntry("", testuses2leafpath, "Testdata", true),
+		NewValOpTblEntry("", testusestestg1path, "G1TestData", true),
+		NewValOpTblEntry("", testusestestg2path, "G2TestData", true),
 	}
 
 	srv, sess := TstStartupSchemaDir(t, "testdata/featureValid", "",
@@ -95,18 +95,18 @@ func TestFeatureAllCapabilitiesEnabled(t *testing.T) {
 // it in an if-feature statement is omitted from the schema tree
 func TestFeatureLocalFeatureDisabled(t *testing.T) {
 	tblFeature := []ValidateOpTbl{
-		{"", localimplicitpath, "implicit", true},
-		{"", localexplicitpath, "explicit", true},
-		{"", localdependentpath, "dependent", false},
-		{"", remotepath, "remote", false},
-		{"", remotedependentpath, "remotelydependent", false},
-		{"", dependentrefpath, "localandremotedependent", false},
-		{"", insideleafpath, "inside-leaf-data", false},
-		{"", augmentleafpath, "AugmentLeafData", false},
-		{"", secondleafpath, "SecondLeafTestData", false},
-		{"", testuses2leafpath, "Testdata", false},
-		{"", testusestestg1path, "G1TestData", false},
-		{"", testusestestg2path, "G2TestData", false},
+		NewValOpTblEntry("", localimplicitpath, "implicit", true),
+		NewValOpTblEntry("", localexplicitpath, "explicit", true),
+		NewValOpTblEntry("", localdependentpath, "dependent", false),
+		NewValOpTblEntry("", remotepath, "remote", false),
+		NewValOpTblEntry("", remotedependentpath, "remotelydependent", false),
+		NewValOpTblEntry("", dependentrefpath, "localandremotedependent", false),
+		NewValOpTblEntry("", insideleafpath, "inside-leaf-data", false),
+		NewValOpTblEntry("", augmentleafpath, "AugmentLeafData", false),
+		NewValOpTblEntry("", secondleafpath, "SecondLeafTestData", false),
+		NewValOpTblEntry("", testuses2leafpath, "Testdata", false),
+		NewValOpTblEntry("", testusestestg1path, "G1TestData", false),
+		NewValOpTblEntry("", testusestestg2path, "G2TestData", false),
 	}
 
 	srv, sess := TstStartupSchemaDir(t, "testdata/featureValid", "",
@@ -121,18 +121,18 @@ func TestFeatureLocalFeatureDisabled(t *testing.T) {
 // omits a node from the schema tree
 func TestFeatureRemoteFeatureDisabled(t *testing.T) {
 	tblFeature := []ValidateOpTbl{
-		{"", localimplicitpath, "implicit", false},
-		{"", localexplicitpath, "explicit", false},
-		{"", localdependentpath, "dependent", false},
-		{"", remotepath, "remote", true},
-		{"", remotedependentpath, "remotelydependent", false},
-		{"", dependentrefpath, "localandremotedependent", true},
-		{"", insideleafpath, "inside-leaf-data", false},
-		{"", augmentleafpath, "AugmentLeafData", false},
-		{"", secondleafpath, "SecondLeafTestData", false},
-		{"", testuses2leafpath, "Testdata", false},
-		{"", testusestestg1path, "G1TestData", false},
-		{"", testusestestg2path, "G2TestData", false},
+		NewValOpTblEntry("", localimplicitpath, "implicit", false),
+		NewValOpTblEntry("", localexplicitpath, "explicit", false),
+		NewValOpTblEntry("", localdependentpath, "dependent", false),
+		NewValOpTblEntry("", remotepath, "remote", true),
+		NewValOpTblEntry("", remotedependentpath, "remotelydependent", false),
+		NewValOpTblEntry("", dependentrefpath, "localandremotedependent", true),
+		NewValOpTblEntry("", insideleafpath, "inside-leaf-data", false),
+		NewValOpTblEntry("", augmentleafpath, "AugmentLeafData", false),
+		NewValOpTblEntry("", secondleafpath, "SecondLeafTestData", false),
+		NewValOpTblEntry("", testuses2leafpath, "Testdata", false),
+		NewValOpTblEntry("", testusestestg1path, "G1TestData", false),
+		NewValOpTblEntry("", testusestestg2path, "G2TestData", false),
 	}
 
 	srv, sess := TstStartupSchemaDir(t, "testdata/featureValid", "",
@@ -147,18 +147,18 @@ func TestFeatureRemoteFeatureDisabled(t *testing.T) {
 // one of the other features are disabled.
 func TestFeatureDependentOnDisabledFeature(t *testing.T) {
 	tblFeature := []ValidateOpTbl{
-		{"", localimplicitpath, "implicit", false},
-		{"", localexplicitpath, "explicit", false},
-		{"", localdependentpath, "dependent", true},
-		{"", remotepath, "remote", false},
-		{"", remotedependentpath, "remotelydependent", false},
-		{"", dependentrefpath, "localandremotedependent", true},
-		{"", insideleafpath, "inside-leaf-data", false},
-		{"", augmentleafpath, "AugmentLeafData", false},
-		{"", secondleafpath, "SecondLeafTestData", false},
-		{"", testuses2leafpath, "Testdata", false},
-		{"", testusestestg1path, "G1TestData", false},
-		{"", testusestestg2path, "G2TestData", false},
+		NewValOpTblEntry("", localimplicitpath, "implicit", false),
+		NewValOpTblEntry("", localexplicitpath, "explicit", false),
+		NewValOpTblEntry("", localdependentpath, "dependent", true),
+		NewValOpTblEntry("", remotepath, "remote", false),
+		NewValOpTblEntry("", remotedependentpath, "remotelydependent", false),
+		NewValOpTblEntry("", dependentrefpath, "localandremotedependent", true),
+		NewValOpTblEntry("", insideleafpath, "inside-leaf-data", false),
+		NewValOpTblEntry("", augmentleafpath, "AugmentLeafData", false),
+		NewValOpTblEntry("", secondleafpath, "SecondLeafTestData", false),
+		NewValOpTblEntry("", testuses2leafpath, "Testdata", false),
+		NewValOpTblEntry("", testusestestg1path, "G1TestData", false),
+		NewValOpTblEntry("", testusestestg2path, "G2TestData", false),
 	}
 
 	srv, sess := TstStartupSchemaDir(t, "testdata/featureValid", "",
@@ -171,18 +171,18 @@ func TestFeatureDependentOnDisabledFeature(t *testing.T) {
 
 func TestFeatureEnabledChildDisabledByParent(t *testing.T) {
 	tblFeature := []ValidateOpTbl{
-		{"", localimplicitpath, "implicit", false},
-		{"", localexplicitpath, "explicit", false},
-		{"", localdependentpath, "dependent", false},
-		{"", remotepath, "remote", false},
-		{"", remotedependentpath, "remotelydependent", false},
-		{"", dependentrefpath, "localandremotedependent", false},
-		{"", insideleafpath, "inside-leaf-data", true},
-		{"", augmentleafpath, "AugmentLeafData", false},
-		{"", secondleafpath, "SecondLeafTestData", false},
-		{"", testuses2leafpath, "Testdata", false},
-		{"", testusestestg1path, "G1TestData", false},
-		{"", testusestestg2path, "G2TestData", false},
+		NewValOpTblEntry("", localimplicitpath, "implicit", false),
+		NewValOpTblEntry("", localexplicitpath, "explicit", false),
+		NewValOpTblEntry("", localdependentpath, "dependent", false),
+		NewValOpTblEntry("", remotepath, "remote", false),
+		NewValOpTblEntry("", remotedependentpath, "remotelydependent", false),
+		NewValOpTblEntry("", dependentrefpath, "localandremotedependent", false),
+		NewValOpTblEntry("", insideleafpath, "inside-leaf-data", true),
+		NewValOpTblEntry("", augmentleafpath, "AugmentLeafData", false),
+		NewValOpTblEntry("", secondleafpath, "SecondLeafTestData", false),
+		NewValOpTblEntry("", testuses2leafpath, "Testdata", false),
+		NewValOpTblEntry("", testusestestg1path, "G1TestData", false),
+		NewValOpTblEntry("", testusestestg2path, "G2TestData", false),
 	}
 
 	srv, sess := TstStartupSchemaDir(t, "testdata/featureValid", "",
@@ -198,19 +198,19 @@ func TestFeatureEnabledChildDisabledByParent(t *testing.T) {
 // its children if the capability is disabled
 func TestFeatureDisableAugment(t *testing.T) {
 	tblFeature := []ValidateOpTbl{
-		{"", localimplicitpath, "implicit", false},
-		{"", localexplicitpath, "explicit", false},
-		{"", localdependentpath, "dependent", false},
-		{"", remotepath, "remote", false},
-		{"", remotedependentpath, "remotelydependent", false},
-		{"", dependentrefpath, "localandremotedependent", false},
-		{"", insideleafpath, "inside-leaf-data", false},
-		{"", augmentleafpath, "AugmentLeafData", true},
-		{"", otherleafpath, "OtherLeafData", true},
-		{"", secondleafpath, "SecondLeafTestData", true},
-		{"", testuses2leafpath, "Testdata", false},
-		{"", testusestestg1path, "G1TestData", false},
-		{"", testusestestg2path, "G2TestData", false},
+		NewValOpTblEntry("", localimplicitpath, "implicit", false),
+		NewValOpTblEntry("", localexplicitpath, "explicit", false),
+		NewValOpTblEntry("", localdependentpath, "dependent", false),
+		NewValOpTblEntry("", remotepath, "remote", false),
+		NewValOpTblEntry("", remotedependentpath, "remotelydependent", false),
+		NewValOpTblEntry("", dependentrefpath, "localandremotedependent", false),
+		NewValOpTblEntry("", insideleafpath, "inside-leaf-data", false),
+		NewValOpTblEntry("", augmentleafpath, "AugmentLeafData", true),
+		NewValOpTblEntry("", otherleafpath, "OtherLeafData", true),
+		NewValOpTblEntry("", secondleafpath, "SecondLeafTestData", true),
+		NewValOpTblEntry("", testuses2leafpath, "Testdata", false),
+		NewValOpTblEntry("", testusestestg1path, "G1TestData", false),
+		NewValOpTblEntry("", testusestestg2path, "G2TestData", false),
 	}
 
 	srv, sess := TstStartupSchemaDir(t, "testdata/featureValid", "",
@@ -224,19 +224,19 @@ func TestFeatureDisableAugment(t *testing.T) {
 // the container and its children when.
 func TestFeatureDisableAugmentContainer(t *testing.T) {
 	tblFeature := []ValidateOpTbl{
-		{"", localimplicitpath, "implicit", false},
-		{"", localexplicitpath, "explicit", false},
-		{"", localdependentpath, "dependent", false},
-		{"", remotepath, "remote", false},
-		{"", remotedependentpath, "remotelydependent", false},
-		{"", dependentrefpath, "localandremotedependent", false},
-		{"", insideleafpath, "inside-leaf-data", false},
-		{"", augmentleafpath, "AugmentLeafData", true},
-		{"", otherleafpath, "OtherLeafData", true},
-		{"", secondleafpath, "SecondLeafTestData", false},
-		{"", testuses2leafpath, "Testdata", false},
-		{"", testusestestg1path, "G1TestData", false},
-		{"", testusestestg2path, "G2TestData", false},
+		NewValOpTblEntry("", localimplicitpath, "implicit", false),
+		NewValOpTblEntry("", localexplicitpath, "explicit", false),
+		NewValOpTblEntry("", localdependentpath, "dependent", false),
+		NewValOpTblEntry("", remotepath, "remote", false),
+		NewValOpTblEntry("", remotedependentpath, "remotelydependent", false),
+		NewValOpTblEntry("", dependentrefpath, "localandremotedependent", false),
+		NewValOpTblEntry("", insideleafpath, "inside-leaf-data", false),
+		NewValOpTblEntry("", augmentleafpath, "AugmentLeafData", true),
+		NewValOpTblEntry("", otherleafpath, "OtherLeafData", true),
+		NewValOpTblEntry("", secondleafpath, "SecondLeafTestData", false),
+		NewValOpTblEntry("", testuses2leafpath, "Testdata", false),
+		NewValOpTblEntry("", testusestestg1path, "G1TestData", false),
+		NewValOpTblEntry("", testusestestg2path, "G2TestData", false),
 	}
 
 	srv, sess := TstStartupSchemaDir(t, "testdata/featureValid", "",
@@ -250,19 +250,19 @@ func TestFeatureDisableAugmentContainer(t *testing.T) {
 // the leaf.
 func TestFeatureDisableAugmentLeaf(t *testing.T) {
 	tblFeature := []ValidateOpTbl{
-		{"", localimplicitpath, "implicit", false},
-		{"", localexplicitpath, "explicit", false},
-		{"", localdependentpath, "dependent", false},
-		{"", remotepath, "remote", false},
-		{"", remotedependentpath, "remotelydependent", false},
-		{"", dependentrefpath, "localandremotedependent", false},
-		{"", insideleafpath, "inside-leaf-data", false},
-		{"", augmentleafpath, "AugmentLeafData", true},
-		{"", otherleafpath, "OtherLeafData", false},
-		{"", secondleafpath, "SecondLeafTestData", false},
-		{"", testuses2leafpath, "Testdata", false},
-		{"", testusestestg1path, "G1TestData", false},
-		{"", testusestestg2path, "G2TestData", false},
+		NewValOpTblEntry("", localimplicitpath, "implicit", false),
+		NewValOpTblEntry("", localexplicitpath, "explicit", false),
+		NewValOpTblEntry("", localdependentpath, "dependent", false),
+		NewValOpTblEntry("", remotepath, "remote", false),
+		NewValOpTblEntry("", remotedependentpath, "remotelydependent", false),
+		NewValOpTblEntry("", dependentrefpath, "localandremotedependent", false),
+		NewValOpTblEntry("", insideleafpath, "inside-leaf-data", false),
+		NewValOpTblEntry("", augmentleafpath, "AugmentLeafData", true),
+		NewValOpTblEntry("", otherleafpath, "OtherLeafData", false),
+		NewValOpTblEntry("", secondleafpath, "SecondLeafTestData", false),
+		NewValOpTblEntry("", testuses2leafpath, "Testdata", false),
+		NewValOpTblEntry("", testusestestg1path, "G1TestData", false),
+		NewValOpTblEntry("", testusestestg2path, "G2TestData", false),
 	}
 
 	srv, sess := TstStartupSchemaDir(t, "testdata/featureValid", "",
@@ -275,19 +275,19 @@ func TestFeatureDisableAugmentLeaf(t *testing.T) {
 // Test that an if-feature of a uses will disable the use of the grouping
 func TestFeatureDisableUses(t *testing.T) {
 	tblFeature := []ValidateOpTbl{
-		{"", localimplicitpath, "implicit", false},
-		{"", localexplicitpath, "explicit", false},
-		{"", localdependentpath, "dependent", false},
-		{"", remotepath, "remote", false},
-		{"", remotedependentpath, "remotelydependent", false},
-		{"", dependentrefpath, "localandremotedependent", false},
-		{"", insideleafpath, "inside-leaf-data", false},
-		{"", augmentleafpath, "AugmentLeafData", false},
-		{"", otherleafpath, "OtherLeafData", false},
-		{"", secondleafpath, "SecondLeafTestData", false},
-		{"", testuses2leafpath, "Testdata", false},
-		{"", testusestestg1path, "G1TestData", true},
-		{"", testusestestg2path, "G2TestData", true},
+		NewValOpTblEntry("", localimplicitpath, "implicit", false),
+		NewValOpTblEntry("", localexplicitpath, "explicit", false),
+		NewValOpTblEntry("", localdependentpath, "dependent", false),
+		NewValOpTblEntry("", remotepath, "remote", false),
+		NewValOpTblEntry("", remotedependentpath, "remotelydependent", false),
+		NewValOpTblEntry("", dependentrefpath, "localandremotedependent", false),
+		NewValOpTblEntry("", insideleafpath, "inside-leaf-data", false),
+		NewValOpTblEntry("", augmentleafpath, "AugmentLeafData", false),
+		NewValOpTblEntry("", otherleafpath, "OtherLeafData", false),
+		NewValOpTblEntry("", secondleafpath, "SecondLeafTestData", false),
+		NewValOpTblEntry("", testuses2leafpath, "Testdata", false),
+		NewValOpTblEntry("", testusestestg1path, "G1TestData", true),
+		NewValOpTblEntry("", testusestestg2path, "G2TestData", true),
 	}
 
 	srv, sess := TstStartupSchemaDir(t, "testdata/featureValid", "", "testdata/featureValid/capsDisableUses")
@@ -300,19 +300,19 @@ func TestFeatureDisableUses(t *testing.T) {
 // will be disabled
 func TestFeatureDisableGroupingLeafNode(t *testing.T) {
 	tblFeature := []ValidateOpTbl{
-		{"", localimplicitpath, "implicit", false},
-		{"", localexplicitpath, "explicit", false},
-		{"", localdependentpath, "dependent", false},
-		{"", remotepath, "remote", false},
-		{"", remotedependentpath, "remotelydependent", false},
-		{"", dependentrefpath, "localandremotedependent", false},
-		{"", insideleafpath, "inside-leaf-data", false},
-		{"", augmentleafpath, "AugmentLeafData", false},
-		{"", otherleafpath, "OtherLeafData", false},
-		{"", secondleafpath, "SecondLeafTestData", false},
-		{"", testuses2leafpath, "Testdata", false},
-		{"", testusestestg1path, "G1TestData", false},
-		{"", testusestestg2path, "G2TestData", true},
+		NewValOpTblEntry("", localimplicitpath, "implicit", false),
+		NewValOpTblEntry("", localexplicitpath, "explicit", false),
+		NewValOpTblEntry("", localdependentpath, "dependent", false),
+		NewValOpTblEntry("", remotepath, "remote", false),
+		NewValOpTblEntry("", remotedependentpath, "remotelydependent", false),
+		NewValOpTblEntry("", dependentrefpath, "localandremotedependent", false),
+		NewValOpTblEntry("", insideleafpath, "inside-leaf-data", false),
+		NewValOpTblEntry("", augmentleafpath, "AugmentLeafData", false),
+		NewValOpTblEntry("", otherleafpath, "OtherLeafData", false),
+		NewValOpTblEntry("", secondleafpath, "SecondLeafTestData", false),
+		NewValOpTblEntry("", testuses2leafpath, "Testdata", false),
+		NewValOpTblEntry("", testusestestg1path, "G1TestData", false),
+		NewValOpTblEntry("", testusestestg2path, "G2TestData", true),
 	}
 
 	srv, sess := TstStartupSchemaDir(t, "testdata/featureValid", "", "testdata/featureValid/capsDisableG2")

@@ -124,17 +124,21 @@ func TestFWPerformance(t *testing.T) {
 	runXpathTestsCheckOutputMultipleSchemas(t,
 		[]TestSchema{
 			{
-				Name: NameDef{"vyatta-firewall", "fw"},
+				Name: NameDef{
+					Namespace: "vyatta-firewall", Prefix: "fw"},
 				Imports: []NameDef{
-					{"vyatta-npf", "npf"}, {"vyatta-security", "security"}},
+					{Namespace: "vyatta-npf", Prefix: "npf"},
+					{Namespace: "vyatta-security", Prefix: "security"}},
 				SchemaSnippet: fwSchema,
 			},
 			{
-				Name:          NameDef{"vyatta-security", "security"},
+				Name: NameDef{
+					Namespace: "vyatta-security", Prefix: "security"},
 				SchemaSnippet: securitySchema,
 			},
 			{
-				Name:          NameDef{"vyatta-npf", "npf"},
+				Name: NameDef{
+					Namespace: "vyatta-npf", Prefix: "npf"},
 				SchemaSnippet: npfSchema,
 			},
 		},

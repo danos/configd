@@ -1,4 +1,4 @@
-// Copyright (c) 2017,2019, AT&T Intellectual Property Inc. All rights reserved.
+// Copyright (c) 2017-2021, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2015-2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -129,7 +129,7 @@ func TestImplicitLocalPrefix(t *testing.T) {
 	runXpathTestsCheckOutputMultipleSchemas(t,
 		[]TestSchema{
 			{
-				Name:          NameDef{"prefix-local", "local"},
+				Name:          NameDef{Namespace: "prefix-local", Prefix: "local"},
 				SchemaSnippet: implicitLocalSchema,
 			},
 		},
@@ -185,7 +185,7 @@ func TestExplicitLocalPrefix(t *testing.T) {
 	runXpathTestsCheckOutputMultipleSchemas(t,
 		[]TestSchema{
 			{
-				Name:          NameDef{"prefix-local", "local"},
+				Name:          NameDef{Namespace: "prefix-local", Prefix: "local"},
 				SchemaSnippet: explicitLocalSchema,
 			},
 		},
@@ -247,12 +247,15 @@ remoteCont {
 	runXpathTestsCheckOutputMultipleSchemas(t,
 		[]TestSchema{
 			{
-				Name:          NameDef{"prefix-local", "local"},
-				Imports:       []NameDef{{"prefix-remote", "remoteLcl"}},
+				Name: NameDef{
+					Namespace: "prefix-local", Prefix: "local"},
+				Imports: []NameDef{
+					{Namespace: "prefix-remote", Prefix: "remoteLcl"}},
 				SchemaSnippet: remotePrefixTestLocalSchema,
 			},
 			{
-				Name:          NameDef{"prefix-remote", "remote"},
+				Name: NameDef{
+					Namespace: "prefix-remote", Prefix: "remote"},
 				SchemaSnippet: remotePrefixTestRemoteSchema,
 			},
 		},
@@ -311,12 +314,13 @@ func TestNoRemotePrefixName(t *testing.T) {
 	runXpathTestsCheckOutputMultipleSchemas(t,
 		[]TestSchema{
 			{
-				Name:          NameDef{"prefix-local", "local"},
-				Imports:       []NameDef{{"prefix-remote", "remoteLcl"}},
+				Name: NameDef{Namespace: "prefix-local", Prefix: "local"},
+				Imports: []NameDef{
+					{Namespace: "prefix-remote", Prefix: "remoteLcl"}},
 				SchemaSnippet: noRemotePrefixLocalSchema,
 			},
 			{
-				Name:          NameDef{"prefix-remote", "remote"},
+				Name:          NameDef{Namespace: "prefix-remote", Prefix: "remote"},
 				SchemaSnippet: noRemotePrefixRemoteSchema,
 			},
 		},
@@ -428,12 +432,12 @@ remoteCont {
 	runXpathTestsCheckOutputMultipleSchemas(t,
 		[]TestSchema{
 			{
-				Name:          NameDef{"prefix-local", "local"},
-				Imports:       []NameDef{{"prefix-remote", "remoteLcl"}},
+				Name:          NameDef{Namespace: "prefix-local", Prefix: "local"},
+				Imports:       []NameDef{{Namespace: "prefix-remote", Prefix: "remoteLcl"}},
 				SchemaSnippet: augmentTopLevelWhenLocalSchema,
 			},
 			{
-				Name:          NameDef{"prefix-remote", "remote"},
+				Name:          NameDef{Namespace: "prefix-remote", Prefix: "remote"},
 				SchemaSnippet: augmentTopLevelWhenRemoteSchema,
 			},
 		},
@@ -500,12 +504,12 @@ remoteCont {
 	runXpathTestsCheckOutputMultipleSchemas(t,
 		[]TestSchema{
 			{
-				Name:          NameDef{"prefix-local", "local"},
-				Imports:       []NameDef{{"prefix-remote", "remoteLcl"}},
+				Name:          NameDef{Namespace: "prefix-local", Prefix: "local"},
+				Imports:       []NameDef{{Namespace: "prefix-remote", Prefix: "remoteLcl"}},
 				SchemaSnippet: augmentLeafWhenLocalSchema,
 			},
 			{
-				Name:          NameDef{"prefix-remote", "remote"},
+				Name:          NameDef{Namespace: "prefix-remote", Prefix: "remote"},
 				SchemaSnippet: augmentLeafWhenRemoteSchema,
 			},
 		},
@@ -576,12 +580,13 @@ func TestImportedGrouping(t *testing.T) {
 	runXpathTestsCheckOutputMultipleSchemas(t,
 		[]TestSchema{
 			{
-				Name:          NameDef{"prefix-local", "local"},
-				Imports:       []NameDef{{"prefix-ref", "refLcl"}},
+				Name: NameDef{Namespace: "prefix-local", Prefix: "local"},
+				Imports: []NameDef{
+					{Namespace: "prefix-ref", Prefix: "refLcl"}},
 				SchemaSnippet: importedGroupingLocalSchema,
 			},
 			{
-				Name:          NameDef{"prefix-ref", "ref"},
+				Name:          NameDef{Namespace: "prefix-ref", Prefix: "ref"},
 				SchemaSnippet: importedGroupingRefSchema,
 			},
 		},
@@ -650,17 +655,17 @@ func TestGroupingInGrouping(t *testing.T) {
 	runXpathTestsCheckOutputMultipleSchemas(t,
 		[]TestSchema{
 			{
-				Name:          NameDef{"prefix-local", "local"},
-				Imports:       []NameDef{{"prefix-ref", "refLcl"}},
+				Name:          NameDef{Namespace: "prefix-local", Prefix: "local"},
+				Imports:       []NameDef{{Namespace: "prefix-ref", Prefix: "refLcl"}},
 				SchemaSnippet: groupingInGroupingLocalSchema,
 			},
 			{
-				Name:          NameDef{"prefix-ref", "ref"},
-				Imports:       []NameDef{{"prefix-ref2", "ref2Lcl"}},
+				Name:          NameDef{Namespace: "prefix-ref", Prefix: "ref"},
+				Imports:       []NameDef{{Namespace: "prefix-ref2", Prefix: "ref2Lcl"}},
 				SchemaSnippet: groupingInGroupingRefSchema,
 			},
 			{
-				Name:          NameDef{"prefix-ref2", "ref2"},
+				Name:          NameDef{Namespace: "prefix-ref2", Prefix: "ref2"},
 				SchemaSnippet: groupingInGroupingRef2Schema,
 			},
 		},
@@ -781,17 +786,17 @@ remoteCont {
 	runXpathTestsCheckOutputMultipleSchemas(t,
 		[]TestSchema{
 			{
-				Name:          NameDef{"prefix-local", "local"},
-				Imports:       []NameDef{{"prefix-ref", "refLcl"}},
+				Name:          NameDef{Namespace: "prefix-local", Prefix: "local"},
+				Imports:       []NameDef{{Namespace: "prefix-ref", Prefix: "refLcl"}},
 				SchemaSnippet: multipleUseGroupingLocalSchema,
 			},
 			{
-				Name:          NameDef{"prefix-remote", "remote"},
-				Imports:       []NameDef{{"prefix-ref", "refRem"}},
+				Name:          NameDef{Namespace: "prefix-remote", Prefix: "remote"},
+				Imports:       []NameDef{{Namespace: "prefix-ref", Prefix: "refRem"}},
 				SchemaSnippet: multipleUseGroupingRemoteSchema,
 			},
 			{
-				Name:          NameDef{"prefix-ref", "ref"},
+				Name:          NameDef{Namespace: "prefix-ref", Prefix: "ref"},
 				SchemaSnippet: multipleUseGroupingRefSchema,
 			},
 		},
@@ -863,18 +868,17 @@ remoteCont {
 	runXpathTestsCheckOutputMultipleSchemas(t,
 		[]TestSchema{
 			{
-				Name: NameDef{"prefix-local", "local"},
-				Imports: []NameDef{
-					{"prefix-ref", "refLcl"},
-					{"prefix-remote", "remoteLcl"}},
+				Name: NameDef{Namespace: "prefix-local", Prefix: "local"},
+				Imports: []NameDef{{Namespace: "prefix-ref", Prefix: "refLcl"},
+					{Namespace: "prefix-remote", Prefix: "remoteLcl"}},
 				SchemaSnippet: groupingInAugmentLocalSchema,
 			},
 			{
-				Name:          NameDef{"prefix-remote", "remote"},
+				Name:          NameDef{Namespace: "prefix-remote", Prefix: "remote"},
 				SchemaSnippet: groupingInAugmentRemoteSchema,
 			},
 			{
-				Name:          NameDef{"prefix-ref", "ref"},
+				Name:          NameDef{Namespace: "prefix-ref", Prefix: "ref"},
 				SchemaSnippet: groupingInAugmentRefSchema,
 			},
 		},
@@ -958,13 +962,12 @@ func TestRemoteWildcard(t *testing.T) {
 	runXpathTestsCheckOutputMultipleSchemas(t,
 		[]TestSchema{
 			{
-				Name: NameDef{"prefix-local", "local"},
-				Imports: []NameDef{
-					{"prefix-remote", "remoteLcl"}},
+				Name:          NameDef{Namespace: "prefix-local", Prefix: "local"},
+				Imports:       []NameDef{{Namespace: "prefix-remote", Prefix: "remoteLcl"}},
 				SchemaSnippet: wildcardLocalSchema,
 			},
 			{
-				Name:          NameDef{"prefix-remote", "remote"},
+				Name:          NameDef{Namespace: "prefix-remote", Prefix: "remote"},
 				SchemaSnippet: wildcardRemoteSchema,
 			},
 		},

@@ -463,10 +463,10 @@ container testcontainer {
 }
 `
 	tbl := []ValidateOpTbl{
-		{"Validate set without a path", emptypath, "", false},
-		{"Validate set invalid path", invalidpath, "", true},
-		{"Validate set root path", rootpath, "", true},
-		{"Validate set container", testcontainerpath, "", true},
+		NewValOpTblEntry("Validate set without a path", emptypath, "", false),
+		NewValOpTblEntry("Validate set invalid path", invalidpath, "", true),
+		NewValOpTblEntry("Validate set root path", rootpath, "", true),
+		NewValOpTblEntry("Validate set container", testcontainerpath, "", true),
 	}
 
 	srv, sess := TstStartup(t, schema, emptyconfig)
@@ -486,11 +486,11 @@ container testcontainer {
 	var testleaflistuserpath_bam = pathutil.CopyAppend(testleaflistuserpath, "bam")
 	testleaflistuserpath_bam = pathutil.CopyAppend(testleaflistuserpath_bam, "")
 	tbl := []ValidateOpTbl{
-		{validatesetnovalue, testleaflistuserpath, "", true},
-		{"Validate set list-leaf item 1", testleaflistuserpath, "foo", false},
-		{"Validate set list-leaf item 2", testleaflistuserpath, "bar", false},
-		{"Validate set list-leaf item 3", testleaflistuserpath, "baz", false},
-		{"Validate set list-leaf item with trailing /", testleaflistuserpath_bam, "", true},
+		NewValOpTblEntry(validatesetnovalue, testleaflistuserpath, "", true),
+		NewValOpTblEntry("Validate set list-leaf item 1", testleaflistuserpath, "foo", false),
+		NewValOpTblEntry("Validate set list-leaf item 2", testleaflistuserpath, "bar", false),
+		NewValOpTblEntry("Validate set list-leaf item 3", testleaflistuserpath, "baz", false),
+		NewValOpTblEntry("Validate set list-leaf item with trailing /", testleaflistuserpath_bam, "", true),
 	}
 
 	srv, sess := TstStartup(t, schema, emptyconfig)
@@ -510,10 +510,10 @@ container testcontainer {
 }
 `
 	tbl := []ValidateOpTbl{
-		{validatesetnovalue, testlistpath, "", true},
-		{"Validate set list item 1", testlistpath, "foo", false},
-		{"Validate set list item 2", testlistpath, "bar", false},
-		{"Validate set list item 3", testlistpath, "baz", false},
+		NewValOpTblEntry(validatesetnovalue, testlistpath, "", true),
+		NewValOpTblEntry("Validate set list item 1", testlistpath, "foo", false),
+		NewValOpTblEntry("Validate set list item 2", testlistpath, "bar", false),
+		NewValOpTblEntry("Validate set list item 3", testlistpath, "baz", false),
 	}
 
 	srv, sess := TstStartup(t, schema, emptyconfig)
@@ -534,8 +534,8 @@ container testcontainer {
 `
 	var testunionpath = pathutil.CopyAppend(testcontainerpath, "testunion")
 	tbl := []ValidateOpTbl{
-		{"Validate set union uint", testunionpath, "10", false},
-		{"Validate set union string", testunionpath, "foo", false},
+		NewValOpTblEntry("Validate set union uint", testunionpath, "10", false),
+		NewValOpTblEntry("Validate set union string", testunionpath, "foo", false),
 	}
 
 	srv, sess := TstStartup(t, schema, emptyconfig)
@@ -561,14 +561,14 @@ container testcontainer {
 	var teststringpath_bam = pathutil.CopyAppend(teststringpath, "bam")
 	teststringpath_bam = pathutil.CopyAppend(teststringpath_bam, "")
 	tbl := []ValidateOpTbl{
-		{"Set empty path", emptypath, "", true},
-		{"Set invalid path", invalidpath, "", true},
-		{"Set root path", rootpath, "", true},
-		{"Set empty leaf", testemptypath, "", false},
-		{"Set boolean node true", testbooleanpath, "true", false},
-		{"Set boolean node false", testbooleanpath, "false", false},
-		{"Set string value", teststringpath, "foo", false},
-		{"Set string value with trailing /", teststringpath_bam, "", true},
+		NewValOpTblEntry("Set empty path", emptypath, "", true),
+		NewValOpTblEntry("Set invalid path", invalidpath, "", true),
+		NewValOpTblEntry("Set root path", rootpath, "", true),
+		NewValOpTblEntry("Set empty leaf", testemptypath, "", false),
+		NewValOpTblEntry("Set boolean node true", testbooleanpath, "true", false),
+		NewValOpTblEntry("Set boolean node false", testbooleanpath, "false", false),
+		NewValOpTblEntry("Set string value", teststringpath, "foo", false),
+		NewValOpTblEntry("Set string value with trailing /", teststringpath_bam, "", true),
 	}
 	srv, sess := TstStartup(t, schema, emptyconfig)
 	ValidateSetTable(t, sess, srv.Ctx, tbl)
@@ -659,17 +659,17 @@ container testcontainer {
 	var teststringpath_bam = pathutil.CopyAppend(teststringpath, "bam")
 	teststringpath_bam = pathutil.CopyAppend(teststringpath_bam, "")
 	tbl := []ValidateOpTbl{
-		{"Set empty path", emptypath, "", true},
-		{"Set empty path", targetpath, "", false},
-		{"Set empty path", abstargetpath, "", false},
-		{"Set empty path", relativetargetpath, "", false},
-		{"Set invalid path", invalidpath, "", true},
-		{"Set root path", rootpath, "", true},
-		{"Set empty leaf", testemptypath, "", false},
-		{"Set boolean node true", testbooleanpath, "true", false},
-		{"Set boolean node false", testbooleanpath, "false", false},
-		{"Set string value", teststringpath, "foo", false},
-		{"Set string value with trailing /", teststringpath_bam, "", true},
+		NewValOpTblEntry("Set empty path", emptypath, "", true),
+		NewValOpTblEntry("Set empty path", targetpath, "", false),
+		NewValOpTblEntry("Set empty path", abstargetpath, "", false),
+		NewValOpTblEntry("Set empty path", relativetargetpath, "", false),
+		NewValOpTblEntry("Set invalid path", invalidpath, "", true),
+		NewValOpTblEntry("Set root path", rootpath, "", true),
+		NewValOpTblEntry("Set empty leaf", testemptypath, "", false),
+		NewValOpTblEntry("Set boolean node true", testbooleanpath, "true", false),
+		NewValOpTblEntry("Set boolean node false", testbooleanpath, "false", false),
+		NewValOpTblEntry("Set string value", teststringpath, "foo", false),
+		NewValOpTblEntry("Set string value with trailing /", teststringpath_bam, "", true),
 	}
 	srv, sess := TstStartup(t, schema, emptyconfig)
 	ValidateSetTable(t, sess, srv.Ctx, tbl)
@@ -946,11 +946,11 @@ container testcontainer {
 	// TODO: order-by system not supported yet
 	// var testleaflistsystempath = pathutil.CopyAppend(testcontainerpath, "testleaflistsystem")
 	tbl := []ValidateOpTbl{
-		{"Set list-leaf without value", testleaflistuserpath, "", true},
-		{"Set list-leaf item 1", testleaflistuserpath, "foo", false},
-		{"Set list-leaf item 2", testleaflistuserpath, "bar", false},
-		{"Set list-leaf item 3", testleaflistuserpath, "baz", false},
-		{"Set list-leaf item 4", testleaflistuserpath, "foo", true},
+		NewValOpTblEntry("Set list-leaf without value", testleaflistuserpath, "", true),
+		NewValOpTblEntry("Set list-leaf item 1", testleaflistuserpath, "foo", false),
+		NewValOpTblEntry("Set list-leaf item 2", testleaflistuserpath, "bar", false),
+		NewValOpTblEntry("Set list-leaf item 3", testleaflistuserpath, "baz", false),
+		NewValOpTblEntry("Set list-leaf item 4", testleaflistuserpath, "foo", true),
 	}
 
 	srv, sess := TstStartup(t, schema, emptyconfig)
@@ -970,11 +970,11 @@ container testcontainer {
 }
 `
 	tbl := []ValidateOpTbl{
-		{"Set list without value", testlistpath, "", true},
-		{"Set list item 1", testlistpath, "foo", false},
-		{"Set list item 2", testlistpath, "bar", false},
-		{"Set list item 3", testlistpath, "baz", false},
-		{"Set list item 4", testlistpath, "foo", true},
+		NewValOpTblEntry("Set list without value", testlistpath, "", true),
+		NewValOpTblEntry("Set list item 1", testlistpath, "foo", false),
+		NewValOpTblEntry("Set list item 2", testlistpath, "bar", false),
+		NewValOpTblEntry("Set list item 3", testlistpath, "baz", false),
+		NewValOpTblEntry("Set list item 4", testlistpath, "foo", true),
 	}
 
 	srv, sess := TstStartup(t, schema, emptyconfig)
@@ -1066,8 +1066,8 @@ func TestDefaultShownInConfiguredPresenceContainer(t *testing.T) {
 }
 `
 	tblSetPresenceWithoutMand := []ValidateOpTbl{
-		{"Verify set of non-mandatory presence container",
-			[]string{"presenceContainerWithoutMandatory"}, "", false},
+		NewValOpTblEntry("Verify set of non-mandatory presence container",
+			[]string{"presenceContainerWithoutMandatory"}, "", false),
 	}
 
 	ValidateOperationTable(t, sess, srv.Ctx, tblSetPresenceWithoutMand,
@@ -1146,18 +1146,18 @@ testcontainer {
 }
 `
 	tbl := []ValidateOpTbl{
-		{"", emptypath, "", true},
-		{"", invalidpath, "", true},
-		{"", rootpath, "", true},
-		{"", testemptypath, "", false},
-		{"", testlistpath, "foo", false},
-		{"", testlistpath, "foo", true},
-		{"", testlistpath, "baz", false},
-		{"", testlistpath, "baz", true},
-		{"", testleaflistuserpath, "foo", false},
-		{"", testleaflistuserpath, "foo", true},
-		{"", testleaflistuserpath, "baz", false},
-		{"", testleaflistuserpath, "baz", true},
+		NewValOpTblEntry("", emptypath, "", true),
+		NewValOpTblEntry("", invalidpath, "", true),
+		NewValOpTblEntry("", rootpath, "", true),
+		NewValOpTblEntry("", testemptypath, "", false),
+		NewValOpTblEntry("", testlistpath, "foo", false),
+		NewValOpTblEntry("", testlistpath, "foo", true),
+		NewValOpTblEntry("", testlistpath, "baz", false),
+		NewValOpTblEntry("", testlistpath, "baz", true),
+		NewValOpTblEntry("", testleaflistuserpath, "foo", false),
+		NewValOpTblEntry("", testleaflistuserpath, "foo", true),
+		NewValOpTblEntry("", testleaflistuserpath, "baz", false),
+		NewValOpTblEntry("", testleaflistuserpath, "baz", true),
 	}
 
 	srv, sess := TstStartup(t, schema, config)
@@ -1315,19 +1315,19 @@ testcontainer {
 	var testlistpath_baz = pathutil.CopyAppend(testlistpath, "baz")
 	var testlistpath_baz_bar = pathutil.CopyAppend(testlistpath_baz, "bar")
 	tbl := []ValidateStatusTbl{
-		{emptypath, rpc.UNCHANGED, false},
-		{invalidpath, rpc.UNCHANGED, true},
-		{rootpath, rpc.UNCHANGED, true},
-		{testcontainerpath, rpc.CHANGED, false},
-		{testemptypath, rpc.UNCHANGED, true},
-		{testbooleanpath_true, rpc.CHANGED, false},
-		{teststringpath, rpc.DELETED, false},
-		{testleaflistuserpath, rpc.CHANGED, false},
-		{testleaflistuserpath_foo, rpc.DELETED, false},
-		{testleaflistuserpath_bar, rpc.CHANGED, false},
-		{testlistpath_foo, rpc.CHANGED, false},
-		{testlistpath_foo_bar, rpc.ADDED, false},
-		{testlistpath_baz_bar, rpc.DELETED, false},
+		NewValStatusTblEntry(emptypath, rpc.UNCHANGED, false),
+		NewValStatusTblEntry(invalidpath, rpc.UNCHANGED, true),
+		NewValStatusTblEntry(rootpath, rpc.UNCHANGED, true),
+		NewValStatusTblEntry(testcontainerpath, rpc.CHANGED, false),
+		NewValStatusTblEntry(testemptypath, rpc.UNCHANGED, true),
+		NewValStatusTblEntry(testbooleanpath_true, rpc.CHANGED, false),
+		NewValStatusTblEntry(teststringpath, rpc.DELETED, false),
+		NewValStatusTblEntry(testleaflistuserpath, rpc.CHANGED, false),
+		NewValStatusTblEntry(testleaflistuserpath_foo, rpc.DELETED, false),
+		NewValStatusTblEntry(testleaflistuserpath_bar, rpc.CHANGED, false),
+		NewValStatusTblEntry(testlistpath_foo, rpc.CHANGED, false),
+		NewValStatusTblEntry(testlistpath_foo_bar, rpc.ADDED, false),
+		NewValStatusTblEntry(testlistpath_baz_bar, rpc.DELETED, false),
 	}
 
 	srv, sess := TstStartup(t, schema, config)
@@ -2054,58 +2054,58 @@ func TestUnique(t *testing.T) {
 
 	// Always use S1 and S2, so common delete table.
 	test_del_tbl := []ValidateOpTbl{
-		{"", server_path, "s1", true /* commit should pass */},
-		{"", server_path, "s2", true /* commit should pass */},
+		NewValOpTblEntry("", server_path, "s1", true /* commit should pass */),
+		NewValOpTblEntry("", server_path, "s2", true /* commit should pass */),
 	}
 
 	// T1: same port, no IP
 	test1_tbl := []ValidateOpTbl{
-		{"", s1p1, "", false /* set should PASS */},
-		{"", s2p1, "", false},
+		NewValOpTblEntry("", s1p1, "", false /* set should PASS */),
+		NewValOpTblEntry("", s2p1, "", false),
 	}
 
 	// T2: same port, S1 has IP
 	test2_tbl := []ValidateOpTbl{
-		{"", s1p1, "", false},
-		{"", s1i1, "", false},
-		{"", s2p1, "", false},
+		NewValOpTblEntry("", s1p1, "", false),
+		NewValOpTblEntry("", s1i1, "", false),
+		NewValOpTblEntry("", s2p1, "", false),
 	}
 
 	// T3: same port, different IP
 	test3_tbl := []ValidateOpTbl{
-		{"", s1p1, "", false},
-		{"", s1i1, "", false},
-		{"", s2p1, "", false},
-		{"", s2i2, "", false},
+		NewValOpTblEntry("", s1p1, "", false),
+		NewValOpTblEntry("", s1i1, "", false),
+		NewValOpTblEntry("", s2p1, "", false),
+		NewValOpTblEntry("", s2i2, "", false),
 	}
 
 	// T4: same IP, no port
 	test4_tbl := []ValidateOpTbl{
-		{"", s1i1, "", false},
-		{"", s2i1, "", false},
+		NewValOpTblEntry("", s1i1, "", false),
+		NewValOpTblEntry("", s2i1, "", false),
 	}
 
 	// T5: same IP, S1 has port
 	test5_tbl := []ValidateOpTbl{
-		{"", s1p1, "", false},
-		{"", s1i1, "", false},
-		{"", s2i1, "", false},
+		NewValOpTblEntry("", s1p1, "", false),
+		NewValOpTblEntry("", s1i1, "", false),
+		NewValOpTblEntry("", s2i1, "", false),
 	}
 
 	// T6: same IP, different port
 	test6_tbl := []ValidateOpTbl{
-		{"", s1p1, "", false},
-		{"", s1i1, "", false},
-		{"", s2p2, "", false},
-		{"", s2i1, "", false},
+		NewValOpTblEntry("", s1p1, "", false),
+		NewValOpTblEntry("", s1i1, "", false),
+		NewValOpTblEntry("", s2p2, "", false),
+		NewValOpTblEntry("", s2i1, "", false),
 	}
 
 	// T7: same IP and port (expect FAIL)
 	test7_tbl_fail := []ValidateOpTbl{
-		{"", s1p1, "", false},
-		{"", s1i1, "", false},
-		{"", s2p1, "", false},
-		{"", s2i1, "", false},
+		NewValOpTblEntry("", s1p1, "", false),
+		NewValOpTblEntry("", s1i1, "", false),
+		NewValOpTblEntry("", s2p1, "", false),
+		NewValOpTblEntry("", s2i1, "", false),
 	}
 
 	// List of tests + results.  Ideally we'd have the test definitions

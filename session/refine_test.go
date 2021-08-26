@@ -1,4 +1,4 @@
-// Copyright (c) 2017,2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2017-2021, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2016-2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -110,13 +110,13 @@ func TestRefineGrouping(t *testing.T) {
 	runXpathTestsCheckOutputMultipleSchemas(t,
 		[]TestSchema{
 			{
-				Name: NameDef{"prefix-local", "local"},
+				Name: NameDef{Namespace: "prefix-local", Prefix: "local"},
 				Imports: []NameDef{
-					{"prefix-remote", "remLcl"}},
+					{Namespace: "prefix-remote", Prefix: "remLcl"}},
 				SchemaSnippet: localRefineSchema,
 			},
 			{
-				Name:          NameDef{"prefix-remote", "remote"},
+				Name:          NameDef{Namespace: "prefix-remote", Prefix: "remote"},
 				SchemaSnippet: remoteRefineSchema,
 			},
 		},
@@ -189,13 +189,13 @@ func TestRefineGroupingUnprefixed(t *testing.T) {
 	runXpathTestsCheckOutputMultipleSchemas(t,
 		[]TestSchema{
 			{
-				Name: NameDef{"prefix-local", "local"},
+				Name: NameDef{Namespace: "prefix-local", Prefix: "local"},
 				Imports: []NameDef{
-					{"prefix-remote", "remLcl"}},
+					{Namespace: "prefix-remote", Prefix: "remLcl"}},
 				SchemaSnippet: localRefineUnprefixedSchema,
 			},
 			{
-				Name:          NameDef{"prefix-remote", "remote"},
+				Name:          NameDef{Namespace: "prefix-remote", Prefix: "remote"},
 				SchemaSnippet: remoteRefineUnprefixedSchema,
 			},
 		},
@@ -275,13 +275,13 @@ func TestMustInRemoteGrouping(t *testing.T) {
 	runXpathTestsCheckOutputMultipleSchemas(t,
 		[]TestSchema{
 			{
-				Name: NameDef{"prefix-local", "local"},
+				Name: NameDef{Namespace: "prefix-local", Prefix: "local"},
 				Imports: []NameDef{
-					{"prefix-remote", "remLcl"}},
+					{Namespace: "prefix-remote", Prefix: "remLcl"}},
 				SchemaSnippet: localMustInRemoteGroupingSchema,
 			},
 			{
-				Name:          NameDef{"prefix-remote", "remote"},
+				Name:          NameDef{Namespace: "prefix-remote", Prefix: "remote"},
 				SchemaSnippet: remoteMustInRemoteGroupingSchema,
 			},
 		},
@@ -355,13 +355,13 @@ func TestMustInRemoteGroupingUnprefixed(t *testing.T) {
 	runXpathTestsCheckOutputMultipleSchemas(t,
 		[]TestSchema{
 			{
-				Name: NameDef{"prefix-local", "local"},
+				Name: NameDef{Namespace: "prefix-local", Prefix: "local"},
 				Imports: []NameDef{
-					{"prefix-remote", "remLcl"}},
+					{Namespace: "prefix-remote", Prefix: "remLcl"}},
 				SchemaSnippet: localMustInRemoteGroupingUnprefixedSchema,
 			},
 			{
-				Name:          NameDef{"prefix-remote", "remote"},
+				Name:          NameDef{Namespace: "prefix-remote", Prefix: "remote"},
 				SchemaSnippet: remoteMustInRemoteGroupingUnprefixedSchema,
 			},
 		},
@@ -499,26 +499,30 @@ func TestComplexGroupingRefine(t *testing.T) {
 	runXpathTestsCheckOutputMultipleSchemas(t,
 		[]TestSchema{
 			{
-				Name: NameDef{"vyatta-policy-pbr-v1", "vyatta-policy-pbr-v1"},
+				Name: NameDef{
+					Namespace: "vyatta-policy-pbr-v1",
+					Prefix:    "vyatta-policy-pbr-v1"},
 				Imports: []NameDef{
-					{"vyatta-routing-v1", "routing"},
-					{"vyatta-policy-v1", "policy"},
-					{"vyatta-policy-route-v1", "policy-route"}},
+					{Namespace: "vyatta-routing-v1", Prefix: "routing"},
+					{Namespace: "vyatta-policy-v1", Prefix: "policy"},
+					{Namespace: "vyatta-policy-route-v1", Prefix: "policy-route"}},
 				SchemaSnippet: refinePolicyPbrSchema,
 			},
 			{
-				Name:          NameDef{"vyatta-routing-v1", "vyatta-routing-v1"},
+				Name: NameDef{
+					Namespace: "vyatta-routing-v1", Prefix: "vyatta-routing-v1"},
 				SchemaSnippet: refineRoutingSchema,
 			},
 			{
-				Name:          NameDef{"vyatta-policy-v1", "vyatta-policy-v1"},
+				Name: NameDef{
+					Namespace: "vyatta-policy-v1", Prefix: "vyatta-policy-v1"},
 				SchemaSnippet: refinePolicySchema,
 			},
 			{
-				Name: NameDef{"vyatta-policy-route-v1",
-					"vyatta-policy-route-v1"},
+				Name: NameDef{Namespace: "vyatta-policy-route-v1",
+					Prefix: "vyatta-policy-route-v1"},
 				Imports: []NameDef{
-					{"vyatta-policy-v1", "policy"}},
+					{Namespace: "vyatta-policy-v1", Prefix: "policy"}},
 				SchemaSnippet: refinePolicyRouteSchema,
 			},
 		},

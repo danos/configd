@@ -1,4 +1,4 @@
-// Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2019-2021, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2014-2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -43,10 +43,10 @@ container testcontainer {
 }
 `
 	tbl := []ValidateOpTbl{
-		{"Validate set boolean without a value", testbooleanpath, "", SetFail},
-		{"Validate set boolean true", testbooleanpath, "true", SetPass},
-		{"Validate set boolean false", testbooleanpath, "false", SetPass},
-		{"Validate set boolean invalid value", testbooleanpath, "foo", SetFail},
+		NewValOpTblEntry("Validate set boolean without a value", testbooleanpath, "", SetFail),
+		NewValOpTblEntry("Validate set boolean true", testbooleanpath, "true", SetPass),
+		NewValOpTblEntry("Validate set boolean false", testbooleanpath, "false", SetPass),
+		NewValOpTblEntry("Validate set boolean invalid value", testbooleanpath, "foo", SetFail),
 	}
 
 	srv, sess := TstStartup(t, schema, emptyconfig)
@@ -85,17 +85,17 @@ func TestValidateSetDec64Leaf(t *testing.T) {
 	var testdec64rangepath = pathutil.CopyAppend(
 		testcontainerpath, "testdec64range")
 	tbl := []ValidateOpTbl{
-		{validatesetnovalue, testdec64path, "", SetFail},
-		{validatesettoosmall, testdec64path, dec64min_minus2, SetFail},
-		{validatesetminvalue, testdec64path, dec64min, SetPass},
-		{validatesetmaxvalue, testdec64path, dec64max, SetPass},
-		{validatesettoolarge, testdec64path, dec64max_plus2, SetFail},
-		{validatesetbelowminrange1, testdec64rangepath, "-51", SetFail},
-		{validatesetminrange1, testdec64rangepath, "-50", SetPass},
-		{"Validate set inner range value", testdec64rangepath, "52.0", SetPass},
-		{validatesetbetweenrange2_3, testdec64rangepath, "65.999", SetFail},
-		{validatesetmaxrange3, testdec64rangepath, "80", SetPass},
-		{validatesetabovemaxrange3, testdec64rangepath, "81", SetFail},
+		NewValOpTblEntry(validatesetnovalue, testdec64path, "", SetFail),
+		NewValOpTblEntry(validatesettoosmall, testdec64path, dec64min_minus2, SetFail),
+		NewValOpTblEntry(validatesetminvalue, testdec64path, dec64min, SetPass),
+		NewValOpTblEntry(validatesetmaxvalue, testdec64path, dec64max, SetPass),
+		NewValOpTblEntry(validatesettoolarge, testdec64path, dec64max_plus2, SetFail),
+		NewValOpTblEntry(validatesetbelowminrange1, testdec64rangepath, "-51", SetFail),
+		NewValOpTblEntry(validatesetminrange1, testdec64rangepath, "-50", SetPass),
+		NewValOpTblEntry("Validate set inner range value", testdec64rangepath, "52.0", SetPass),
+		NewValOpTblEntry(validatesetbetweenrange2_3, testdec64rangepath, "65.999", SetFail),
+		NewValOpTblEntry(validatesetmaxrange3, testdec64rangepath, "80", SetPass),
+		NewValOpTblEntry(validatesetabovemaxrange3, testdec64rangepath, "81", SetFail),
 	}
 
 	srv, sess := TstStartup(t, schema, emptyconfig)
@@ -125,23 +125,23 @@ container testcontainer {
 	var testint8rangepath = pathutil.CopyAppend(
 		testcontainerpath, "testint8range")
 	tbl := []ValidateOpTbl{
-		{validatesetnovalue, testint8path, "", SetFail},
-		{validatesettoosmall, testint8path, int8min_minus1, SetFail},
-		{validatesetminvalue, testint8path, int8min, SetPass},
-		{validatesetmaxvalue, testint8path, int8max, SetPass},
-		{validatesettoolarge, testint8path, int8max_plus1, SetFail},
-		{validatesetbelowminrange1, testint8rangepath, intrange1min_minus1,
-			SetFail},
-		{validatesetminrange1, testint8rangepath, intrange1min, SetPass},
-		{validatesetmaxrange1, testint8rangepath, intrange1max, SetPass},
-		{validatesetabovemaxrange1, testint8rangepath, intrange1max_plus1,
-			SetFail},
-		{validatesetminrange2, testint8rangepath, intrange2min, SetPass},
-		{validatesetbetweenrange2_3, testint8rangepath, intrangebetween2and3,
-			SetFail},
-		{validatesetmaxrange3, testint8rangepath, intrange3max, SetPass},
-		{validatesetabovemaxrange3, testint8rangepath, intrange3maxplus1,
-			SetFail},
+		NewValOpTblEntry(validatesetnovalue, testint8path, "", SetFail),
+		NewValOpTblEntry(validatesettoosmall, testint8path, int8min_minus1, SetFail),
+		NewValOpTblEntry(validatesetminvalue, testint8path, int8min, SetPass),
+		NewValOpTblEntry(validatesetmaxvalue, testint8path, int8max, SetPass),
+		NewValOpTblEntry(validatesettoolarge, testint8path, int8max_plus1, SetFail),
+		NewValOpTblEntry(validatesetbelowminrange1, testint8rangepath, intrange1min_minus1,
+			SetFail),
+		NewValOpTblEntry(validatesetminrange1, testint8rangepath, intrange1min, SetPass),
+		NewValOpTblEntry(validatesetmaxrange1, testint8rangepath, intrange1max, SetPass),
+		NewValOpTblEntry(validatesetabovemaxrange1, testint8rangepath, intrange1max_plus1,
+			SetFail),
+		NewValOpTblEntry(validatesetminrange2, testint8rangepath, intrange2min, SetPass),
+		NewValOpTblEntry(validatesetbetweenrange2_3, testint8rangepath, intrangebetween2and3,
+			SetFail),
+		NewValOpTblEntry(validatesetmaxrange3, testint8rangepath, intrange3max, SetPass),
+		NewValOpTblEntry(validatesetabovemaxrange3, testint8rangepath, intrange3maxplus1,
+			SetFail),
 	}
 
 	srv, sess := TstStartup(t, schema, emptyconfig)
@@ -171,22 +171,30 @@ container testcontainer {
 	var testint16rangepath = pathutil.CopyAppend(
 		testcontainerpath, "testint16range")
 	tbl := []ValidateOpTbl{
-		{validatesetnovalue, testint16path, "", SetFail},
-		{validatesettoosmall, testint16path, int16min_minus1, SetFail},
-		{validatesetminvalue, testint16path, int16min, SetPass},
-		{validatesetmaxvalue, testint16path, int16max, SetPass},
-		{validatesettoolarge, testint16path, int16max_plus1, SetFail},
-		{validatesetbelowminrange1, testint16rangepath, intrange1min_minus1,
-			SetFail},
-		{validatesetminrange1, testint16rangepath, intrange1min, SetPass},
-		{validatesetmaxrange1, testint16rangepath, intrange1max, SetPass},
-		{validatesetabovemaxrange1, testint16rangepath, intrange1max_plus1,
-			SetFail},
-		{validatesetbetweenrange2_3, testint16rangepath, intrangebetween2and3,
-			SetFail},
-		{validatesetmaxrange3, testint16rangepath, intrange3max, SetPass},
-		{validatesetabovemaxrange3, testint16rangepath, intrange3maxplus1,
-			SetFail},
+		NewValOpTblEntry(
+			validatesetnovalue, testint16path, "", SetFail),
+		NewValOpTblEntry(
+			validatesettoosmall, testint16path, int16min_minus1, SetFail),
+		NewValOpTblEntry(
+			validatesetminvalue, testint16path, int16min, SetPass),
+		NewValOpTblEntry(
+			validatesetmaxvalue, testint16path, int16max, SetPass),
+		NewValOpTblEntry(
+			validatesettoolarge, testint16path, int16max_plus1, SetFail),
+		NewValOpTblEntry(
+			validatesetbelowminrange1, testint16rangepath, intrange1min_minus1, SetFail),
+		NewValOpTblEntry(
+			validatesetminrange1, testint16rangepath, intrange1min, SetPass),
+		NewValOpTblEntry(
+			validatesetmaxrange1, testint16rangepath, intrange1max, SetPass),
+		NewValOpTblEntry(
+			validatesetabovemaxrange1, testint16rangepath, intrange1max_plus1, SetFail),
+		NewValOpTblEntry(
+			validatesetbetweenrange2_3, testint16rangepath, intrangebetween2and3, SetFail),
+		NewValOpTblEntry(
+			validatesetmaxrange3, testint16rangepath, intrange3max, SetPass),
+		NewValOpTblEntry(
+			validatesetabovemaxrange3, testint16rangepath, intrange3maxplus1, SetFail),
 	}
 
 	srv, sess := TstStartup(t, schema, emptyconfig)
@@ -216,17 +224,15 @@ container testcontainer {
 	var testint32rangepath = pathutil.CopyAppend(
 		testcontainerpath, "testint32range")
 	tbl := []ValidateOpTbl{
-		{validatesetnovalue, testint32path, "", SetFail},
-		{validatesettoosmall, testint32path, int32min_minus1, SetFail},
-		{validatesetminvalue, testint32path, int32min, SetPass},
-		{validatesetmaxvalue, testint32path, int32max, SetPass},
-		{validatesettoolarge, testint32path, int32max_plus1, SetFail},
-		{validatesetbelowminrange1, testint32rangepath, intrange1min_minus1,
-			SetFail},
-		{validatesetminrange1, testint32rangepath, intrange1min, SetPass},
-		{validatesetmaxrange1, testint32rangepath, intrange1max, SetPass},
-		{validatesetabovemaxrange1, testint32rangepath, intrange1max_plus1,
-			SetFail},
+		NewValOpTblEntry(validatesetnovalue, testint32path, "", SetFail),
+		NewValOpTblEntry(validatesettoosmall, testint32path, int32min_minus1, SetFail),
+		NewValOpTblEntry(validatesetminvalue, testint32path, int32min, SetPass),
+		NewValOpTblEntry(validatesetmaxvalue, testint32path, int32max, SetPass),
+		NewValOpTblEntry(validatesettoolarge, testint32path, int32max_plus1, SetFail),
+		NewValOpTblEntry(validatesetbelowminrange1, testint32rangepath, intrange1min_minus1, SetFail),
+		NewValOpTblEntry(validatesetminrange1, testint32rangepath, intrange1min, SetPass),
+		NewValOpTblEntry(validatesetmaxrange1, testint32rangepath, intrange1max, SetPass),
+		NewValOpTblEntry(validatesetabovemaxrange1, testint32rangepath, intrange1max_plus1, SetFail),
 	}
 
 	srv, sess := TstStartup(t, schema, emptyconfig)
@@ -256,17 +262,15 @@ container testcontainer {
 	var testint64rangepath = pathutil.CopyAppend(
 		testcontainerpath, "testint64range")
 	tbl := []ValidateOpTbl{
-		{validatesetnovalue, testint64path, "", SetFail},
-		{validatesettoosmall, testint64path, int64min_minus1, SetFail},
-		{validatesetminvalue, testint64path, int64min, SetPass},
-		{validatesetmaxvalue, testint64path, int64max, SetPass},
-		{validatesettoolarge, testint64path, int64max_plus1, SetFail},
-		{validatesetbelowminrange1, testint64rangepath, intrange1min_minus1,
-			SetFail},
-		{validatesetminrange1, testint64rangepath, intrange1min, SetPass},
-		{validatesetmaxrange1, testint64rangepath, intrange1max, SetPass},
-		{validatesetabovemaxrange1, testint64rangepath, intrange1max_plus1,
-			SetFail},
+		NewValOpTblEntry(validatesetnovalue, testint64path, "", SetFail),
+		NewValOpTblEntry(validatesettoosmall, testint64path, int64min_minus1, SetFail),
+		NewValOpTblEntry(validatesetminvalue, testint64path, int64min, SetPass),
+		NewValOpTblEntry(validatesetmaxvalue, testint64path, int64max, SetPass),
+		NewValOpTblEntry(validatesettoolarge, testint64path, int64max_plus1, SetFail),
+		NewValOpTblEntry(validatesetbelowminrange1, testint64rangepath, intrange1min_minus1, SetFail),
+		NewValOpTblEntry(validatesetminrange1, testint64rangepath, intrange1min, SetPass),
+		NewValOpTblEntry(validatesetmaxrange1, testint64rangepath, intrange1max, SetPass),
+		NewValOpTblEntry(validatesetabovemaxrange1, testint64rangepath, intrange1max_plus1, SetFail),
 	}
 
 	srv, sess := TstStartup(t, schema, emptyconfig)
@@ -294,22 +298,18 @@ container testcontainer {
 	var testuint8rangepath = pathutil.CopyAppend(
 		testcontainerpath, "testuint8range")
 	tbl := []ValidateOpTbl{
-		{validatesetnovalue, testuint8path, "", SetFail},
-		{validatesettoosmall, testuint8path, uintmin_minus1, SetFail},
-		{validatesetminvalue, testuint8path, uintmin, SetPass},
-		{validatesetmaxvalue, testuint8path, uint8max, SetPass},
-		{validatesettoolarge, testuint8path, uint8max_plus1, SetFail},
-		{validatesetbelowminrange1, testuint8rangepath, uintrange1min_minus1,
-			SetFail},
-		{validatesetminrange1, testuint8rangepath, uintrange1min, SetPass},
-		{validatesetmaxrange1, testuint8rangepath, uintrange1max, SetPass},
-		{validatesetabovemaxrange1, testuint8rangepath, uintrange1max_plus1,
-			SetFail},
-		{validatesetbetweenrange2_3, testuint8rangepath, uintrangebetween2and3,
-			SetFail},
-		{validatesetmaxrange3, testuint8rangepath, uintrange3max, SetPass},
-		{validatesetabovemaxrange3, testuint8rangepath, uintrange3maxplus1,
-			SetFail},
+		NewValOpTblEntry(validatesetnovalue, testuint8path, "", SetFail),
+		NewValOpTblEntry(validatesettoosmall, testuint8path, uintmin_minus1, SetFail),
+		NewValOpTblEntry(validatesetminvalue, testuint8path, uintmin, SetPass),
+		NewValOpTblEntry(validatesetmaxvalue, testuint8path, uint8max, SetPass),
+		NewValOpTblEntry(validatesettoolarge, testuint8path, uint8max_plus1, SetFail),
+		NewValOpTblEntry(validatesetbelowminrange1, testuint8rangepath, uintrange1min_minus1, SetFail),
+		NewValOpTblEntry(validatesetminrange1, testuint8rangepath, uintrange1min, SetPass),
+		NewValOpTblEntry(validatesetmaxrange1, testuint8rangepath, uintrange1max, SetPass),
+		NewValOpTblEntry(validatesetabovemaxrange1, testuint8rangepath, uintrange1max_plus1, SetFail),
+		NewValOpTblEntry(validatesetbetweenrange2_3, testuint8rangepath, uintrangebetween2and3, SetFail),
+		NewValOpTblEntry(validatesetmaxrange3, testuint8rangepath, uintrange3max, SetPass),
+		NewValOpTblEntry(validatesetabovemaxrange3, testuint8rangepath, uintrange3maxplus1, SetFail),
 	}
 
 	srv, sess := TstStartup(t, schema, emptyconfig)
@@ -337,17 +337,15 @@ container testcontainer {
 	var testuint16rangepath = pathutil.CopyAppend(
 		testcontainerpath, "testuint16range")
 	tbl := []ValidateOpTbl{
-		{validatesetnovalue, testuint16path, "", SetFail},
-		{validatesettoosmall, testuint16path, uintmin_minus1, SetFail},
-		{validatesetminvalue, testuint16path, uintmin, SetPass},
-		{validatesetmaxvalue, testuint16path, uint16max, SetPass},
-		{validatesettoolarge, testuint16path, uint16max_plus1, SetFail},
-		{validatesetbelowminrange1, testuint16rangepath, uintrange1min_minus1,
-			SetFail},
-		{validatesetminrange1, testuint16rangepath, uintrange1min, SetPass},
-		{validatesetmaxrange1, testuint16rangepath, uintrange1max, SetPass},
-		{validatesetabovemaxrange1, testuint16rangepath, uintrange1max_plus1,
-			SetFail},
+		NewValOpTblEntry(validatesetnovalue, testuint16path, "", SetFail),
+		NewValOpTblEntry(validatesettoosmall, testuint16path, uintmin_minus1, SetFail),
+		NewValOpTblEntry(validatesetminvalue, testuint16path, uintmin, SetPass),
+		NewValOpTblEntry(validatesetmaxvalue, testuint16path, uint16max, SetPass),
+		NewValOpTblEntry(validatesettoolarge, testuint16path, uint16max_plus1, SetFail),
+		NewValOpTblEntry(validatesetbelowminrange1, testuint16rangepath, uintrange1min_minus1, SetFail),
+		NewValOpTblEntry(validatesetminrange1, testuint16rangepath, uintrange1min, SetPass),
+		NewValOpTblEntry(validatesetmaxrange1, testuint16rangepath, uintrange1max, SetPass),
+		NewValOpTblEntry(validatesetabovemaxrange1, testuint16rangepath, uintrange1max_plus1, SetFail),
 	}
 
 	srv, sess := TstStartup(t, schema, emptyconfig)
@@ -375,17 +373,15 @@ container testcontainer {
 	var testuint32rangepath = pathutil.CopyAppend(
 		testcontainerpath, "testuint32range")
 	tbl := []ValidateOpTbl{
-		{validatesetnovalue, testuint32path, "", SetFail},
-		{validatesettoosmall, testuint32path, uintmin_minus1, SetFail},
-		{validatesetminvalue, testuint32path, uintmin, SetPass},
-		{validatesetmaxvalue, testuint32path, uint32max, SetPass},
-		{validatesettoolarge, testuint32path, uint32max_plus1, SetFail},
-		{validatesetbelowminrange1, testuint32rangepath, uintrange1min_minus1,
-			SetFail},
-		{validatesetminrange1, testuint32rangepath, uintrange1min, SetPass},
-		{validatesetmaxrange1, testuint32rangepath, uintrange1max, SetPass},
-		{validatesetabovemaxrange1, testuint32rangepath, uintrange1max_plus1,
-			SetFail},
+		NewValOpTblEntry(validatesetnovalue, testuint32path, "", SetFail),
+		NewValOpTblEntry(validatesettoosmall, testuint32path, uintmin_minus1, SetFail),
+		NewValOpTblEntry(validatesetminvalue, testuint32path, uintmin, SetPass),
+		NewValOpTblEntry(validatesetmaxvalue, testuint32path, uint32max, SetPass),
+		NewValOpTblEntry(validatesettoolarge, testuint32path, uint32max_plus1, SetFail),
+		NewValOpTblEntry(validatesetbelowminrange1, testuint32rangepath, uintrange1min_minus1, SetFail),
+		NewValOpTblEntry(validatesetminrange1, testuint32rangepath, uintrange1min, SetPass),
+		NewValOpTblEntry(validatesetmaxrange1, testuint32rangepath, uintrange1max, SetPass),
+		NewValOpTblEntry(validatesetabovemaxrange1, testuint32rangepath, uintrange1max_plus1, SetFail),
 	}
 
 	srv, sess := TstStartup(t, schema, emptyconfig)
@@ -413,17 +409,15 @@ container testcontainer {
 	var testuint64rangepath = pathutil.CopyAppend(
 		testcontainerpath, "testuint64range")
 	tbl := []ValidateOpTbl{
-		{validatesetnovalue, testuint64path, "", SetFail},
-		{validatesettoosmall, testuint64path, uintmin_minus1, SetFail},
-		{validatesetminvalue, testuint64path, uintmin, SetPass},
-		{validatesetmaxvalue, testuint64path, uint64max, SetPass},
-		{validatesettoolarge, testuint64path, uint64max_plus1, SetFail},
-		{validatesetbelowminrange1, testuint64rangepath, uintrange1min_minus1,
-			SetFail},
-		{validatesetminrange1, testuint64rangepath, uintrange1min, SetPass},
-		{validatesetmaxrange1, testuint64rangepath, uintrange1max, SetPass},
-		{validatesetabovemaxrange1, testuint64rangepath, uintrange1max_plus1,
-			SetFail},
+		NewValOpTblEntry(validatesetnovalue, testuint64path, "", SetFail),
+		NewValOpTblEntry(validatesettoosmall, testuint64path, uintmin_minus1, SetFail),
+		NewValOpTblEntry(validatesetminvalue, testuint64path, uintmin, SetPass),
+		NewValOpTblEntry(validatesetmaxvalue, testuint64path, uint64max, SetPass),
+		NewValOpTblEntry(validatesettoolarge, testuint64path, uint64max_plus1, SetFail),
+		NewValOpTblEntry(validatesetbelowminrange1, testuint64rangepath, uintrange1min_minus1, SetFail),
+		NewValOpTblEntry(validatesetminrange1, testuint64rangepath, uintrange1min, SetPass),
+		NewValOpTblEntry(validatesetmaxrange1, testuint64rangepath, uintrange1max, SetPass),
+		NewValOpTblEntry(validatesetabovemaxrange1, testuint64rangepath, uintrange1max_plus1, SetFail),
 	}
 
 	srv, sess := TstStartup(t, schema, emptyconfig)
@@ -449,19 +443,19 @@ container testcontainer {
 	var teststringpatternpath = pathutil.CopyAppend(
 		testcontainerpath, "teststringpattern")
 	tbl := []ValidateOpTbl{
-		{validatesetnovalue, teststringpath, "", SetFail},
-		{"Validate set string 1", teststringpath, "12", SetFail},
-		{"Validate set string 2", teststringpath, "123", SetPass},
-		{"Validate set string 3", teststringpath, "1234", SetPass},
-		{"Validate set string 4", teststringpath, "12345", SetPass},
-		{"Validate set string 5", teststringpath, "123456", SetFail},
-		{"Validate set string 6", teststringpath, "1234567", SetPass},
-		{"Validate set string 7", teststringpath, "12345678", SetFail},
-		{"Validate set pattern 1", teststringpatternpath, "1", SetFail},
-		{"Validate set pattern 2", teststringpatternpath, "a", SetFail},
-		{"Validate set pattern 3", teststringpatternpath, "a0", SetFail},
-		{"Validate set pattern 4", teststringpatternpath, "a1", SetPass},
-		{"Validate set pattern 5", teststringpatternpath, "a12", SetPass},
+		NewValOpTblEntry(validatesetnovalue, teststringpath, "", SetFail),
+		NewValOpTblEntry("Validate set string 1", teststringpath, "12", SetFail),
+		NewValOpTblEntry("Validate set string 2", teststringpath, "123", SetPass),
+		NewValOpTblEntry("Validate set string 3", teststringpath, "1234", SetPass),
+		NewValOpTblEntry("Validate set string 4", teststringpath, "12345", SetPass),
+		NewValOpTblEntry("Validate set string 5", teststringpath, "123456", SetFail),
+		NewValOpTblEntry("Validate set string 6", teststringpath, "1234567", SetPass),
+		NewValOpTblEntry("Validate set string 7", teststringpath, "12345678", SetFail),
+		NewValOpTblEntry("Validate set pattern 1", teststringpatternpath, "1", SetFail),
+		NewValOpTblEntry("Validate set pattern 2", teststringpatternpath, "a", SetFail),
+		NewValOpTblEntry("Validate set pattern 3", teststringpatternpath, "a0", SetFail),
+		NewValOpTblEntry("Validate set pattern 4", teststringpatternpath, "a1", SetPass),
+		NewValOpTblEntry("Validate set pattern 5", teststringpatternpath, "a12", SetPass),
 	}
 
 	srv, sess := TstStartup(t, schema, emptyconfig)

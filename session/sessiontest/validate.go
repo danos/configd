@@ -1,4 +1,4 @@
-// Copyright (c) 2017,2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2017-2021, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2014-2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -62,6 +62,20 @@ type ValidateOpTbl struct {
 	Path        []string
 	Value       string
 	Result      bool // result of commit if requested, otherwise, set/delete
+}
+
+func NewValOpTblEntry(
+	desc string,
+	path []string,
+	value string,
+	result bool) ValidateOpTbl {
+
+	return ValidateOpTbl{
+		Description: desc,
+		Path:        path,
+		Value:       value,
+		Result:      result,
+	}
 }
 
 type SessOp int
@@ -396,6 +410,18 @@ type ValidateStatusTbl struct {
 	Path   []string
 	Status rpc.NodeStatus
 	Err    bool
+}
+
+func NewValStatusTblEntry(
+	path []string,
+	status rpc.NodeStatus,
+	err bool) ValidateStatusTbl {
+
+	return ValidateStatusTbl{
+		Path:   path,
+		Status: status,
+		Err:    err,
+	}
 }
 
 func ValidateStatus(t *testing.T, sess *Session, ctx *configd.Context, exp ValidateStatusTbl) {

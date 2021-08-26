@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2019 AT&T Intellectual Property
+// Copyright (c) 2017-2021 AT&T Intellectual Property
 // All rights reserved.
 //
 // Copyright (c) 2016-2017 by Brocade Communications Systems, Inc.
@@ -119,8 +119,13 @@ func genUserCmdLog(cmds ...string) audit.UserLogSlice {
 
 	logs := audit.UserLogSlice{}
 	for _, cmd := range cmds {
-		logs = append(logs, audit.UserLog{audit.LOG_TYPE_USER_CMD,
-			fmt.Sprintf("run: %s, for user: %s", cmd, u.Uid), 1})
+		logs = append(
+			logs,
+			audit.UserLog{
+				Type:   audit.LOG_TYPE_USER_CMD,
+				Msg:    fmt.Sprintf("run: %s, for user: %s", cmd, u.Uid),
+				Result: 1,
+			})
 	}
 	return logs
 }

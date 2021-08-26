@@ -155,18 +155,22 @@ uses foobars;
 
 var edit_config_schema = []TestSchema{
 	{
-		Name:          NameDef{"vyatta-protocols", "vyatta-protocols"},
+		Name: NameDef{
+			Namespace: "vyatta-protocols", Prefix: "vyatta-protocols"},
 		Prefix:        "vyatta-protocols",
 		SchemaSnippet: schemaProtocols,
 	},
 	{
-		Name:          NameDef{"vyatta-protocols-ospf", "vyatta-protocols-ospf"},
-		Prefix:        "vyatta-protocols-ospf",
-		Imports:       []NameDef{{"vyatta-protocols", "protocols"}},
+		Name: NameDef{
+			Namespace: "vyatta-protocols-ospf", Prefix: "vyatta-protocols-ospf"},
+		Prefix: "vyatta-protocols-ospf",
+		Imports: []NameDef{{
+			Namespace: "vyatta-protocols", Prefix: "protocols"}},
 		SchemaSnippet: schemaOspf,
 	},
 	{
-		Name:          NameDef{"vyatta-choices", "vyatta-choices"},
+		Name: NameDef{
+			Namespace: "vyatta-choices", Prefix: "vyatta-choices"},
 		Prefix:        "vyatta-choices",
 		SchemaSnippet: schemaChoices,
 	},

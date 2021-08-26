@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2020 AT&T Intellectual Property
+// Copyright (c) 2017-2021 AT&T Intellectual Property
 // All rights reserved.
 //
 // Copyright (c) 2016-2017 by Brocade Communications Systems, Inc.
@@ -360,7 +360,7 @@ var prefixSchemas = []sessiontest.TestSchema{
 			Prefix:    "local",
 		},
 		Imports: []sessiontest.NameDef{
-			{"prefix-remote", "remote"}},
+			{Namespace: "prefix-remote", Prefix: "remote"}},
 		SchemaSnippet: localSchema,
 	},
 	{

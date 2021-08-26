@@ -1,4 +1,4 @@
-// Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2019-2021, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2015-2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -47,10 +47,10 @@ var augembedmixedtwoleafpath = pathutil.CopyAppend(embeddedcontainerpath, augemb
 // Test that an augment of a local node with an implicit prefix works
 func TestAugmentLocalImplicit(t *testing.T) {
 	tblFeature := []ValidateOpTbl{
-		{"", auglocalimpleafpath, "TestData", true},
-		{"", augembedimpleafpath, "TestData", true},
-		{"", augembedmixedoneleafpath, "TestData", true},
-		{"", augembedmixedtwoleafpath, "TestData", true},
+		NewValOpTblEntry("", auglocalimpleafpath, "TestData", true),
+		NewValOpTblEntry("", augembedimpleafpath, "TestData", true),
+		NewValOpTblEntry("", augembedmixedoneleafpath, "TestData", true),
+		NewValOpTblEntry("", augembedmixedtwoleafpath, "TestData", true),
 	}
 
 	srv, sess := TstStartupSchemaDir(t, "testdata/augmentValid", "", "")
@@ -64,8 +64,8 @@ func TestAugmentLocalImplicit(t *testing.T) {
 // Test that an augment of a local node with an explicit prefix works
 func TestAugmentLocalExplicit(t *testing.T) {
 	tblFeature := []ValidateOpTbl{
-		{"", auglocalexpleafpath, "TestData", true},
-		{"", augembedexpleafpath, "TestData", true},
+		NewValOpTblEntry("", auglocalexpleafpath, "TestData", true),
+		NewValOpTblEntry("", augembedexpleafpath, "TestData", true),
 	}
 
 	srv, sess := TstStartupSchemaDir(t, "testdata/augmentValid", "", "")
@@ -79,7 +79,7 @@ func TestAugmentLocalExplicit(t *testing.T) {
 // Test that an augment of a remote target node works.
 func TestAugmentRemote(t *testing.T) {
 	tblFeature := []ValidateOpTbl{
-		{"", augremoteleafpath, "TestData", true},
+		NewValOpTblEntry("", augremoteleafpath, "TestData", true),
 	}
 
 	srv, sess := TstStartupSchemaDir(t, "testdata/augmentValid", "", "")

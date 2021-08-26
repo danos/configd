@@ -1,4 +1,4 @@
-// Copyright (c) 2017,2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2017-2021, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2015-2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -235,7 +235,7 @@ func TestSetAndCommitValidLocalRef(t *testing.T) {
 	runXpathTestsCheckOutputMultipleSchemas(t,
 		[]TestSchema{
 			{
-				Name:          NameDef{"prefix-local", "local"},
+				Name:          NameDef{Namespace: "prefix-local", Prefix: "local"},
 				SchemaSnippet: localRefSchema,
 			},
 		},
@@ -282,12 +282,12 @@ intfCont {
 	runXpathTestsCheckOutputMultipleSchemas(t,
 		[]TestSchema{
 			{
-				Name:          NameDef{"prefix-intf", "intf"},
+				Name:          NameDef{Namespace: "prefix-intf", Prefix: "intf"},
 				SchemaSnippet: interfaceSchema,
 			},
 			{
-				Name:          NameDef{"prefix-da", "da"},
-				Imports:       []NameDef{{"prefix-intf", "intf"}},
+				Name:          NameDef{Namespace: "prefix-da", Prefix: "da"},
+				Imports:       []NameDef{{Namespace: "prefix-intf", Prefix: "intf"}},
 				SchemaSnippet: defAddrSchema,
 			},
 		},
@@ -328,12 +328,12 @@ intfCont {
 	runXpathTestsCheckOutputMultipleSchemas(t,
 		[]TestSchema{
 			{
-				Name:          NameDef{"prefix-intf", "intf"},
+				Name:          NameDef{Namespace: "prefix-intf", Prefix: "intf"},
 				SchemaSnippet: interfaceSchema,
 			},
 			{
-				Name:          NameDef{"prefix-da", "da"},
-				Imports:       []NameDef{{"prefix-intf", "intf"}},
+				Name:          NameDef{Namespace: "prefix-da", Prefix: "da"},
+				Imports:       []NameDef{{Namespace: "prefix-intf", Prefix: "intf"}},
 				SchemaSnippet: defAddrSchema,
 			},
 		},
@@ -372,12 +372,12 @@ func TestSetAndCommitInvalidRefWithPredicate(t *testing.T) {
 	runXpathTestsCheckOutputMultipleSchemas(t,
 		[]TestSchema{
 			{
-				Name:          NameDef{"prefix-intf", "intf"},
+				Name:          NameDef{Namespace: "prefix-intf", Prefix: "intf"},
 				SchemaSnippet: interfaceSchema,
 			},
 			{
-				Name:          NameDef{"prefix-da", "da"},
-				Imports:       []NameDef{{"prefix-intf", "intf"}},
+				Name:          NameDef{Namespace: "prefix-da", Prefix: "da"},
+				Imports:       []NameDef{{Namespace: "prefix-intf", Prefix: "intf"}},
 				SchemaSnippet: defAddrSchema,
 			},
 		},

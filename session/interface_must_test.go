@@ -1,4 +1,5 @@
-// Copyright (c) 2017,2019, AT&T Intellectual Property Inc. All rights reserved.
+// Copyright (c) 2017-2021, AT&T Intellectual Property Inc.
+// All rights reserved.
 //
 // Copyright (c) 2016-2017 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -351,73 +352,73 @@ augment /if:interfaces {
 
 var intfTestSchemas = []TestSchema{
 	{
-		Name:          NameDef{"vyatta-dataplane", "dataplane"},
-		Imports:       []NameDef{{"vyatta-interfaces", "if"}},
+		Name:          NameDef{Namespace: "vyatta-dataplane", Prefix: "dataplane"},
+		Imports:       []NameDef{{Namespace: "vyatta-interfaces", Prefix: "if"}},
 		SchemaSnippet: dataplaneSchema,
 	},
 	{
-		Name:          NameDef{"vyatta-l2tpeth", "l2tpeth"},
-		Imports:       []NameDef{{"vyatta-interfaces", "if"}},
+		Name:          NameDef{Namespace: "vyatta-l2tpeth", Prefix: "l2tpeth"},
+		Imports:       []NameDef{{Namespace: "vyatta-interfaces", Prefix: "if"}},
 		SchemaSnippet: l2tpethSchema,
 	},
 	{
-		Name:          NameDef{"vyatta-bonding", "bonding"},
-		Imports:       []NameDef{{"vyatta-interfaces", "if"}},
+		Name:          NameDef{Namespace: "vyatta-bonding", Prefix: "bonding"},
+		Imports:       []NameDef{{Namespace: "vyatta-interfaces", Prefix: "if"}},
 		SchemaSnippet: bondingSchema,
 	},
 	{
-		Name:          NameDef{"vyatta-bridge", "bridge"},
-		Imports:       []NameDef{{"vyatta-interfaces", "if"}},
+		Name:          NameDef{Namespace: "vyatta-bridge", Prefix: "bridge"},
+		Imports:       []NameDef{{Namespace: "vyatta-interfaces", Prefix: "if"}},
 		SchemaSnippet: bridgeSchema,
 	},
 	{
-		Name:          NameDef{"vyatta-erspan", "erspan"},
-		Imports:       []NameDef{{"vyatta-interfaces", "if"}},
+		Name:          NameDef{Namespace: "vyatta-erspan", Prefix: "erspan"},
+		Imports:       []NameDef{{Namespace: "vyatta-interfaces", Prefix: "if"}},
 		SchemaSnippet: erspanSchema,
 	},
 	{
-		Name:          NameDef{"vyatta-loopback", "loopback"},
-		Imports:       []NameDef{{"vyatta-interfaces", "if"}},
+		Name:          NameDef{Namespace: "vyatta-loopback", Prefix: "loopback"},
+		Imports:       []NameDef{{Namespace: "vyatta-interfaces", Prefix: "if"}},
 		SchemaSnippet: loopbackSchema,
 	},
 	{
-		Name:          NameDef{"vyatta-openvpn", "openvpn"},
-		Imports:       []NameDef{{"vyatta-interfaces", "if"}},
+		Name:          NameDef{Namespace: "vyatta-openvpn", Prefix: "openvpn"},
+		Imports:       []NameDef{{Namespace: "vyatta-interfaces", Prefix: "if"}},
 		SchemaSnippet: openvpnSchema,
 	},
 	{
-		Name:          NameDef{"vyatta-switch", "switch"},
-		Imports:       []NameDef{{"vyatta-interfaces", "if"}},
+		Name:          NameDef{Namespace: "vyatta-switch", Prefix: "switch"},
+		Imports:       []NameDef{{Namespace: "vyatta-interfaces", Prefix: "if"}},
 		SchemaSnippet: switchSchema,
 	},
 	{
-		Name:          NameDef{"vyatta-tunnel", "tunnel"},
-		Imports:       []NameDef{{"vyatta-interfaces", "if"}},
+		Name:          NameDef{Namespace: "vyatta-tunnel", Prefix: "tunnel"},
+		Imports:       []NameDef{{Namespace: "vyatta-interfaces", Prefix: "if"}},
 		SchemaSnippet: tunnelSchema,
 	},
 	{
-		Name:          NameDef{"vyatta-vti", "vti"},
-		Imports:       []NameDef{{"vyatta-interfaces", "if"}},
+		Name:          NameDef{Namespace: "vyatta-vti", Prefix: "vti"},
+		Imports:       []NameDef{{Namespace: "vyatta-interfaces", Prefix: "if"}},
 		SchemaSnippet: vtiSchema,
 	},
 	{
-		Name:          NameDef{"vyatta-interfaces", "interfaces"},
+		Name:          NameDef{Namespace: "vyatta-interfaces", Prefix: "interfaces"},
 		SchemaSnippet: intfSchema,
 	},
 	{
-		Name: NameDef{"vyatta-mgmt", "mgmt"},
+		Name: NameDef{Namespace: "vyatta-mgmt", Prefix: "mgmt"},
 		Imports: []NameDef{
-			{"vyatta-interfaces", "if"},
-			{"vyatta-dataplane", "if-dataplane"},
-			{"vyatta-l2tpeth", "if-l2tpeth"},
-			{"vyatta-bonding", "if-bonding"},
-			{"vyatta-bridge", "if-bridge"},
-			{"vyatta-erspan", "if-erspan"},
-			{"vyatta-loopback", "if-loopback"},
-			{"vyatta-openvpn", "if-openvpn"},
-			{"vyatta-switch", "if-switch"},
-			{"vyatta-tunnel", "if-tunnel"},
-			{"vyatta-vti", "if-vti"},
+			{Namespace: "vyatta-interfaces", Prefix: "if"},
+			{Namespace: "vyatta-dataplane", Prefix: "if-dataplane"},
+			{Namespace: "vyatta-l2tpeth", Prefix: "if-l2tpeth"},
+			{Namespace: "vyatta-bonding", Prefix: "if-bonding"},
+			{Namespace: "vyatta-bridge", Prefix: "if-bridge"},
+			{Namespace: "vyatta-erspan", Prefix: "if-erspan"},
+			{Namespace: "vyatta-loopback", Prefix: "if-loopback"},
+			{Namespace: "vyatta-openvpn", Prefix: "if-openvpn"},
+			{Namespace: "vyatta-switch", Prefix: "if-switch"},
+			{Namespace: "vyatta-tunnel", Prefix: "if-tunnel"},
+			{Namespace: "vyatta-vti", Prefix: "if-vti"},
 		},
 		SchemaSnippet: mgmtSchema,
 	},

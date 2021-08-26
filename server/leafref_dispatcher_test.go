@@ -670,7 +670,7 @@ var msdpSchemas = []sessiontest.TestSchema{
 			Prefix:    "msdp",
 		},
 		Imports: []sessiontest.NameDef{
-			{"prefix-protocols", "protocols"}},
+			{Namespace: "prefix-protocols", Prefix: "protocols"}},
 		SchemaSnippet: msdpSchema,
 	},
 	{

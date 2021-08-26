@@ -1,4 +1,4 @@
-// Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2019-2021, AT&T Intellectual Property. All rights reserved.
 //
 // Copyright (c) 2014-17 by Brocade Communications Systems, Inc.
 // All rights reserved.
@@ -210,34 +210,34 @@ commitTestleafFour
 
 `
 	tblPriOne := []ValidateOpTbl{
-		{"", testleafpath, "foo", false},
-		{"", testleafsixpath, "foo", false},
-		{"", testleaftwopath, "foo", false},
-		{"", testleafthreepath, "foo", false},
-		{"", testleaffourpath, "foo", false},
-		{"", testleaffivepath, "foo", false},
-		{"", teststringpath, "foo", false},
-		{"", testbooleanpath, "true", false},
+		NewValOpTblEntry("", testleafpath, "foo", false),
+		NewValOpTblEntry("", testleafsixpath, "foo", false),
+		NewValOpTblEntry("", testleaftwopath, "foo", false),
+		NewValOpTblEntry("", testleafthreepath, "foo", false),
+		NewValOpTblEntry("", testleaffourpath, "foo", false),
+		NewValOpTblEntry("", testleaffivepath, "foo", false),
+		NewValOpTblEntry("", teststringpath, "foo", false),
+		NewValOpTblEntry("", testbooleanpath, "true", false),
 	}
 	tblPriTwo := []ValidateOpTbl{
-		{"", teststringpath, "foo", false},
-		{"", testbooleanpath, "true", false},
-		{"", testleaffourpath, "foo", false},
-		{"", testleafthreepath, "foo", false},
-		{"", testleaffivepath, "foo", false},
-		{"", testleaftwopath, "foo", false},
-		{"", testleafsixpath, "foo", false},
-		{"", testleafpath, "foo", false},
+		NewValOpTblEntry("", teststringpath, "foo", false),
+		NewValOpTblEntry("", testbooleanpath, "true", false),
+		NewValOpTblEntry("", testleaffourpath, "foo", false),
+		NewValOpTblEntry("", testleafthreepath, "foo", false),
+		NewValOpTblEntry("", testleaffivepath, "foo", false),
+		NewValOpTblEntry("", testleaftwopath, "foo", false),
+		NewValOpTblEntry("", testleafsixpath, "foo", false),
+		NewValOpTblEntry("", testleafpath, "foo", false),
 	}
 	tblPriThree := []ValidateOpTbl{
-		{"", testleaffivepath, "foo", false},
-		{"", testleafsixpath, "foo", false},
-		{"", testleafthreepath, "foo", false},
-		{"", testleafpath, "foo", false},
-		{"", testleaffourpath, "foo", false},
-		{"", testleaftwopath, "foo", false},
-		{"", testbooleanpath, "true", false},
-		{"", teststringpath, "foo", false},
+		NewValOpTblEntry("", testleaffivepath, "foo", false),
+		NewValOpTblEntry("", testleafsixpath, "foo", false),
+		NewValOpTblEntry("", testleafthreepath, "foo", false),
+		NewValOpTblEntry("", testleafpath, "foo", false),
+		NewValOpTblEntry("", testleaffourpath, "foo", false),
+		NewValOpTblEntry("", testleaftwopath, "foo", false),
+		NewValOpTblEntry("", testbooleanpath, "true", false),
+		NewValOpTblEntry("", teststringpath, "foo", false),
 	}
 
 	priTbl := []validatePriTbl{
