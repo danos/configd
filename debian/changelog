@@ -1,3 +1,10 @@
+configd (2.12.1) unstable; urgency=medium
+
+  [ Paul Carson ]
+  * Block commit when disk is read-only (Fixes: VRVDR-55566)
+
+ -- William Ivory <william.ivory@intl.att.com>  Tue, 31 Aug 2021 13:00:08 +0100
+
 configd (2.12) unstable; urgency=medium
 
   [ Nicholas Brown ]
