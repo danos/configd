@@ -134,9 +134,9 @@ func TestValidateSetDec64Leaf(t *testing.T) {
 	// (u)int64, some bits are needed for the exponent, so we can't have the
 	// same precision as (u)int64.
 	const dec64Fd2min = "-92233720368547758.08"
-	const dec64Fd2min_minus2 = "-92233720368547778.08"
-	const dec64Fd2max = "+92233720368547758.08"
-	const dec64Fd2max_plus2 = "+92233720368547778.08"
+	const dec64Fd2min_minus2 = "-92233720368547760.08"
+	const dec64Fd2max = "+92233720368547758.07"
+	const dec64Fd2max_plus2 = "+92233720368547760.07"
 	var testdec64Fd2path = pathutil.CopyAppend(testcontainerpath, "testdec64")
 	var testdec64Fd2rangepath = pathutil.CopyAppend(
 		testcontainerpath, "testdec64range")
