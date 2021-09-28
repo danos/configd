@@ -617,8 +617,11 @@ container resources {
 `
 
 const IPAddrBaseLR = 0x3D010100 // 10.10.10.0
-const NumLeafRefEntries = 1000
+const NumLeafRefEntries = 100
 
+// This is currently not optimised as the initial optimisation turned out to
+// be rejecting valid allowed values for leafrefs that used relative paths
+// inside a parent list node.
 func TestLeafRefPerformance(t *testing.T) {
 	if testing.Short() {
 		t.Skipf("Skip LeafRef Performance test for 'short' tests")

@@ -383,3 +383,79 @@ func TestSetAndCommitInvalidRefWithPredicate(t *testing.T) {
 		},
 		baseConfig, remoteRefFailTests)
 }
+
+const missingLeafrefSchema = `
+list parent-list {
+	key "parent";
+	leaf parent {
+		type string;
+	}
+	list ref-list {
+		key "ref-leaf";
+		leaf ref-leaf {
+			type string;
+		}
+	}
+	list using-list {
+		key "number";
+		leaf number {
+			type uint32;
+		}
+		leaf using-leaf {
+			type leafref {
+				path "../../ref-list/ref-leaf";
+			}
+		}
+	}
+}
+`
+
+var missingLeafrefInitConfig = Root(
+	List("parent-list",
+		ListEntry("Table-A",
+			List("ref-list",
+				ListEntry("ref-1")),
+			List("using-list",
+				ListEntry("4",
+					Leaf("using-leaf", "ref-1")))),
+	))
+
+var missingLeafrefConfig = Root(
+	List("parent-list",
+		ListEntry("Table-A",
+			List("ref-list",
+				ListEntry("ref-1")),
+			List("using-list",
+				ListEntry("4",
+					Leaf("using-leaf", "ref-1")))),
+		ListEntry("Table-B",
+			List("ref-list",
+				ListEntry("ref-3")),
+			List("using-list",
+				ListEntry("15",
+					Leaf("using-leaf", "ref-3")))),
+	))
+
+func TestMissingLeafref(t *testing.T) {
+
+	test_setTbl := []ValidateOpTbl{
+		createValOpTbl("Add Table B ref-list",
+			"parent-list/Table-B/ref-list/ref-3", SetPass),
+		createValOpTbl("Add Table B using-list",
+			"parent-list/Table-B/using-list/15/using-leaf/ref-3", SetPass),
+	}
+
+	missingLeafrefTests := []xpathTestEntry{
+		newXpathTestEntry(test_setTbl, nil, CommitPass, missingLeafrefConfig,
+			expOutAllOK),
+	}
+
+	runXpathTestsCheckOutputMultipleSchemas(t,
+		[]TestSchema{
+			{
+				Name:          NameDef{Namespace: "prefix-pol", Prefix: "pol"},
+				SchemaSnippet: missingLeafrefSchema,
+			},
+		},
+		missingLeafrefInitConfig, missingLeafrefTests)
+}
