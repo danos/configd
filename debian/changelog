@@ -1,3 +1,9 @@
+configd (2.12.2) unstable; urgency=medium
+
+  * Fix over-optimised leafref allowed values cacheing.
+
+ -- William Ivory <william.ivory@intl.att.com>  Tue, 28 Sep 2021 16:58:25 +0100
+
 configd (2.12.1) unstable; urgency=medium
 
   [ Paul Carson ]
