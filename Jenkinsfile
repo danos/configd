@@ -11,12 +11,12 @@ pipeline {
     stages {
         stage('Go Code Formatting') {
             agent {
-                docker { image 'golang:1.10'
+                docker { image 'golang:1.15'
                          reuseNode true
                 }
             }
             steps {
-		sh script: "./gofmt.sh"
+                sh script: "./gofmt.sh"
             }
         }
 
@@ -25,31 +25,11 @@ pipeline {
                 sh "dram --username jenkins -d yang"
             }
         }
-        stage('golint') {
-            agent {
-                docker { image 'golang:1.10'
-                         reuseNode true
-                }
-            }
-            steps {
-                sh script: "go get -u golang.org/x/lint/golint"
-                sh script: "golint -set_exit_status ./... > golint.txt", returnStatus: true
-            }
-
-            post {
-                always {
-                    recordIssues tool: goLint(pattern: 'golint.txt'),
-                        qualityGates: [[type: 'TOTAL', threshold: 1, unstable: true]]
-
-                    deleteDir()
-                }
-            }
-        }
 
         stage('golangci-lint') {
             agent {
-                docker { image 'golangci/golangci-lint:v1.10.2'
-                         args '--entrypoint=\'\''
+                docker { image 'golangci/golangci-lint:v1.40.0'
+                         args '-u root --entrypoint=\'\''
                          reuseNode true
                 }
             }
