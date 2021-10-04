@@ -79,6 +79,7 @@ func TestValidateSetDec64Leaf(t *testing.T) {
 	// same precision as (u)int64.
 	const dec64min = "-9223372036854775.808"
 	const dec64min_minus2 = "-9223372036854777.808"
+	const dec64min_minus_pt002 = "-9223372036854775.810"
 	const dec64max = "+9223372036854775.807"
 	const dec64max_plus2 = "+9223372036854777.807"
 
@@ -93,6 +94,7 @@ func TestValidateSetDec64Leaf(t *testing.T) {
 	tbl := []ValidateOpTbl{
 		NewValOpTblEntry(validatesetnovalue, testdec64path, "", SetFail),
 		NewValOpTblEntry(validatesettoosmall, testdec64path, dec64min_minus2, SetFail),
+		NewValOpTblEntry(validatesettoosmall, testdec64path, dec64min_minus_pt002, SetFail),
 		NewValOpTblEntry(validatesetminvalue, testdec64path, dec64min, SetPass),
 		NewValOpTblEntry(validatesetmaxvalue, testdec64path, dec64max, SetPass),
 		NewValOpTblEntry(validatesettoolarge, testdec64path, dec64max_plus2, SetFail),
@@ -112,51 +114,6 @@ func TestValidateSetDec64Leaf(t *testing.T) {
 	ValidateSetPathTable(t, sess, srv.Ctx, tbl)
 	sess.Kill()
 
-	// Same test using fraction-digits 2
-	const schemaFd2 = `
-	container testcontainer {
-		leaf testdec64 {
-			type decimal64 {
-				fraction-digits 2;
-			}
-		}
-		leaf testdec64range {
-			type decimal64 {
-				fraction-digits 2;
-				range "-50..50 | 51..60 | 70..80";
-			}
-		    default 42;
-		}
-	}
-	`
-	// The way decimal numbers are represented means that some numbers can't
-	// actually quite be represented, and we also need to remember that unlike
-	// (u)int64, some bits are needed for the exponent, so we can't have the
-	// same precision as (u)int64.
-	const dec64Fd2min = "-92233720368547758.08"
-	const dec64Fd2min_minus2 = "-92233720368547760.08"
-	const dec64Fd2max = "+92233720368547758.07"
-	const dec64Fd2max_plus2 = "+92233720368547760.07"
-	var testdec64Fd2path = pathutil.CopyAppend(testcontainerpath, "testdec64")
-	var testdec64Fd2rangepath = pathutil.CopyAppend(
-		testcontainerpath, "testdec64range")
-	tblFd2 := []ValidateOpTbl{
-		NewValOpTblEntry(validatesetnovalue, testdec64Fd2path, "", SetFail),
-		NewValOpTblEntry(validatesettoosmall, testdec64Fd2path, dec64Fd2min_minus2, SetFail),
-		NewValOpTblEntry(validatesetminvalue, testdec64Fd2path, dec64Fd2min, SetPass),
-		NewValOpTblEntry(validatesetmaxvalue, testdec64Fd2path, dec64Fd2max, SetPass),
-		NewValOpTblEntry(validatesettoolarge, testdec64Fd2path, dec64Fd2max_plus2, SetFail),
-		NewValOpTblEntry(validatesetbelowminrange1, testdec64Fd2rangepath, "-51", SetFail),
-		NewValOpTblEntry(validatesetminrange1, testdec64Fd2rangepath, "-50", SetPass),
-		NewValOpTblEntry("Validate set inner range value", testdec64Fd2rangepath, "52.0", SetPass),
-		NewValOpTblEntry(validatesetbetweenrange2_3, testdec64Fd2rangepath, "65.99", SetFail),
-		NewValOpTblEntry(validatesetmaxrange3, testdec64Fd2rangepath, "80", SetPass),
-		NewValOpTblEntry(validatesetabovemaxrange3, testdec64Fd2rangepath, "81", SetFail),
-	}
-
-	srv, sess = TstStartup(t, schemaFd2, emptyconfig)
-	ValidateSetPathTable(t, sess, srv.Ctx, tblFd2)
-	sess.Kill()
 }
 
 func TestValidateSetInt8Leaf(t *testing.T) {
