@@ -83,9 +83,7 @@ func TestValidateSetDec64Leaf(t *testing.T) {
 	const dec64max = "+9223372036854775.807"
 	const dec64max_plus2 = "+9223372036854777.807"
 
-	const dec64min_dropFractionDigit = "-9223372036854775.80"
 	const dec64min_minus2_dropFractionDigit = "-9223372036854777.80"
-	const dec64max_dropFractionDigit = "+9223372036854775.80"
 	const dec64max_plus2_dropFractionDigit = "+9223372036854777.80"
 
 	var testdec64path = pathutil.CopyAppend(testcontainerpath, "testdec64")
@@ -104,7 +102,6 @@ func TestValidateSetDec64Leaf(t *testing.T) {
 		NewValOpTblEntry(validatesetbetweenrange2_3, testdec64rangepath, "65.999", SetFail),
 		NewValOpTblEntry(validatesetmaxrange3, testdec64rangepath, "80", SetPass),
 		NewValOpTblEntry(validatesetabovemaxrange3, testdec64rangepath, "81", SetFail),
-
 		// Check the case of fewer digits used
 		NewValOpTblEntry(validatesettoosmall, testdec64path, dec64min_minus2_dropFractionDigit, SetFail),
 		NewValOpTblEntry(validatesettoolarge, testdec64path, dec64max_plus2_dropFractionDigit, SetFail),
