@@ -57,11 +57,21 @@ container testcontainer {
 // Need to ensure we properly check the range, including the 'gaps', and
 // overshooting the max value as well.
 func TestValidateSetDec64Leaf(t *testing.T) {
-	const schema = `
+	const schemaFd3 = `
 	container testcontainer {
 		leaf testdec64 {
 			type decimal64 {
 				fraction-digits 3;
+			}
+		}
+		leaf testdec64fd1 {
+			type decimal64 {
+				fraction-digits 1;
+			}
+		}
+		leaf testdec64fd18 {
+			type decimal64 {
+				fraction-digits 18;
 			}
 		}
 		leaf testdec64range {
@@ -77,19 +87,29 @@ func TestValidateSetDec64Leaf(t *testing.T) {
 	// actually quite be represented, and we also need to remember that unlike
 	// (u)int64, some bits are needed for the exponent, so we can't have the
 	// same precision as (u)int64.
-	const dec64min = "-9223372036854775.808"
-	const dec64min_minus2 = "-9223372036854777.808"
-	const dec64min_minus_pt002 = "-9223372036854775.810"
-	const dec64max = "+9223372036854775.807"
-	const dec64max_plus2 = "+9223372036854777.807"
-
-	const dec64min_minus2_dropFractionDigit = "-9223372036854777.80"
-	const dec64max_plus2_dropFractionDigit = "+9223372036854777.80"
-
+	const (
+		dec64min                          = "-9223372036854775.808"
+		dec64min_minus2                   = "-9223372036854777.808"
+		dec64min_minus_pt002              = "-9223372036854775.810"
+		dec64max                          = "+9223372036854775.807"
+		dec64max_plus2                    = "+9223372036854777.807"
+		dec64min_minus2_dropFractionDigit = "-9223372036854777.80"
+		dec64max_plus2_dropFractionDigit  = "+9223372036854777.80"
+		dec64min_fd1                      = "-922337203685477580.8"
+		dec64min_fd1_minus_1lsd           = "-922337203685477580.9"
+		dec64max_fd1                      = "+922337203685477580.7"
+		dec64max_fd1_plus_1lsd            = "+922337203685477580.8"
+		dec64min_fd18                     = "-9.223372036854775808"
+		dec64min_fd18_minus_1lsd          = "-9.223372036854775809"
+		dec64max_fd18                     = "+9.223372036854775807"
+		dec64max_fd18_plus_1lsd           = "+9.223372036854775808"
+	)
 	var testdec64path = pathutil.CopyAppend(testcontainerpath, "testdec64")
 	var testdec64rangepath = pathutil.CopyAppend(
 		testcontainerpath, "testdec64range")
-	tbl := []ValidateOpTbl{
+	var testdec64fd1path = pathutil.CopyAppend(testcontainerpath, "testdec64fd1")
+	var testdec64fd18path = pathutil.CopyAppend(testcontainerpath, "testdec64fd18")
+	tblForSchemaFd3 := []ValidateOpTbl{
 		NewValOpTblEntry(validatesetnovalue, testdec64path, "", SetFail),
 		NewValOpTblEntry(validatesettoosmall, testdec64path, dec64min_minus2, SetFail),
 		NewValOpTblEntry(validatesettoosmall, testdec64path, dec64min_minus_pt002, SetFail),
@@ -105,12 +125,21 @@ func TestValidateSetDec64Leaf(t *testing.T) {
 		// Check the case of fewer digits used
 		NewValOpTblEntry(validatesettoosmall, testdec64path, dec64min_minus2_dropFractionDigit, SetFail),
 		NewValOpTblEntry(validatesettoolarge, testdec64path, dec64max_plus2_dropFractionDigit, SetFail),
+		// Check fraction-digits: 1
+		NewValOpTblEntry(validatesetminvalue, testdec64fd1path, dec64min_fd1, SetPass),
+		NewValOpTblEntry(validatesettoosmall, testdec64fd1path, dec64min_fd1_minus_1lsd, SetFail),
+		NewValOpTblEntry(validatesetmaxvalue, testdec64fd1path, dec64max_fd1, SetPass),
+		NewValOpTblEntry(validatesettoolarge, testdec64fd1path, dec64max_fd1_plus_1lsd, SetFail),
+		// CHeck fraction-digits: 18
+		NewValOpTblEntry(validatesetminvalue, testdec64fd18path, dec64min_fd18, SetPass),
+		NewValOpTblEntry(validatesettoosmall, testdec64fd18path, dec64min_fd18_minus_1lsd, SetFail),
+		NewValOpTblEntry(validatesetmaxvalue, testdec64fd18path, dec64max_fd18, SetPass),
+		NewValOpTblEntry(validatesettoolarge, testdec64fd18path, dec64max_fd18_plus_1lsd, SetFail),
 	}
 
-	srv, sess := TstStartup(t, schema, emptyconfig)
-	ValidateSetPathTable(t, sess, srv.Ctx, tbl)
+	srv, sess := TstStartup(t, schemaFd3, emptyconfig)
+	ValidateSetPathTable(t, sess, srv.Ctx, tblForSchemaFd3)
 	sess.Kill()
-
 }
 
 func TestValidateSetInt8Leaf(t *testing.T) {
