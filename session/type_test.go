@@ -54,6 +54,13 @@ container testcontainer {
 	sess.Kill()
 }
 
+type validateSetPathTest struct {
+	name     string
+	path     []string
+	value    string
+	expected bool
+}
+
 // Need to ensure we properly check the range, including the 'gaps', and
 // overshooting the max value as well.
 func TestValidateSetDec64Leaf(t *testing.T) {
@@ -83,10 +90,7 @@ func TestValidateSetDec64Leaf(t *testing.T) {
 		}
 	}
 	`
-	// The way decimal numbers are represented means that some numbers can't
-	// actually quite be represented, and we also need to remember that unlike
-	// (u)int64, some bits are needed for the exponent, so we can't have the
-	// same precision as (u)int64.
+
 	const (
 		dec64min                          = "-9223372036854775.808"
 		dec64min_minus2                   = "-9223372036854777.808"
@@ -104,42 +108,54 @@ func TestValidateSetDec64Leaf(t *testing.T) {
 		dec64max_fd18                     = "+9.223372036854775807"
 		dec64max_fd18_plus_1lsd           = "+9.223372036854775808"
 	)
+
 	var testdec64path = pathutil.CopyAppend(testcontainerpath, "testdec64")
-	var testdec64rangepath = pathutil.CopyAppend(
-		testcontainerpath, "testdec64range")
+	var testdec64rangepath = pathutil.CopyAppend(testcontainerpath, "testdec64range")
 	var testdec64fd1path = pathutil.CopyAppend(testcontainerpath, "testdec64fd1")
 	var testdec64fd18path = pathutil.CopyAppend(testcontainerpath, "testdec64fd18")
-	tblForSchemaFd3 := []ValidateOpTbl{
-		NewValOpTblEntry(validatesetnovalue, testdec64path, "", SetFail),
-		NewValOpTblEntry(validatesettoosmall, testdec64path, dec64min_minus2, SetFail),
-		NewValOpTblEntry(validatesettoosmall, testdec64path, dec64min_minus_pt002, SetFail),
-		NewValOpTblEntry(validatesetminvalue, testdec64path, dec64min, SetPass),
-		NewValOpTblEntry(validatesetmaxvalue, testdec64path, dec64max, SetPass),
-		NewValOpTblEntry(validatesettoolarge, testdec64path, dec64max_plus2, SetFail),
-		NewValOpTblEntry(validatesetbelowminrange1, testdec64rangepath, "-51", SetFail),
-		NewValOpTblEntry(validatesetminrange1, testdec64rangepath, "-50", SetPass),
-		NewValOpTblEntry("Validate set inner range value", testdec64rangepath, "52.0", SetPass),
-		NewValOpTblEntry(validatesetbetweenrange2_3, testdec64rangepath, "65.999", SetFail),
-		NewValOpTblEntry(validatesetmaxrange3, testdec64rangepath, "80", SetPass),
-		NewValOpTblEntry(validatesetabovemaxrange3, testdec64rangepath, "81", SetFail),
+
+	tests := []validateSetPathTest{
+		{name: validatesetminvalue, path: testdec64path, value: dec64min, expected: SetPass},
+		{name: validatesetmaxvalue, path: testdec64path, value: dec64max, expected: SetPass},
+		{name: validatesetnovalue, path: testdec64path, value: "", expected: SetFail},
+		{name: validatesettoosmall, path: testdec64path, value: dec64min_minus2, expected: SetFail},
+		{name: validatesettoosmall, path: testdec64path, value: dec64min_minus_pt002, expected: SetFail},
+		{name: validatesettoolarge, path: testdec64path, value: dec64max_plus2, expected: SetFail},
+
+		// Check ranges
+		{name: validatesetminrange1, path: testdec64rangepath, value: "-50", expected: SetPass},
+		{name: validatesetbelowminrange1, path: testdec64rangepath, value: "-51", expected: SetFail},
+		{name: "Validate set inner range value", path: testdec64rangepath, value: "52.0", expected: SetPass},
+		{name: validatesetbetweenrange2_3, path: testdec64rangepath, value: "65.999", expected: SetFail},
+		{name: validatesetmaxrange3, path: testdec64rangepath, value: "80", expected: SetPass},
+		{name: validatesetabovemaxrange3, path: testdec64rangepath, value: "81", expected: SetFail},
+
 		// Check the case of fewer digits used
-		NewValOpTblEntry(validatesettoosmall, testdec64path, dec64min_minus2_dropFractionDigit, SetFail),
-		NewValOpTblEntry(validatesettoolarge, testdec64path, dec64max_plus2_dropFractionDigit, SetFail),
+		{name: validatesettoosmall, path: testdec64path, value: dec64min_minus2_dropFractionDigit, expected: SetFail},
+		{name: validatesettoolarge, path: testdec64path, value: dec64max_plus2_dropFractionDigit, expected: SetFail},
+
 		// Check fraction-digits: 1
-		NewValOpTblEntry(validatesetminvalue, testdec64fd1path, dec64min_fd1, SetPass),
-		NewValOpTblEntry(validatesettoosmall, testdec64fd1path, dec64min_fd1_minus_1lsd, SetFail),
-		NewValOpTblEntry(validatesetmaxvalue, testdec64fd1path, dec64max_fd1, SetPass),
-		NewValOpTblEntry(validatesettoolarge, testdec64fd1path, dec64max_fd1_plus_1lsd, SetFail),
+		{name: validatesetminvalue, path: testdec64fd1path, value: dec64min_fd1, expected: SetPass},
+		{name: validatesettoosmall, path: testdec64fd1path, value: dec64min_fd1_minus_1lsd, expected: SetFail},
+		{name: validatesetmaxvalue, path: testdec64fd1path, value: dec64max_fd1, expected: SetPass},
+		{name: validatesettoolarge, path: testdec64fd1path, value: dec64max_fd1_plus_1lsd, expected: SetFail},
+
 		// CHeck fraction-digits: 18
-		NewValOpTblEntry(validatesetminvalue, testdec64fd18path, dec64min_fd18, SetPass),
-		NewValOpTblEntry(validatesettoosmall, testdec64fd18path, dec64min_fd18_minus_1lsd, SetFail),
-		NewValOpTblEntry(validatesetmaxvalue, testdec64fd18path, dec64max_fd18, SetPass),
-		NewValOpTblEntry(validatesettoolarge, testdec64fd18path, dec64max_fd18_plus_1lsd, SetFail),
+		{name: validatesetminvalue, path: testdec64fd18path, value: dec64min_fd18, expected: SetPass},
+		{name: validatesettoosmall, path: testdec64fd18path, value: dec64min_fd18_minus_1lsd, expected: SetFail},
+		{name: validatesetmaxvalue, path: testdec64fd18path, value: dec64max_fd18, expected: SetPass},
+		{name: validatesetmaxvalue, path: testdec64fd18path, value: dec64max_fd18_plus_1lsd, expected: SetFail},
 	}
 
 	srv, sess := TstStartup(t, schemaFd3, emptyconfig)
-	ValidateSetPathTable(t, sess, srv.Ctx, tblForSchemaFd3)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			fullpath := pathutil.CopyAppend(test.path, test.value)
+			ValidateSetPath(t, sess, srv.Ctx, fullpath, test.expected)
+		})
+	}
 	sess.Kill()
+
 }
 
 func TestValidateSetInt8Leaf(t *testing.T) {
