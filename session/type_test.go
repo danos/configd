@@ -64,31 +64,31 @@ type validateSetPathTest struct {
 // Need to ensure we properly check the range, including the 'gaps', and
 // overshooting the max value as well.
 func TestValidateSetDec64Leaf(t *testing.T) {
-	const schemaFd3 = `
-	container testcontainer {
-		leaf testdec64 {
-			type decimal64 {
-				fraction-digits 3;
-			}
-		}
-		leaf testdec64fd1 {
-			type decimal64 {
-				fraction-digits 1;
-			}
-		}
-		leaf testdec64fd18 {
-			type decimal64 {
-				fraction-digits 18;
-			}
-		}
-		leaf testdec64range {
-			type decimal64 {
-				fraction-digits 3;
-				range "-50..50 | 51..60 | 70..80";
-			}
-		    default 42;
+	const fractionDigitSchema = `
+container testcontainer {
+	leaf testdec64 {
+		type decimal64 {
+			fraction-digits 3;
 		}
 	}
+	leaf testdec64fd1 {
+		type decimal64 {
+			fraction-digits 1;
+		}
+	}
+	leaf testdec64fd18 {
+		type decimal64 {
+			fraction-digits 18;
+		}
+	}
+	leaf testdec64range {
+		type decimal64 {
+			fraction-digits 3;
+			range "-50..50 | 51..60 | 70..80";
+		}
+		default 42;
+	}
+}
 	`
 
 	const (
@@ -125,7 +125,7 @@ func TestValidateSetDec64Leaf(t *testing.T) {
 		// Check ranges
 		{name: validatesetminrange1, path: testdec64rangepath, value: "-50", expected: SetPass},
 		{name: validatesetbelowminrange1, path: testdec64rangepath, value: "-51", expected: SetFail},
-		{name: "Validate set inner range value", path: testdec64rangepath, value: "52.0", expected: SetPass},
+		{name: validatesetinnerrange, path: testdec64rangepath, value: "52.0", expected: SetPass},
 		{name: validatesetbetweenrange2_3, path: testdec64rangepath, value: "65.999", expected: SetFail},
 		{name: validatesetmaxrange3, path: testdec64rangepath, value: "80", expected: SetPass},
 		{name: validatesetabovemaxrange3, path: testdec64rangepath, value: "81", expected: SetFail},
@@ -140,14 +140,14 @@ func TestValidateSetDec64Leaf(t *testing.T) {
 		{name: validatesetmaxvalue, path: testdec64fd1path, value: dec64max_fd1, expected: SetPass},
 		{name: validatesettoolarge, path: testdec64fd1path, value: dec64max_fd1_plus_1lsd, expected: SetFail},
 
-		// CHeck fraction-digits: 18
+		// Check fraction-digits: 18
 		{name: validatesetminvalue, path: testdec64fd18path, value: dec64min_fd18, expected: SetPass},
 		{name: validatesettoosmall, path: testdec64fd18path, value: dec64min_fd18_minus_1lsd, expected: SetFail},
 		{name: validatesetmaxvalue, path: testdec64fd18path, value: dec64max_fd18, expected: SetPass},
 		{name: validatesetmaxvalue, path: testdec64fd18path, value: dec64max_fd18_plus_1lsd, expected: SetFail},
 	}
 
-	srv, sess := TstStartup(t, schemaFd3, emptyconfig)
+	srv, sess := TstStartup(t, fractionDigitSchema, emptyconfig)
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			fullpath := pathutil.CopyAppend(test.path, test.value)

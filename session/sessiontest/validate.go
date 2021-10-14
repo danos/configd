@@ -33,9 +33,9 @@ func ValidateExists(t *testing.T, sess *Session, ctx *configd.Context, path []st
 }
 
 // exp is whether we expect an error or not (i.e., true means expect error)
-func ValidateSetPath(t *testing.T, sess *Session, ctx *configd.Context, path []string, expected bool) {
+func ValidateSetPath(t *testing.T, sess *Session, ctx *configd.Context, path []string, exp bool) {
 	err := sess.ValidateSet(ctx, path)
-	if (err != nil) != expected {
+	if (err != nil) != exp {
 		if err == nil {
 			t.Errorf("Unexpected validate set path result for path [%s]",
 				pathutil.Pathstr(path))

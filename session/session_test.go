@@ -78,6 +78,7 @@ const validatesetbelowminrange3 = "Validate set below minimum range 3 value"
 const validatesetminrange3 = "Validate set minimum range 3 value"
 const validatesetmaxrange3 = "Validate set maximum range 3 value"
 const validatesetabovemaxrange3 = "Validate set above maximum range 3 value"
+const validatesetinnerrange = "Validate set inner range value"
 
 // Paths used in tests
 const testcontainer = "testcontainer"
