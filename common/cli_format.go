@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2020, AT&T Intellectual Property. All rights reserved.
+// Copyright (c) 2017-2021, AT&T Intellectual Property. All rights reserved.
 //
 // SPDX-License-Identifier: LGPL-2.1-only
 
@@ -112,7 +112,7 @@ func FormatRpcPathError(err error) error {
 	} else {
 		b.WriteString(err.Error())
 	}
-	return fmt.Errorf(b.String())
+	return fmt.Error(b.String()) //errors.New(b.String())
 }
 
 // FormatCommitOrValErrors - pretty print commit / validation errors
