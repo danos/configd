@@ -1,5 +1,6 @@
 [Unit]
 Description=Yang based Configuration daemon
+Wants=ifmgrd.service
 
 [Service]
 Restart=always
