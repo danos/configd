@@ -22,6 +22,7 @@ package common
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"net/url"
 	"strings"
@@ -112,7 +113,7 @@ func FormatRpcPathError(err error) error {
 	} else {
 		b.WriteString(err.Error())
 	}
-	return fmt.Error(b.String()) //errors.New(b.String())
+	return errors.New(b.String())
 }
 
 // FormatCommitOrValErrors - pretty print commit / validation errors
