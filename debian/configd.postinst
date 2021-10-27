@@ -39,7 +39,7 @@ case "$1" in
 
     triggered)
         if [ -d /run/systemd/system ] ; then
-            deb-systemd-invoke reload-or-restart configd || true
+            deb-systemd-invoke restart configd provisiond vyatta-opd || true
         fi
     ;;
 
