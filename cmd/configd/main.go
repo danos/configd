@@ -237,7 +237,7 @@ func initialiseLogging() {
 }
 
 func getListeners() net.Listener {
-	listeners, err := activation.Listeners(true)
+	listeners, err := activation.Listeners()
 	fatal(err)
 	if len(listeners) == 0 {
 		fmt.Println("No systemd listeners")

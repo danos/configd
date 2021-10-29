@@ -15,17 +15,8 @@ GOBUILDDIR := _build
 # If the cover tool is present, use it in tests
 GOCOVER=$(if $(shell go doc cmd/cover >/dev/null 2>&1 && echo true),-cover,)
 
-SYSTEMD_DEV_VER := $(shell dpkg-query -W -f='$${Version}' golang-github-coreos-go-systemd-dev)
-SYSTEMD_DEV_NEW := $(shell dpkg --compare-versions $(SYSTEMD_DEV_VER) ge 17 && echo "1" || echo "0")
-
 %:
 	dh $@ --buildsystem=golang --with=systemd,golang,vci,yang --builddirectory=$(GOBUILDDIR)
-
-override_dh_auto_configure:
-	if [ "$(SYSTEMD_DEV_NEW)" = "1" ]; then \
-		sed -i "s/activation.Listeners(true)/activation.Listeners()/g" $(CURDIR)/cmd/configd/main.go; \
-	fi
-	dh_auto_configure
 
 override_dh_auto_build: vet
 	dh_auto_build -- $(GORACE)
