@@ -23,7 +23,6 @@ Build-Depends:
  golang-github-danos-utils-tty-dev,
  golang-github-danos-vci-dev (>= 0.3),
  golang-github-danos-yang-dev,
- golang-github-danos-yangd-dev (>= 1.1),
  golang-github-fsnotify-fsnotify-dev,
  golang-go-systemd-dev,
  golang-golang-x-crypto-dev,
